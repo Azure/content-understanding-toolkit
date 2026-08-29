@@ -22,7 +22,7 @@ export function CtaSection() {
             </div>
             <div className="cta__step">
               <b>3 · Swap in your data</b>
-              <code>lab.load_canonical_file("my_data.parquet")</code>
+              <code>calib.load_canonical_file("my_data.parquet")</code>
             </div>
           </div>
         </div>

@@ -97,21 +97,21 @@ flowchart LR
 Calibration runs offline, once per form type. Routing runs inline on every extraction and reads nothing but the table.
 
 ```python
-import calibration as lab
+import calibration as calib
 
-data = lab.load_demo_data()
+data = calib.load_demo_data()
 
 # Calibrate on labeled documents, then freeze the policy at a coverage target.
-base_policies = lab.fit_base_policies(data, split="train")
-policies = lab.select_policies(base_policies, 0.80)
+base_policies = calib.fit_base_policies(data, split="train")
+policies = calib.select_policies(base_policies, 0.80)
 
 # This CSV is the deliverable.
-lab.save_calibration_table(policies, "data/calibration_table_80.csv")
+calib.save_calibration_table(policies, "data/calibration_table_80.csv")
 
 # Production: load the table and route. No labeled data, no model.
-policies = lab.load_calibration_table("data/calibration_table_80.csv")
-routed = lab.route_frame(data, policies, split="test")
-per_field, totals = lab.held_out_metrics(routed)
+policies = calib.load_calibration_table("data/calibration_table_80.csv")
+routed = calib.route_frame(data, policies, split="test")
+per_field, totals = calib.held_out_metrics(routed)
 ```
 
 ## Calibration table
@@ -207,8 +207,8 @@ One row per extracted field value:
 **No particular file format is required.** `load_canonical_file` reads `.csv` or `.parquet`, and every function takes a plain DataFrame — so if you already have one in memory, pass it straight in and skip files entirely:
 
 ```python
-data = lab.load_canonical_file("my_data.csv")      # or .parquet
-base_policies = lab.fit_base_policies(my_dataframe, split="train")
+data = calib.load_canonical_file("my_data.csv")      # or .parquet
+base_policies = calib.fit_base_policies(my_dataframe, split="train")
 ```
 
 Two things to get right:
