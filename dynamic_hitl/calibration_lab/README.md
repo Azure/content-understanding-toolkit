@@ -6,8 +6,26 @@ The companion explainer site is in [`../web_app/`](../web_app/); it shows *what*
 
 ## Run it
 
+Create a virtual environment at the repo root and install the dependencies from the Microsoft package registry:
+
 ```powershell
-python -m pip install -r requirements.txt
+# From the repo root.
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --index-url https://packagefeedproxy.microsoft.io/pypi/simple/ -r dynamic_hitl\calibration_lab\requirements.txt
+```
+
+```bash
+# bash / zsh
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --index-url https://packagefeedproxy.microsoft.io/pypi/simple/ -r dynamic_hitl/calibration_lab/requirements.txt
+```
+
+Then launch the notebook:
+
+```powershell
+cd dynamic_hitl\calibration_lab
 jupyter notebook run_calibration.ipynb
 ```
 
@@ -20,12 +38,12 @@ The bundled results were produced once, from the pinned public dataset [`naver-c
 
 ```powershell
 # 1. Download the receipts and ground truth from Hugging Face.
-..\.venv\Scripts\python.exe ..\scripts\prepare_cord.py download --output ..\data\cord-v2
+..\..\.venv\Scripts\python.exe ..\scripts\prepare_cord.py download --output ..\data\cord-v2
 
 # 2. Create the analyzer in your CU resource and run it over the images.
 
 # 3. Pair extractions with ground truth into the canonical frame.
-..\.venv\Scripts\python.exe ..\scripts\prepare_cord.py assemble `
+..\..\.venv\Scripts\python.exe ..\scripts\prepare_cord.py assemble `
   --manifest ..\data\cord-v2\manifest.csv `
   --extractions ..\data\cord-v2\extractions `
   --analyzer-schema cord_receipt_v1.json `
