@@ -32,7 +32,7 @@ keys, no Python at page-view time.**
 | 02 · The tempting shortcut | One global confidence cutoff lands somewhere different in every field. |
 | 03 · What to do instead | Two tracks per field, gated on whether that field's confidence carries real signal. |
 | 04 · Your one dial | A single business target sets every cutoff; the savings composition moves with it. |
-| 05 · Does it hold up? | The frozen policy, measured on 100 receipts it never saw. |
+| 05 · Does it hold up? | The frozen policy, measured on 200 receipts it never saw. |
 | 06 · Room to grow | Confidence cutoff vs. fitted `P(correct)` — identical today, extensible later. |
 | Closing | Run the same method on your own documents via [`../calibration_lab/`](../calibration_lab/). |
 
@@ -55,9 +55,9 @@ customer-facing notebook runs — and sweeps it across:
 - both scoring engines (raw confidence and fitted `P(correct)`),
 - the training split (expected results) and the held-out test split (measured results).
 
-`src/data/payload.json` (~220 KB) is **committed**, so the site builds and runs with Node
+`src/data/payload.json` (~240 KB) is **committed**, so the site builds and runs with Node
 alone. Regenerating it is only necessary after changing the dataset or the calibration
-logic. The two folders ship together.
+logic, and takes the better part of an hour. The two folders ship together.
 
 ## Layout
 

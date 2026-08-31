@@ -130,17 +130,20 @@ export function MethodSection({ target }: { target: number }) {
           {decimal(field.aucHigh, 2)}).{' '}
           {field.confidenceIsUsable
             ? 'Weak, but real — enough to earn a cutoff.'
-            : 'Not distinguishable from chance, so every value goes to review.'}
+            : 'Not distinguishable from chance, so every value goes to review.'}{' '}
+          The bar is the most consequential setting in the method: move it from{' '}
+          {decimal(meta.minAucCiLower, 2)} to 0.55 and only one field here still qualifies.
         </p>
       </Card>
 
       <div className="callout">
         <b>Blank values get their own test.</b> {percent(meta.blankShare)} of everything Content
-        Understanding returned was blank, all carrying the same placeholder confidence — no cutoff
-        can sort them. So the blank-values panel above asks a different question entirely: not
-        whether confidence ranks a blank, but how often a blank turns out to be genuinely blank.
-        Each field's blanks get one on/off switch, and it only flips when the whole interval clears
-        your coverage target.
+        Understanding returned was blank, and it scores a blank with a placeholder rather than a
+        real probability — no cutoff can sort them. So the blank-values panel above asks a
+        different question entirely: not whether confidence ranks a blank, but how often a blank
+        turns out to be genuinely blank. Each field's blanks get one on/off switch, and it only
+        flips when the whole interval clears your coverage target. This track, not the cutoffs,
+        is where most of the automation comes from.
       </div>
     </Section>
   );

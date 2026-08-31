@@ -8,6 +8,10 @@ Usage (from this folder)::
 
     python build_payload.py
 
+Expect this to run for the better part of an hour: the labeled-volume sweep
+refits every field on eleven subset sizes, ten draws each, and every fit
+bootstraps its AUC interval 2,000 times.
+
 The generated payload is committed, so regenerating it is only necessary after
 changing the dataset or the calibration logic.
 """
@@ -29,7 +33,7 @@ if not LAB.exists():
     raise SystemExit(f"calibration_lab not found at {LAB}; the two folders ship together")
 sys.path.insert(0, str(LAB))
 
-import calibration as lab  # noqa: E402  (needs the sys.path entry above)
+import calibration as calib  # noqa: E402  (needs the sys.path entry above)
 
 
 OUTPUT = WEB_APP / "src" / "data" / "payload.json"
@@ -99,7 +103,7 @@ def build_meta(data: pd.DataFrame, targets: list[float]) -> dict:
         "testMistakes": int((~test["is_correct"].astype(bool)).sum()),
         "blankShare": r(float(train["extracted_value"].isna().mean())),
         "targets": [r(t, 2) for t in targets],
-        "minAucCiLower": lab.MIN_AUC_CI_LOWER,
+        "minAucCiLower": calib.MIN_AUC_CI_LOWER,
         "fieldOrder": [label_for(f) for f in sorted(FIELD_LABELS)],
     }
 
@@ -107,8 +111,8 @@ def build_meta(data: pd.DataFrame, targets: list[float]) -> dict:
 def build_fields(data: pd.DataFrame, base_policies: dict) -> list[dict]:
     """Per-field static profile: volume, accuracy, and how much signal the
     confidence score carries. Target-independent."""
-    train = lab.calibration_input(data, split="train")
-    signal = lab.signal_frame(base_policies).set_index("field_name")
+    train = calib.calibration_input(data, split="train")
+    signal = calib.signal_frame(base_policies).set_index("field_name")
     rows = []
     for field, group in train.groupby("field_name", sort=True):
         record = signal.loc[field]
@@ -139,7 +143,7 @@ def build_fields(data: pd.DataFrame, base_policies: dict) -> list[dict]:
 def build_confidence_distribution(data: pd.DataFrame, bins: int = 20) -> list[dict]:
     """Histogram of confidence for correct vs incorrect filled-in values, per
     field. Shows how heavily the two distributions overlap."""
-    train = lab.calibration_input(data, split="train")
+    train = calib.calibration_input(data, split="train")
     filled = train.loc[train["extracted_value"].notna()]
     edges = np.linspace(0.0, 1.0, bins + 1)
     rows = []
@@ -178,8 +182,8 @@ def build_signal_vs_volume(data: pd.DataFrame) -> dict:
             rng = np.random.default_rng(VOLUME_SEED + repeat)
             picked = set(rng.choice(train_docs, size=n_docs, replace=False))
             subset = data.loc[data["document_id"].isin(picked)]
-            policies = lab.fit_base_policies(subset, split="train")
-            signal = lab.signal_frame(policies).set_index("field_name")
+            policies = calib.fit_base_policies(subset, split="train")
+            signal = calib.signal_frame(policies).set_index("field_name")
             for field in FIELD_LABELS:
                 if field in signal.index:
                     draws[field].append(signal.loc[field])
@@ -207,7 +211,7 @@ def _average_signal(records: list[pd.Series], repeats: int) -> dict:
         "aucHigh": filled[2],
         # The blank track's bar is the coverage target, which the site picks
         # later, so only the filled-in track can be judged here.
-        "usable": filled[1] is not None and filled[1] >= lab.MIN_AUC_CI_LOWER,
+        "usable": filled[1] is not None and filled[1] >= calib.MIN_AUC_CI_LOWER,
         "nFilled": _mean_count(records, "n_filled"),
         "blankPrecision": blank[0],
         "blankLow": blank[1],
@@ -237,7 +241,7 @@ def _mean_count(records: list[pd.Series], key: str) -> int:
 def build_global_cutoff(data: pd.DataFrame) -> dict:
     """The strawman: one raw-confidence cutoff applied to every field. Traced
     per field so it is visible that the same number lands very differently."""
-    train = lab.calibration_input(data, split="train")
+    train = calib.calibration_input(data, split="train")
     cutoffs = [round(c, 3) for c in np.arange(0.0, 1.0 + CUTOFF_STEP / 2, CUTOFF_STEP)]
     confidence = train["confidence"].to_numpy(dtype=float)
     correct = train["is_correct"].to_numpy(dtype=bool)
@@ -281,8 +285,8 @@ def build_global_cutoff(data: pd.DataFrame) -> dict:
 def build_engine(data: pd.DataFrame, targets: list[float], score_mode: str) -> dict:
     """Expected (training) and measured (unseen test) results at every target."""
     print(f"  fitting base policies [{score_mode}] ...", flush=True)
-    base_policies = lab.fit_base_policies(data, split="train", score_mode=score_mode)
-    train = lab.calibration_input(data, split="train")
+    base_policies = calib.fit_base_policies(data, split="train", score_mode=score_mode)
+    train = calib.calibration_input(data, split="train")
 
     expected_portfolio: list[dict] = []
     expected_per_field: dict[str, list[dict]] = {}
@@ -291,10 +295,10 @@ def build_engine(data: pd.DataFrame, targets: list[float], score_mode: str) -> d
     cutoffs: dict[str, list] = {}
 
     for index, target in enumerate(targets):
-        policies = lab.select_policies(base_policies, target)
+        policies = calib.select_policies(base_policies, target)
 
         # Expected: what the policy forecasts on the documents it learned from.
-        per_field, portfolio = lab.savings_attribution(policies, train)
+        per_field, portfolio = calib.savings_attribution(policies, train)
         expected_portfolio.append(
             {
                 "target": r(target, 2),
@@ -329,11 +333,11 @@ def build_engine(data: pd.DataFrame, targets: list[float], score_mode: str) -> d
             )
 
         # Measured: the frozen policy run against documents it never saw.
-        routed = lab.route_frame(data, policies, split="test")
-        measured, totals = lab.held_out_metrics(routed)
+        routed = calib.route_frame(data, policies, split="test")
+        measured, totals = calib.held_out_metrics(routed)
         to_hitl = routed["route_to_hitl"].astype(bool)
         incorrect = ~routed["is_correct"].astype(bool)
-        thresholded = routed["route_reason"].isin(lab.THRESHOLD_ROUTE_REASONS)
+        thresholded = routed["route_reason"].isin(calib.THRESHOLD_ROUTE_REASONS)
         thresholded_errors = int((incorrect & thresholded).sum())
         measured_portfolio.append(
             {
@@ -358,6 +362,7 @@ def build_engine(data: pd.DataFrame, targets: list[float], score_mode: str) -> d
                     "autoApproveRate": r(row["auto_approve_rate"]),
                     "catch": r(row["catch_rate"]),
                     "stpErrorRate": r(row["stp_error_rate"]),
+                    "nAuto": int(row["auto_approved"]),
                 }
             )
 
@@ -373,11 +378,11 @@ def build_engine(data: pd.DataFrame, targets: list[float], score_mode: str) -> d
 
 def main() -> None:
     print("loading dataset ...", flush=True)
-    data = lab.load_demo_data()
-    targets = lab.target_range(TARGET_START, TARGET_END, TARGET_STEP)
+    data = calib.load_demo_data()
+    targets = calib.target_range(TARGET_START, TARGET_END, TARGET_STEP)
 
     print("fitting the reference signal ...", flush=True)
-    reference_policies = lab.fit_base_policies(data, split="train")
+    reference_policies = calib.fit_base_policies(data, split="train")
 
     payload = {
         "meta": build_meta(data, targets),
@@ -387,7 +392,7 @@ def main() -> None:
         "globalCutoff": build_global_cutoff(data),
         "naiveFrontier": [
             {"threshold": r(row["threshold"], 3), "stpRate": r(row["stpRate"]), "catch": r(row["catch"])}
-            for row in lab.naive_threshold_sweep(data, split="test", step=0.005)
+            for row in calib.naive_threshold_sweep(data, split="test", step=0.005)
             .rename(columns={"stp_rate": "stpRate"})
             .to_dict(orient="records")
         ],

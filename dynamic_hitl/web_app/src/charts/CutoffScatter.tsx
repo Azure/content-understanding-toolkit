@@ -48,12 +48,29 @@ export function CutoffScatter({
       })
       .sort((a, b) => a.cy - b.cy);
 
+    const top = MARGIN.top;
+    const bottom = HEIGHT - MARGIN.bottom;
+
+    const labelYs: number[] = [];
     let lowest = -Infinity;
-    return laid.map((entry) => {
-      const labelY = Math.max(entry.cy, lowest + LABEL_GAP);
+    for (const entry of laid) {
+      const labelY = Math.max(entry.cy, lowest + LABEL_GAP, top);
+      labelYs.push(labelY);
       lowest = labelY;
-      return { ...entry, labelY, labelX: entry.cx + entry.radius + 9 };
-    });
+    }
+    // Fields often bunch at 0% slipped, which would cascade the stack past the
+    // axis; walk back up to pull it inside the plot.
+    let highest = Infinity;
+    for (let i = laid.length - 1; i >= 0; i -= 1) {
+      labelYs[i] = Math.min(labelYs[i], highest - LABEL_GAP, bottom);
+      highest = labelYs[i];
+    }
+
+    return laid.map((entry, i) => ({
+      ...entry,
+      labelY: labelYs[i],
+      labelX: entry.cx + entry.radius + 9,
+    }));
   }, [fields, points, x, y, r, maxErrorRate]);
 
   return (

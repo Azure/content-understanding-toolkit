@@ -118,6 +118,7 @@ export interface MeasuredFieldPoint {
   autoApproveRate: number;
   catch: number | null;
   stpErrorRate: number | null;
+  nAuto: number;
 }
 
 export interface PolicyCutoff {
