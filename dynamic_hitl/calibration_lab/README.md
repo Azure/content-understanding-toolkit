@@ -56,14 +56,24 @@ Step 3 fills in `is_correct` using the same rules as [`matching.py`](matching.py
 
 ## Approach
 
-Reviewing every extracted value is expensive; auto-approving everything above one confidence cutoff is unsafe, because a 0.9 means something different on every field. So measure each field separately, and only automate the ones that earn it.
+Reviewing every extracted value is expensive; auto-approving everything above one confidence cutoff is unsafe, because the same 0.9 carries a different error rate on every field. So measure each field separately, and only automate the ones that earn it.
 
 Two tracks, because blanks and filled-in values carry different evidence:
 
 - **Filled-in values** are ranked by confidence. A field earns a cutoff only if the lower bound of its AUC interval clears 0.5 — otherwise everything goes to review. The cutoff chosen is the one with the least review that still catches your target share of mistakes.
-- **Blank values** get one on/off switch. CU returns the same placeholder confidence for every blank, so no cutoff can sort them; they are auto-approved only when a Wilson bound says they are reliably, genuinely blank.
+- **Blank values** get one on/off switch. CU scores a blank with a placeholder rather than a real probability, so no cutoff can sort them; they are auto-approved only when a Wilson bound says they are reliably, genuinely blank.
 
 You set one number: the share of known mistakes review must catch.
+
+Expect the blank track to carry much of the saving — about half of it on the bundled receipts at an 80% target, and a larger share as you ask for more coverage. Splitting blanks out from filled-in values is doing at least as much work as the cutoffs are.
+
+### What that number does and does not promise
+
+It is a floor on the **calibrated track**, measured on the same rows the cutoff was chosen from. Three things follow:
+
+- **Not a portfolio guarantee.** Fields left in full review push the overall catch rate above the target; auto-approved blanks push it below.
+- **Not an accuracy promise.** An 80% target does not mean auto-approved values are 80% correct. Catch rate and the error rate among auto-approved values have different denominators — read both, per field.
+- **No margin.** The cutoff picked is the most aggressive one that clears the target on the calibration set, so held-out catch lands a few points either side of it. On the bundled receipts the calibrated track delivers 78% against an 80% target.
 
 ## Calibrate, then route
 
@@ -123,6 +133,7 @@ per_field, totals = calib.held_out_metrics(routed)
 | menu.name | calibrate | 0.796 | raw_confidence | null_to_hitl | 0.80 | 0.80 |
 | menu.price | calibrate | 0.875 | raw_confidence | null_to_hitl | 0.80 | 0.80 |
 | menu.quantity | always_review | — | raw_confidence | null_to_hitl | 0.80 | 0.80 |
+| service_price | calibrate | 0.864 | raw_confidence | null_to_stp | 0.80 | 0.80 |
 | subtotal_price | calibrate | 0.856 | raw_confidence | null_to_stp | 0.80 | 0.80 |
 | total_price | calibrate | 0.845 | raw_confidence | null_to_hitl | 0.80 | 0.80 |
 
@@ -213,7 +224,7 @@ base_policies = calib.fit_base_policies(my_dataframe, split="train")
 
 Two things to get right:
 
-1. **Split by document, not by row**, so no document lands in both train and test.
+1. **Split by document, not by row**, so no document lands in both train and test. `load_canonical_file` folds any `validation` rows into `test`, since the lab uses a two-way holdout.
 2. **`is_correct` is yours to define.** The calibration never compares extractions to ground truth; it inherits whatever you put in that column. Too strict and you chase mistakes that were not mistakes; too loose and the policy certifies real ones.
 
 [`matching.py`](matching.py) is the version this lab ships — exact match after per-field normalization — and it is what produced `is_correct` for the bundled receipts:
@@ -228,7 +239,9 @@ Normalization is not cosmetic here: it decides 2.4% of verdicts, mostly quantiti
 
 ### How much labeled data
 
-A field earns a cutoff once its interval clears the bar, which takes more than the bare minimums the code enforces. On the CORD receipts, per field: roughly **150+ filled-in values**, and **15–30 blanks** for the blank track, which tightens much faster. Below ~100 documents nothing qualified at all.
+A field earns a cutoff once its interval clears the bar, which takes more than the bare minimums the code enforces. On the CORD receipts the blank track tightens fastest — **15–30 blanks** is often enough — while the filled-in track needs a few hundred values before it qualifies dependably.
+
+Below a few hundred documents, *which* fields qualify is mostly noise. Re-sampling the training split at 50 and at 100 documents flips fields either way, and the count does not climb steadily with volume. Treat qualification made on thin data as provisional.
 
 Fields that do not qualify route to full review — the behaviour you had before calibrating — so thin data costs savings, never safety. Re-fit as labels accumulate.
 
@@ -268,6 +281,8 @@ Gates are floors for running the estimator at all; the interval does the real wo
 | `min_auc_ci_lower` | 0.50 | The whole AUC interval must beat a coin flip. |
 | `min_nulls` | 10 blanks | A Wilson bound on fewer blanks clears no sensible bar. |
 
+`min_auc_ci_lower` is the knob that matters most, and 0.50 is the loosest bar that still means anything. On the bundled receipts five of eight fields earn a cutoff at 0.50 and only **one** does at 0.55, where nearly every saving comes from the blank track instead. Fields whose lower bound sits near the bar are unstable in their own right: `service_price` lands at 0.5012 and only qualifies once the bootstrap is wide enough to resolve it. Treat borderline qualification as provisional and re-fit as labels accumulate.
+
 Filled-in decisions are `calibrate`, `always_trust`, `always_review`, or `insufficient_data`; blank decisions are `null_to_stp`, `null_to_hitl`, `insufficient_nulls`, or `no_nulls_observed`. Anything that fails a gate falls back to review.
 
 ## Adding predictors later
@@ -282,6 +297,6 @@ Both modes ship in the same table and route through the same code. What changes 
 | `cutoff` | a raw confidence | a `P(correct)` probability |
 | routing test | `confidence >= cutoff` | `sigmoid(lr_coef * confidence + lr_intercept) >= cutoff` |
 
-With confidence as the only predictor the two are monotone transforms of one another, so they rank values identically and produce the same routing — the same boundary in different units. On the bundled receipts, `menu.name` gets a raw cutoff of `0.796` and a logistic cutoff of `0.7698`, and `sigmoid(2.077 × 0.796 − 0.446) = 0.7698` exactly. Both auto-approve 27.6% of held-out values and catch 86.6% of the mistakes.
+With confidence as the only predictor the two are monotone transforms of one another, so they rank values identically and produce the same routing — the same boundary in different units. On the bundled receipts, `menu.name` gets a raw cutoff of `0.796` and a logistic cutoff of `0.7698`, and `sigmoid(2.077 × 0.796 − 0.446) = 0.7698` exactly. Both auto-approve 28.3% of held-out values and catch 85.4% of the mistakes.
 
 So switching modes today buys nothing, which is the point: it is a slot, not an upgrade. The logistic form is what you extend when you gain a *second* predictor of correctness — page quality, vendor, field length, a cross-field consistency check — at which point the score stops being a function of confidence alone and the fitted coefficients start doing real work.

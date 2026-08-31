@@ -4,25 +4,14 @@ Two-track routing per field:
   * **Null track** — Wilson 95% CI on P(GT null | extracted null). When the
     lower bound clears the null target the policy routes nulls to STP;
     otherwise nulls go to HITL.
-  * **Non-null track** — Platt-style 1-D logistic regression on raw ACU
-    confidence, evaluated with out-of-fold (OOF) predictions and gated on a
-    95% bootstrap CI on AUC.
+  * **Non-null track** — confidence ranked directly, or mapped through a
+    Platt-style 1-D logistic regression, then gated on a 95% bootstrap CI on
+    AUC and cut at the threshold that meets the requested catch target.
 
-The calibrated signal supports two threshold-selection questions:
+One business number drives it: ``target_catch_rate``, the minimum share of
+known extraction errors human review must intercept.
 
-  * **Error interception** (the established ``target_catch_rate`` workflow) —
-    what minimum share of known extraction errors must HITL intercept?
-  * **STP risk budget** — what is the maximum confidence-bounded error rate
-    allowed among values sent straight through?
-
-The second mode is additive. The existing error-interception API, CSV contract,
-notebooks, and routing behavior remain unchanged.
-
-Everything below is a reorganization of the routing-policy logic baked into
-``address_confirmation_notebooks/1024_calibration_experiment_4.ipynb``,
-exposed as a callable module so the notebook flow can be reproduced (and
-the resulting per-field policy table can be persisted to CSV) without
-re-executing the notebook.
+This is the engine. :mod:`calibration` is the API you call.
 """
 
 from __future__ import annotations
@@ -30,11 +19,8 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Literal
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -47,37 +33,21 @@ from sklearn.model_selection import (
 from statsmodels.stats.proportion import proportion_confint
 
 
-# Canonical row-key tuple — one entry per value the calibrator emits per
-# field, in the order they appear as columns in the deliverable table.
-_DEFAULT_ROW_KEYS: tuple[str, ...] = (
-    "form_type",
-    "form_version",
-    "form_id",
-    "acu_analyzer",
-    "field_name",
-    "null_target",
-    "null_review",
-    "non_null_target",
-    "non_null_calibrated",
-    "lr_coef",
-    "lr_intercept",
-    "lr_threshold",
-    "calibration_timestamp",
-)
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Internal helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
 
 def _is_null_value(v) -> bool:
-    """True only for true nulls (None / NaN). Empty strings are real
-    extractions in this pipeline."""
+    """True when a value counts as "nothing was extracted": None, NaN, or a
+    string that is empty or whitespace. Kept in step with ``matching.is_null``,
+    so the module that labels and the module that routes agree."""
     if v is None:
         return True
     if isinstance(v, float) and math.isnan(v):
         return True
+    if isinstance(v, str):
+        return not v.strip()
     return False
 
 
@@ -101,18 +71,27 @@ class CalibrationConfig:
     """Knobs for the non-null LR track and the null track."""
 
     target_catch_rate: float = 0.80
-    """Error interception target (technical: OOF mis-extraction recall).
+    """The minimum fraction of known non-null extraction errors that human
+    review must intercept.
 
-    This is the established threshold objective: the minimum fraction of known
-    non-null extraction errors that human review must intercept.
+    This is a floor on the *calibrated* track, measured on the rows the
+    threshold was chosen from. It is not a portfolio-wide guarantee, and it
+    says nothing about how often an auto-approved value is wrong.
     """
 
     min_null_precision: float = 0.80
     """Null: Wilson-CI lower-bound bar that null precision must clear before
     nulls are routed to STP."""
 
-    min_auc_ci_lower: float = 0.55
-    """Non-null: AUC 95% CI lower bound required before a threshold is fit."""
+    min_auc_ci_lower: float = 0.50
+    """Non-null: AUC 95% CI lower bound required before a threshold is fit.
+
+    The most consequential knob here. 0.50 asks only that the whole interval
+    beat a coin flip; raising it a few hundredths can disqualify every field on
+    a dataset whose confidence carries weak signal. Fields whose lower bound
+    sits near the bar can also change side with ``random_state``, so treat
+    borderline qualification as provisional.
+    """
 
     min_samples: int = 20
     """Minimum non-null rows before we'll attempt to fit the LR."""
@@ -129,12 +108,10 @@ class CalibrationConfig:
     random_state: int = 42
 
     group_col: str | None = None
-    """Optional document/group column for leakage-safe OOF predictions and
-    cluster-bootstrap AUC confidence intervals.
-
-    The default is ``None`` to preserve the established row-level calibration
-    behavior. Set this to ``"document_id"`` for datasets containing repeated
-    observations from the same document, such as receipt line items.
+    """Optional document/group column for leakage-safe fold splits and
+    cluster-bootstrap AUC confidence intervals. Set this to ``"document_id"``
+    for datasets containing repeated observations from the same document, such
+    as receipt line items.
     """
 
     score_mode: Literal["logistic", "raw_confidence"] = "logistic"
@@ -159,50 +136,6 @@ class CalibrationConfig:
                 "score_mode must be 'logistic' or 'raw_confidence', got "
                 f"{self.score_mode!r}"
             )
-
-
-@dataclass(frozen=True)
-class StpRiskConfig:
-    """Business-facing threshold controls for the additive STP-risk mode."""
-
-    max_stp_error_rate: float = 0.05
-    """Maximum Wilson upper confidence bound allowed on errors among STP rows."""
-
-    min_stp_samples: int = 20
-    """Minimum accepted non-null rows required to trust an STP estimate."""
-
-    min_nulls: int = 10
-    """Minimum null predictions required before nulls may be sent to STP."""
-
-    min_auc_ci_lower: float = 0.55
-    """Signal gate shared with the established error-interception workflow."""
-
-    ci_level: float = 0.95
-
-    def __post_init__(self) -> None:
-        if not 0 <= self.max_stp_error_rate < 1:
-            raise ValueError("max_stp_error_rate must be in [0, 1)")
-        if self.min_stp_samples < 1:
-            raise ValueError("min_stp_samples must be >= 1")
-        if self.min_nulls < 1:
-            raise ValueError("min_nulls must be >= 1")
-        if not 0 < self.ci_level < 1:
-            raise ValueError("ci_level must be in (0, 1)")
-
-
-@dataclass(frozen=True)
-class FormMetadata:
-    """Form-level constants written into every row of the calibration table."""
-
-    form_type: str
-    form_version: str
-    form_id: str
-    acu_analyzer: str
-
-    friendly_name_map: Mapping[str, str] | None = None
-    """Optional override mapping (canonical field key → display name) used to
-    populate the ``Field Name (Friendly)`` column. When None, the field key
-    from the dataframe is used as-is."""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -670,435 +603,8 @@ def redecide_policies(
     return {f: redecide_policy(p, config=config) for f, p in policies.items()}
 
 
-def stp_risk_frontier(
-    policy: Mapping,
-    *,
-    ci_level: float = 0.95,
-) -> pd.DataFrame:
-    """Return the cached non-null automation/risk frontier for one field.
-
-    Each row is a candidate calibrated-probability threshold. ``stp_rate`` is
-    the share of non-null field observations auto-passed, while
-    ``stp_error_ci_upper`` is the Wilson upper confidence bound on the error
-    rate among those auto-passed observations.
-    """
-    if not 0 < ci_level < 1:
-        raise ValueError("ci_level must be in (0, 1)")
-    cache = policy.get("_cache")
-    if cache is None:
-        raise ValueError(
-            "policy is missing its _cache — was it built with the current "
-            "version of build_routing_policy?"
-        )
-    sweep = cache.get("sweep")
-    if sweep is None:
-        return pd.DataFrame(
-            columns=[
-                "t",
-                "tn",
-                "fp",
-                "fn",
-                "tp",
-                "catch",
-                "hitl_load",
-                "stp_n",
-                "stp_errors",
-                "stp_rate",
-                "stp_error_rate",
-                "stp_error_ci_lower",
-                "stp_error_ci_upper",
-            ]
-        )
-
-    frontier = sweep.copy()
-    alpha = 1.0 - ci_level
-    frontier["stp_error_ci_lower"] = np.nan
-    frontier["stp_error_ci_upper"] = np.nan
-    for idx, row in frontier.loc[frontier["stp_n"] > 0].iterrows():
-        lo, hi = _wilson_ci(
-            int(row["stp_errors"]), int(row["stp_n"]), alpha=alpha
-        )
-        frontier.loc[idx, "stp_error_ci_lower"] = lo
-        frontier.loc[idx, "stp_error_ci_upper"] = hi
-    return frontier
-
-
-def _build_null_policy_for_stp_risk(
-    signal: Mapping,
-    cfg: StpRiskConfig,
-) -> dict:
-    """Apply a confidence-bounded error budget to null predictions."""
-    n_nulls = int(signal["n_nulls"])
-    n_correct = int(signal["n_nulls_gt_null"])
-    n_errors = n_nulls - n_correct
-    alpha = 1.0 - cfg.ci_level
-    error_rate = n_errors / n_nulls if n_nulls else None
-    ci_lower, ci_upper = (
-        _wilson_ci(n_errors, n_nulls, alpha=alpha)
-        if n_nulls
-        else (None, None)
-    )
-    result = {
-        "policy_mode": "stp_risk_budget",
-        "max_stp_error_rate": cfg.max_stp_error_rate,
-        "min_nulls": cfg.min_nulls,
-        "n_nulls": n_nulls,
-        "n_nulls_gt_null": n_correct,
-        "n_null_errors": n_errors,
-        "null_precision": signal["null_precision"],
-        "null_error_rate": error_rate,
-        "error_ci_lower": ci_lower,
-        "error_ci_upper": ci_upper,
-        # Compatibility aliases used by existing visualizations.
-        "ci_lower": signal["null_ci_lower"],
-        "ci_upper": signal["null_ci_upper"],
-        "decision": None,
-        "reason": "",
-    }
-    if n_nulls == 0:
-        result.update(
-            decision="no_nulls_observed",
-            reason="no null predictions observed → route nulls to HITL",
-        )
-    elif n_nulls < cfg.min_nulls:
-        result.update(
-            decision="insufficient_nulls",
-            reason=(
-                f"only {n_nulls} null predictions observed "
-                f"(< min_nulls={cfg.min_nulls}) → route nulls to HITL"
-            ),
-        )
-    elif ci_upper is not None and ci_upper <= cfg.max_stp_error_rate:
-        result.update(
-            decision="null_to_stp",
-            reason=(
-                f"null STP error {error_rate:.1%} "
-                f"(upper {cfg.ci_level:.0%} bound {ci_upper:.1%}) is within "
-                f"the {cfg.max_stp_error_rate:.1%} risk budget → STP"
-            ),
-        )
-    else:
-        result.update(
-            decision="null_to_hitl",
-            reason=(
-                f"null STP error upper {cfg.ci_level:.0%} bound "
-                f"{ci_upper:.1%} exceeds the "
-                f"{cfg.max_stp_error_rate:.1%} risk budget → HITL"
-            ),
-        )
-    return result
-
-
-def redecide_policy_for_stp_risk(
-    policy: Mapping,
-    *,
-    config: StpRiskConfig | None = None,
-) -> dict:
-    """Select the most automated threshold within an STP error-rate budget.
-
-    Heavy work is reused from the cached Platt fit and OOF predictions created
-    by :func:`build_routing_policy`. A candidate is eligible only when its
-    Wilson upper confidence bound is within ``max_stp_error_rate``. Among
-    eligible candidates, the one accepting the most observations is selected.
-    """
-    cfg = config or StpRiskConfig()
-    cache = policy.get("_cache")
-    if cache is None:
-        raise ValueError(
-            "policy is missing its _cache — was it built with the current "
-            "version of build_routing_policy?"
-        )
-
-    null_policy = _build_null_policy_for_stp_risk(cache, cfg)
-    n = int(cache["n"])
-    n_errors = int(cache["n_errors"])
-    base = {
-        "field_name": cache["field_name"],
-        "score_mode": cache.get("score_mode", "logistic"),
-        "policy_mode": "stp_risk_budget",
-        "max_stp_error_rate": cfg.max_stp_error_rate,
-        "n": n,
-        "n_errors": n_errors,
-        "decision": None,
-        "reason": "",
-        "threshold": None,
-        "model": cache.get("model"),
-        "lr_coef": None,
-        "lr_intercept": None,
-        "achieved_catch_rate": None,
-        "hitl_load": 1.0 if n else None,
-        "stp_rate": 0.0 if n else None,
-        "stp_n": 0,
-        "stp_errors": 0,
-        "stp_miss_rate": None,
-        "stp_error_ci_lower": None,
-        "stp_error_ci_upper": None,
-        "confusion_matrix": None,
-        "auc": cache.get("auc"),
-        "auc_ci_lower": cache.get("auc_ci_lower"),
-        "auc_ci_upper": cache.get("auc_ci_upper"),
-        "null_policy": null_policy,
-        "_cache": cache,
-    }
-
-    skip_reason = cache.get("lr_skip_reason")
-    if skip_reason is not None:
-        if n_errors == 0 and n >= cfg.min_stp_samples:
-            lo, hi = _wilson_ci(0, n, alpha=1.0 - cfg.ci_level)
-            if hi <= cfg.max_stp_error_rate:
-                base.update(
-                    decision="always_trust",
-                    reason=(
-                        f"no errors in {n} non-null observations and upper "
-                        f"{cfg.ci_level:.0%} bound {hi:.1%} is within the "
-                        f"{cfg.max_stp_error_rate:.1%} risk budget"
-                    ),
-                    hitl_load=0.0,
-                    stp_rate=1.0,
-                    stp_n=n,
-                    stp_errors=0,
-                    stp_miss_rate=0.0,
-                    stp_error_ci_lower=lo,
-                    stp_error_ci_upper=hi,
-                )
-                return base
-        decision = "insufficient_data" if n < cfg.min_stp_samples else "always_review"
-        base.update(decision=decision, reason=f"{skip_reason} → route to HITL")
-        return base
-
-    if cache["bootstrap_degenerate"]:
-        base.update(
-            decision="always_review",
-            reason="bootstrap degenerate — signal confidence interval is unreliable",
-        )
-        return base
-    if float(cache["auc_ci_lower"]) < cfg.min_auc_ci_lower:
-        base.update(
-            decision="always_review",
-            reason=(
-                f"AUC CI lower {cache['auc_ci_lower']:.3f} < "
-                f"{cfg.min_auc_ci_lower:.2f} — signal not trustworthy"
-            ),
-        )
-        return base
-
-    frontier = stp_risk_frontier(policy, ci_level=cfg.ci_level)
-    eligible = frontier[
-        (frontier["stp_n"] >= cfg.min_stp_samples)
-        & (frontier["stp_error_ci_upper"] <= cfg.max_stp_error_rate)
-    ]
-    if eligible.empty:
-        base.update(
-            decision="always_review",
-            reason=(
-                "no threshold has enough accepted samples and a confidence-bounded "
-                f"STP error rate ≤ {cfg.max_stp_error_rate:.1%}"
-            ),
-        )
-        return base
-
-    chosen = eligible.loc[eligible["stp_n"].idxmax()]
-    threshold = float(chosen["t"])
-    tn, fp, fn, tp = (
-        int(chosen["tn"]),
-        int(chosen["fp"]),
-        int(chosen["fn"]),
-        int(chosen["tp"]),
-    )
-    model = cache["model"]
-    base.update(
-        decision="calibrate",
-        reason=(
-            f"maximum automation within {cfg.max_stp_error_rate:.1%} STP "
-            f"error budget at threshold {threshold:.4f}"
-        ),
-        threshold=threshold,
-        lr_coef=float(model.coef_[0, 0]) if model is not None else None,
-        lr_intercept=float(model.intercept_[0]) if model is not None else None,
-        achieved_catch_rate=float(chosen["catch"]),
-        hitl_load=float(chosen["hitl_load"]),
-        stp_rate=float(chosen["stp_rate"]),
-        stp_n=int(chosen["stp_n"]),
-        stp_errors=int(chosen["stp_errors"]),
-        stp_miss_rate=float(chosen["stp_error_rate"]),
-        stp_error_ci_lower=float(chosen["stp_error_ci_lower"]),
-        stp_error_ci_upper=float(chosen["stp_error_ci_upper"]),
-        confusion_matrix=np.array([[tn, fp], [fn, tp]]),
-    )
-    return base
-
-
-def redecide_policies_for_stp_risk(
-    policies: Mapping[str, Mapping],
-    *,
-    max_stp_error_rates: float | Mapping[str, float],
-    base_config: StpRiskConfig | None = None,
-) -> dict[str, dict]:
-    """Apply one or per-field STP risk budgets without refitting models."""
-    base = base_config or StpRiskConfig()
-    if isinstance(max_stp_error_rates, Mapping):
-        missing = sorted(set(policies) - set(max_stp_error_rates))
-        if missing:
-            raise KeyError(f"missing STP risk targets for fields: {missing}")
-        targets = max_stp_error_rates
-    else:
-        targets = {field: float(max_stp_error_rates) for field in policies}
-
-    return {
-        field: redecide_policy_for_stp_risk(
-            policy,
-            config=replace(base, max_stp_error_rate=float(targets[field])),
-        )
-        for field, policy in policies.items()
-    }
-
-
 # ─────────────────────────────────────────────────────────────────────────────
-# Calibration table
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-def _null_review_flag(null_decision: str) -> bool:
-    """True ⇔ nulls for this field are routed to HITL (i.e. require review)."""
-    return null_decision != "null_to_stp"
-
-
-def build_calibration_table(
-    df_full: pd.DataFrame,
-    *,
-    metadata: FormMetadata,
-    fields: Iterable[str] | None = None,
-    config: CalibrationConfig | None = None,
-    policies: Mapping[str, dict] | None = None,
-) -> pd.DataFrame:
-    """Run the two-track calibration over every field and emit the
-    deliverable per-field policy table.
-
-    Parameters
-    ----------
-    df_full : the unfiltered comparison frame (must contain both null and
-        non-null rows; same shape consumed by ``build_routing_policy``).
-    metadata : ``FormMetadata`` carrying the form-level constants
-        (form type/version/id, ACU analyzer name, optional friendly-name
-        override map). Forcing a field to always be reviewed is **not** part
-        of the calibration contract — leave that field out of the table and
-        routing sends it to review.
-    fields : iterable of friendly field keys to include. Defaults to every
-        unique value of ``df_full['field_name']`` (or the keys of
-        ``policies`` when supplied).
-    config : ``CalibrationConfig`` knobs; defaults to the notebook values
-        (target_catch_rate=0.80, min_null_precision=0.80, …).
-    policies : optional precomputed mapping ``{field: policy_dict}`` from
-        :func:`build_routing_policies`. When provided, the per-field LR
-        fits are reused instead of recomputed; ``df_full`` is then only
-        consulted for the default field list.
-
-    Returns
-    -------
-    DataFrame with columns (in order, defined by ``_DEFAULT_ROW_KEYS``):
-        form_type, form_version, form_id, acu_analyzer,
-        field_name,
-        null_target, null_review,
-        non_null_target, non_null_calibrated,
-        lr_coef, lr_intercept, lr_threshold,
-        calibration_timestamp
-
-    Per-row semantics:
-      * **null_target**          — ``config.min_null_precision`` (the bar
-        the null Wilson-CI lower bound had to clear).
-      * **null_review**          — True iff null_decision != 'null_to_stp'
-        (i.e. nulls go to HITL).
-      * **non_null_target**      — ``config.target_catch_rate``.
-      * **non_null_calibrated**  — True iff non-null decision == 'calibrate'.
-        For 'always_trust' / 'always_review' / 'insufficient_data' this is
-        False and the LR columns are NaN.
-      * **lr_coef / lr_intercept / lr_threshold** — only populated when
-        non_null_calibrated is True.
-      * **calibration_timestamp** — ISO-8601 UTC timestamp captured once
-        per call, identical across every row in the returned table.
-    """
-    cfg = config or CalibrationConfig()
-
-    if fields is None:
-        if policies is not None:
-            fields = list(policies.keys())
-        else:
-            fields = sorted(df_full["field_name"].dropna().unique())
-
-    name_map = metadata.friendly_name_map or {}
-    # Single timestamp stamped onto every row so the whole table reflects
-    # one calibration run.
-    calibrated_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-    rows: list[dict] = []
-    for field_key in fields:
-        if policies is not None and field_key in policies:
-            policy = policies[field_key]
-        else:
-            policy = build_routing_policy(df_full, field_key, config=cfg)
-        np_ = policy["null_policy"]
-        calibrated = policy["decision"] == "calibrate"
-        rows.append(
-            {
-                "form_type":             metadata.form_type,
-                "form_version":          metadata.form_version,
-                "form_id":               metadata.form_id,
-                "acu_analyzer":          metadata.acu_analyzer,
-                "field_name":            name_map.get(field_key, field_key),
-                "null_target":           cfg.min_null_precision,
-                "null_review":           _null_review_flag(np_["decision"]),
-                "non_null_target":       cfg.target_catch_rate,
-                "non_null_calibrated":   calibrated,
-                "lr_coef":               policy["lr_coef"] if calibrated else np.nan,
-                "lr_intercept":          policy["lr_intercept"] if calibrated else np.nan,
-                "lr_threshold":          policy["threshold"] if calibrated else np.nan,
-                "calibration_timestamp": calibrated_at,
-            }
-        )
-
-    return pd.DataFrame(rows, columns=list(_DEFAULT_ROW_KEYS))
-
-
-def save_calibration_table(
-    table: pd.DataFrame,
-    path: str | Path,
-    *,
-    overwrite: bool = True,
-) -> Path:
-    """Persist a calibration table to CSV.
-
-    Parameters
-    ----------
-    table : the dataframe returned by :func:`build_calibration_table`.
-        Column order is enforced against ``_DEFAULT_ROW_KEYS`` so
-        downstream consumers see a stable schema.
-    path : output path (``str`` or ``pathlib.Path``). Parent directories
-        are created if they don't exist.
-    overwrite : when False, raises ``FileExistsError`` if ``path`` already
-        exists. Defaults to True.
-
-    Returns
-    -------
-    The resolved ``Path`` written to.
-    """
-    cols = list(_DEFAULT_ROW_KEYS)
-    missing = [c for c in cols if c not in table.columns]
-    if missing:
-        raise ValueError(
-            f"calibration table is missing required columns: {missing}"
-        )
-
-    out = Path(path)
-    if out.exists() and not overwrite:
-        raise FileExistsError(f"refusing to overwrite existing file: {out}")
-    out.parent.mkdir(parents=True, exist_ok=True)
-
-    table[cols].to_csv(out, index=False)
-    return out
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Visualizations
+# Portfolio rollup
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -1133,350 +639,6 @@ def build_routing_policies(
     return {f: build_routing_policy(df_full, f, config=cfg) for f in fields}
 
 
-def plot_calibrated_policies(
-    policies: Mapping[str, dict],
-    *,
-    target_catch_rate: float | None = None,
-    ax: "plt.Axes | None" = None,
-) -> "plt.Axes":
-    """Per-field paired bars: errors caught vs HITL load, for every field
-    whose policy decision is ``'calibrate'``.
-
-    A vertical dashed line marks the target catch rate (read from the first
-    policy's ``target_catch_rate`` if not supplied).
-    """
-    rows = [
-        {
-            "field": name,
-            "achieved_catch": p["achieved_catch_rate"],
-            "hitl_load": p["hitl_load"],
-            "target": p["target_catch_rate"],
-        }
-        for name, p in policies.items()
-        if p.get("decision") == "calibrate"
-    ]
-    if not rows:
-        raise ValueError("no calibrated policies to plot")
-    df_plot = (
-        pd.DataFrame(rows)
-        .sort_values("achieved_catch", ascending=True)
-        .reset_index(drop=True)
-    )
-    if target_catch_rate is None:
-        target_catch_rate = float(df_plot["target"].iloc[0])
-
-    n = len(df_plot)
-    if ax is None:
-        _, ax = plt.subplots(figsize=(11, max(4.5, 0.42 * n + 1.5)))
-    y = np.arange(n)
-    bar_h = 0.38
-    ax.barh(
-        y - bar_h / 2, df_plot["achieved_catch"], height=bar_h,
-        color="steelblue", label="Errors caught (catch rate)",
-    )
-    ax.barh(
-        y + bar_h / 2, df_plot["hitl_load"], height=bar_h,
-        color="tomato", alpha=0.85, label="HITL load",
-    )
-    for i, row in df_plot.iterrows():
-        ax.text(
-            row["achieved_catch"] + 0.005, i - bar_h / 2,
-            f"{row['achieved_catch']:.0%}", va="center", fontsize=8.5,
-        )
-        ax.text(
-            row["hitl_load"] + 0.005, i + bar_h / 2,
-            f"{row['hitl_load']:.0%}", va="center", fontsize=8.5,
-        )
-    ax.axvline(
-        target_catch_rate, color="navy", linestyle="--", lw=1.2,
-        label=f"Target catch = {target_catch_rate:.0%}",
-    )
-    ax.set_yticks(y)
-    ax.set_yticklabels(df_plot["field"], fontsize=9)
-    ax.set_xlabel("Fraction of non-null traffic", fontsize=11)
-    ax.set_xlim(
-        0,
-        max(1.02, df_plot[["achieved_catch", "hitl_load"]].max().max() + 0.08),
-    )
-    ax.set_title(
-        f"Calibrated routing policies — target catch rate {target_catch_rate:.0%}\n"
-        "(per-field OOF 5-fold CV; lower bar = HITL cost, upper bar = errors caught)",
-        fontsize=12,
-    )
-    ax.grid(axis="x", alpha=0.3)
-    ax.legend(loc="lower right", fontsize=9)
-    plt.tight_layout()
-    return ax
-
-
-def plot_null_routing(
-    policies: Mapping[str, dict],
-    *,
-    min_null_precision: float | None = None,
-) -> "plt.Figure":
-    """Twin-panel chart of the null-routing track for every field.
-
-    Includes every field that has a ``null_policy`` block — not just the
-    LR-calibrated ones — so the full contribution of the null-track to
-    HITL savings is visible (always-review and insufficient-data fields
-    can still route nulls to STP when null precision clears the bar).
-
-    Left: null volume per field (correct nulls vs null mis-extractions),
-    colored by route (green = STP, red = HITL).
-    Right: observed null precision with 95% Wilson CI, vs the
-    ``min_null_precision`` decision bar.
-    """
-    rows = []
-    for name, pol in policies.items():
-        np_ = pol.get("null_policy")
-        if np_ is None:
-            continue
-        n_nulls = int(np_["n_nulls"])
-        n_correct = int(np_["n_nulls_gt_null"])
-        routes_to_hitl = np_["decision"] in _NULL_TO_HITL_DECISIONS
-        rows.append(
-            {
-                "field": name,
-                "n_nulls": n_nulls,
-                "n_nulls_gt_null": n_correct,
-                "n_null_errors": n_nulls - n_correct,
-                "null_precision": np_["null_precision"],
-                "ci_lower": np_["ci_lower"],
-                "ci_upper": np_["ci_upper"],
-                "null_route": "HITL" if routes_to_hitl else "STP",
-                "min_null_precision": np_["min_null_precision"],
-            }
-        )
-    if not rows:
-        raise ValueError("no calibrated policies to plot")
-    df_chart = (
-        pd.DataFrame(rows)
-        .sort_values("n_nulls", ascending=True)
-        .reset_index(drop=True)
-    )
-    if min_null_precision is None:
-        min_null_precision = float(df_chart["min_null_precision"].iloc[0])
-
-    n = len(df_chart)
-    y = np.arange(n)
-    fig, (ax_vol, ax_prec) = plt.subplots(
-        1, 2, figsize=(14, max(4.5, 0.42 * n + 1.5)), sharey=True,
-        gridspec_kw={"width_ratios": [1, 1]},
-    )
-
-    route_color = {"STP": "mediumseagreen", "HITL": "tomato"}
-    bar_face = [route_color[r] for r in df_chart["null_route"]]
-
-    ax_vol.barh(
-        y, df_chart["n_nulls_gt_null"], color=bar_face, alpha=0.55,
-    )
-    ax_vol.barh(
-        y, df_chart["n_null_errors"], left=df_chart["n_nulls_gt_null"],
-        color=bar_face, alpha=1.0, hatch="//", edgecolor="black", lw=0.6,
-    )
-    max_nulls = max(int(df_chart["n_nulls"].max()), 1)
-    for i, row in df_chart.iterrows():
-        ax_vol.text(
-            row["n_nulls"] + max_nulls * 0.01, i,
-            f"{int(row['n_nulls'])}  → {row['null_route']}",
-            va="center", fontsize=8.5,
-        )
-    ax_vol.set_yticks(y)
-    ax_vol.set_yticklabels(df_chart["field"], fontsize=9)
-    ax_vol.set_xlabel("Null extractions on this dataset (count)", fontsize=11)
-    ax_vol.set_title("Null volume per field", fontsize=12)
-    ax_vol.grid(axis="x", alpha=0.3)
-
-    # Build a 2x2 legend showing both possible colors for each segment type.
-    from matplotlib.patches import Patch
-    vol_legend_handles = [
-        Patch(facecolor=route_color["STP"], alpha=0.55,
-              label="GT also null (correct null) — nulls → STP"),
-        Patch(facecolor=route_color["HITL"], alpha=0.55,
-              label="GT also null (correct null) — nulls → HITL"),
-        Patch(facecolor=route_color["STP"], alpha=1.0, hatch="//",
-              edgecolor="black", lw=0.6,
-              label="GT non-null (null mis-extraction) — nulls → STP"),
-        Patch(facecolor=route_color["HITL"], alpha=1.0, hatch="//",
-              edgecolor="black", lw=0.6,
-              label="GT non-null (null mis-extraction) — nulls → HITL"),
-    ]
-    ax_vol.legend(
-        handles=vol_legend_handles,
-        loc="upper center", bbox_to_anchor=(0.5, -0.12),
-        ncol=2, fontsize=8.5, frameon=False,
-    )
-
-    has_prec = df_chart["null_precision"].notna()
-    if has_prec.any():
-        sub = df_chart.loc[has_prec]
-        ax_prec.barh(
-            y[has_prec.to_numpy()], sub["null_precision"],
-            color=[route_color[r] for r in sub["null_route"]], alpha=0.85,
-        )
-        xerr_lo = (sub["null_precision"] - sub["ci_lower"]).to_numpy()
-        xerr_hi = (sub["ci_upper"] - sub["null_precision"]).to_numpy()
-        ax_prec.errorbar(
-            sub["null_precision"], y[has_prec.to_numpy()],
-            xerr=[xerr_lo, xerr_hi], fmt="none",
-            color="black", capsize=3, lw=1.2,
-        )
-        for idx_pos, (_, row) in zip(y[has_prec.to_numpy()], sub.iterrows()):
-            ax_prec.text(
-                min(row["ci_upper"] + 0.01, 0.97), idx_pos,
-                f"{row['null_precision']:.0%}", va="center", fontsize=8.5,
-            )
-    for idx_pos in y[(~has_prec).to_numpy()]:
-        ax_prec.text(
-            0.02, idx_pos, "no nulls observed → HITL",
-            va="center", fontsize=8.5, color="gray", style="italic",
-        )
-
-    ax_prec.axvline(
-        min_null_precision, color="navy", linestyle="--", lw=1.2,
-    )
-    ax_prec.set_xlim(0, 1.05)
-    ax_prec.set_xlabel("P(GT null | extracted null)", fontsize=11)
-    ax_prec.set_title("Null precision vs decision threshold", fontsize=12)
-    ax_prec.grid(axis="x", alpha=0.3)
-
-    from matplotlib.lines import Line2D
-    prec_legend_handles = [
-        Patch(facecolor=route_color["STP"], alpha=0.85,
-              label="Nulls → STP (null-routing policy applied)"),
-        Patch(facecolor=route_color["HITL"], alpha=0.85,
-              label="Nulls → HITL (no null-routing policy)"),
-        Line2D([0], [0], color="black", lw=1.2, label="95% Wilson CI"),
-        Line2D([0], [0], color="navy", linestyle="--", lw=1.2,
-               label=f"min_null_precision = {min_null_precision:.0%}"),
-    ]
-    ax_prec.legend(
-        handles=prec_legend_handles,
-        loc="upper center", bbox_to_anchor=(0.5, -0.12),
-        ncol=2, fontsize=8.5, frameon=False,
-    )
-
-    fig.suptitle(
-        "Null-routing policy results per field\n"
-        "Green = null-routing policy applied (nulls → STP)   ·   "
-        "Red = no null-routing policy (nulls → HITL)",
-        fontsize=12, y=1.02,
-    )
-    plt.tight_layout()
-    return fig
-
-
-def plot_hitl_savings(
-    policies: Mapping[str, dict],
-    *,
-    target_catch_rate: float | None = None,
-) -> "plt.Figure":
-    """Twin-panel HITL volume + savings vs the all-HITL baseline, per
-    calibrated field. Also annotates the portfolio-level savings.
-
-    Left: stacked HITL volume (non-null routed-to-HITL by the LR threshold +
-    null routed-to-HITL by the null policy), with the all-HITL baseline
-    overlaid as a dashed outline.
-    Right: per-field HITL savings (1 − calibrated/baseline), with the
-    portfolio savings drawn as a vertical reference line.
-    """
-    rows = []
-    for name, pol in policies.items():
-        if pol.get("decision") != "calibrate":
-            continue
-        np_ = pol["null_policy"]
-        n_nonnull = int(pol["n"])
-        n_nulls = int(np_["n_nulls"])
-        total = n_nonnull + n_nulls
-        nonnull_hitl = int(round(pol["hitl_load"] * n_nonnull))
-        null_hitl = n_nulls if np_["decision"] in _NULL_TO_HITL_DECISIONS else 0
-        calibrated_hitl = nonnull_hitl + null_hitl
-        savings_pct = 1.0 - calibrated_hitl / total if total else float("nan")
-        rows.append(
-            {
-                "field": name,
-                "n_nonnull": n_nonnull,
-                "n_nulls": n_nulls,
-                "nonnull_hitl": nonnull_hitl,
-                "null_hitl": null_hitl,
-                "calibrated_hitl": calibrated_hitl,
-                "baseline_hitl": total,
-                "hitl_savings_pct": savings_pct,
-                "target": pol["target_catch_rate"],
-            }
-        )
-    if not rows:
-        raise ValueError("no calibrated policies to plot")
-    if target_catch_rate is None:
-        target_catch_rate = float(rows[0]["target"])
-    df_chart = (
-        pd.DataFrame(rows)
-        .sort_values("hitl_savings_pct", ascending=True)
-        .reset_index(drop=True)
-    )
-
-    total_calibrated = int(df_chart["calibrated_hitl"].sum())
-    total_baseline = int(df_chart["baseline_hitl"].sum())
-    portfolio_savings = (
-        1.0 - total_calibrated / total_baseline if total_baseline else float("nan")
-    )
-
-    n = len(df_chart)
-    y = np.arange(n)
-    fig, (ax_vol, ax_sav) = plt.subplots(
-        1, 2, figsize=(14, max(4.5, 0.42 * n + 1.5)), sharey=True,
-        gridspec_kw={"width_ratios": [2, 1]},
-    )
-
-    ax_vol.barh(
-        y, df_chart["nonnull_hitl"], color="steelblue",
-        label="Non-null → HITL (LR threshold)",
-    )
-    ax_vol.barh(
-        y, df_chart["null_hitl"], left=df_chart["nonnull_hitl"],
-        color="slategray", label="Null → HITL (null-policy)",
-    )
-    ax_vol.barh(
-        y, df_chart["baseline_hitl"], facecolor="none",
-        edgecolor="tomato", lw=1.4, linestyle="--",
-        label="Baseline: route 100% to HITL",
-    )
-    max_baseline = max(int(df_chart["baseline_hitl"].max()), 1)
-    for i, row in df_chart.iterrows():
-        ax_vol.text(
-            row["baseline_hitl"] + max_baseline * 0.01, i,
-            f"{int(row['calibrated_hitl']):,} / {int(row['baseline_hitl']):,}",
-            va="center", fontsize=8.5,
-        )
-    ax_vol.set_yticks(y)
-    ax_vol.set_yticklabels(df_chart["field"], fontsize=9)
-    ax_vol.set_xlabel("HITL routings on this dataset (count)", fontsize=11)
-    ax_vol.set_title("Calibrated HITL volume vs all-HITL baseline", fontsize=12)
-    ax_vol.grid(axis="x", alpha=0.3)
-    ax_vol.legend(loc="lower right", fontsize=9)
-
-    ax_sav.barh(y, df_chart["hitl_savings_pct"], color="mediumseagreen", alpha=0.9)
-    for i, v in enumerate(df_chart["hitl_savings_pct"]):
-        ax_sav.text(v + 0.005, i, f"{v:.0%}", va="center", fontsize=9)
-    ax_sav.axvline(
-        portfolio_savings, color="navy", linestyle="--", lw=1.2,
-        label=f"Portfolio savings = {portfolio_savings:.0%}",
-    )
-    ax_sav.set_xlim(0, 1.05)
-    ax_sav.set_xlabel("HITL savings vs all-HITL", fontsize=11)
-    ax_sav.set_title("Savings per field", fontsize=12)
-    ax_sav.grid(axis="x", alpha=0.3)
-    ax_sav.legend(loc="lower right", fontsize=9)
-
-    fig.suptitle(
-        f"HITL volume & savings — target catch rate {target_catch_rate:.0%}\n"
-        "(includes both non-null calibrated routings and null-policy routings)",
-        fontsize=13, y=1.02,
-    )
-    plt.tight_layout()
-    return fig
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Portfolio-level savings estimate
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1485,26 +647,25 @@ def plot_hitl_savings(
 def estimate_hitl_savings(
     df_full: pd.DataFrame,
     policies: Mapping[str, dict],
-    metadata: FormMetadata,
 ) -> dict:
-    """Estimate the OOF-honest HITL load (and savings vs an all-HITL
+    """Estimate the expected HITL load (and savings vs an all-HITL
     baseline) for the **entire form**, not just the calibrated fields.
 
     Every field present in ``df_full`` is bucketed and its expected HITL
     routings counted:
 
       * **calibrate**      → non-null HITL = ``hitl_load × n_nonnull``
-                              (OOF estimate from the policy);
+                              (the policy's own estimate);
                               null HITL governed by the null-policy.
       * **always_trust**   → 0 non-null HITL; null HITL governed by the
                               null-policy.
       * everything else    → 100% HITL (always_review,
                               insufficient_data, no_policy).
 
-    The non-null ``hitl_load`` figure is the **out-of-fold** estimate from
-    5-fold CV inside :func:`build_routing_policy`, so the resulting
-    portfolio savings is an honest forecast — *not* an in-sample
-    optimistic number.
+    ``hitl_load`` comes from the threshold sweep in
+    :func:`build_routing_policy`, which both fits and measures on the same
+    rows. The number is therefore a forecast on the calibration set, not a
+    held-out result — route an unseen split to measure what was delivered.
 
     Parameters
     ----------
@@ -1513,8 +674,6 @@ def estimate_hitl_savings(
         counts here define the field volume per form.
     policies : ``{field_name: policy_dict}`` from
         :func:`build_routing_policies`.
-    metadata : ``FormMetadata`` — currently unused but accepted for API
-        symmetry with the rest of the module.
 
     Returns
     -------
@@ -1529,7 +688,6 @@ def estimate_hitl_savings(
             hitl_load, hitl_savings_pct, plus per-bucket field counts.
             ``null_savings_pct + lr_savings_pct + hitl_load == 1.0``.
     """
-    del metadata  # accepted for API symmetry; not consulted here.
     rows: list[dict] = []
 
     for field_name in sorted(df_full["field_name"].dropna().unique()):
@@ -1626,159 +784,6 @@ def estimate_hitl_savings(
     return {"per_field": per_field, "portfolio": portfolio}
 
 
-def plot_savings_attribution(
-    savings: Mapping,
-    *,
-    sort_by: str = "total_savings",
-) -> "plt.Figure":
-    """Stacked-bar attribution of HITL savings into null-track vs
-    non-null (LR) track contributions.
-
-    Each per-field bar spans the full all-HITL baseline. The bar is
-    segmented into three pieces summing to ``baseline_hitl``:
-
-      * **Retained HITL** (red)     — routings that still need review.
-      * **Null → STP** (blue)        — savings from the null-track
-                                       (``null_savings``).
-      * **Non-null → STP** (green)   — savings from the non-null LR/
-                                       always_trust track (``lr_savings``).
-
-    A portfolio-total bar is shown at the top, normalized to the same
-    width as the per-field bars (each per-field bar is normalized to its
-    own baseline so all bars line up at 100%).
-
-    Parameters
-    ----------
-    savings : the return value of :func:`estimate_hitl_savings`.
-    sort_by : ``'total_savings'`` (default), ``'null_savings'``,
-        ``'lr_savings'``, ``'baseline'``, or ``'field'``.
-    """
-    per_field = savings["per_field"].copy()
-    portfolio = savings["portfolio"]
-
-    if per_field.empty:
-        raise ValueError("savings['per_field'] is empty")
-
-    # Normalize each row to its own baseline so all bars span [0, 1].
-    per_field["null_pct"] = per_field["null_savings"] / per_field["baseline_hitl"]
-    per_field["lr_pct"] = per_field["lr_savings"] / per_field["baseline_hitl"]
-    per_field["retained_pct"] = (
-        per_field["expected_hitl"] / per_field["baseline_hitl"]
-    )
-
-    if sort_by == "total_savings":
-        per_field = per_field.sort_values("hitl_savings_pct", ascending=False)
-    elif sort_by == "null_savings":
-        per_field = per_field.sort_values("null_pct", ascending=False)
-    elif sort_by == "lr_savings":
-        per_field = per_field.sort_values("lr_pct", ascending=False)
-    elif sort_by == "baseline":
-        per_field = per_field.sort_values("baseline_hitl", ascending=False)
-    elif sort_by == "field":
-        per_field = per_field.sort_values("field", ascending=True)
-    else:
-        raise ValueError(f"unknown sort_by={sort_by!r}")
-    per_field = per_field.reset_index(drop=True)
-
-    n_fields = len(per_field)
-    # +2 rows: spacer + portfolio total at the top.
-    fig, ax = plt.subplots(figsize=(12, max(4.5, 0.42 * n_fields + 2.0)))
-
-    color_retained = "tomato"
-    color_null = "steelblue"
-    color_lr = "mediumseagreen"
-
-    # ── Per-field bars ───────────────────────────────────────────────────────
-    y = np.arange(n_fields)
-    ax.barh(y, per_field["retained_pct"], color=color_retained,
-            label="Retained HITL")
-    ax.barh(y, per_field["null_pct"], left=per_field["retained_pct"],
-            color=color_null, label="Null → STP (null-policy)")
-    ax.barh(
-        y, per_field["lr_pct"],
-        left=per_field["retained_pct"] + per_field["null_pct"],
-        color=color_lr, label="Non-null → STP (LR / always-trust)",
-    )
-
-    for i, row in per_field.iterrows():
-        ax.text(
-            1.01, i,
-            f"  {row['hitl_savings_pct']:.0%} saved  "
-            f"(n={int(row['baseline_hitl']):,}, {row['bucket']})",
-            va="center", fontsize=8.5,
-        )
-        # Inline segment labels when wide enough to read.
-        if row["null_pct"] >= 0.06:
-            ax.text(
-                row["retained_pct"] + row["null_pct"] / 2, i,
-                f"{row['null_pct']:.0%}",
-                ha="center", va="center", fontsize=8, color="white",
-            )
-        if row["lr_pct"] >= 0.06:
-            ax.text(
-                row["retained_pct"] + row["null_pct"] + row["lr_pct"] / 2, i,
-                f"{row['lr_pct']:.0%}",
-                ha="center", va="center", fontsize=8, color="white",
-            )
-
-    # ── Portfolio total bar ──────────────────────────────────────────────────
-    port_y = n_fields + 1.0
-    port_retained = portfolio["hitl_load"]
-    port_null = portfolio["null_savings_pct"]
-    port_lr = portfolio["lr_savings_pct"]
-    ax.barh(port_y, port_retained, color=color_retained,
-            edgecolor="black", lw=1.2)
-    ax.barh(port_y, port_null, left=port_retained, color=color_null,
-            edgecolor="black", lw=1.2)
-    ax.barh(port_y, port_lr, left=port_retained + port_null, color=color_lr,
-            edgecolor="black", lw=1.2)
-    ax.text(
-        1.01, port_y,
-        f"  {portfolio['hitl_savings_pct']:.0%} saved  "
-        f"(n={portfolio['baseline_hitl']:,}, portfolio)",
-        va="center", fontsize=9.5, fontweight="bold",
-    )
-    if port_null >= 0.04:
-        ax.text(port_retained + port_null / 2, port_y,
-                f"{port_null:.0%}", ha="center", va="center",
-                fontsize=9, color="white", fontweight="bold")
-    if port_lr >= 0.04:
-        ax.text(port_retained + port_null + port_lr / 2, port_y,
-                f"{port_lr:.0%}", ha="center", va="center",
-                fontsize=9, color="white", fontweight="bold")
-
-    ax.set_yticks(list(y) + [port_y])
-    ax.set_yticklabels(
-        list(per_field["field"]) + ["PORTFOLIO TOTAL"],
-        fontsize=9,
-    )
-    ax.set_xlim(0, 1.30)
-    ax.set_xticks(np.linspace(0, 1.0, 6))
-    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0%}"))
-    ax.set_xlabel(
-        "Fraction of all-HITL baseline (per-field rows normalized to own baseline)",
-        fontsize=11,
-    )
-    ax.set_title(
-        f"HITL savings attribution — portfolio savings = "
-        f"{portfolio['hitl_savings_pct']:.1%}  "
-        f"(null-track {portfolio['null_savings_pct']:.1%} + "
-        f"non-null-track {portfolio['lr_savings_pct']:.1%})",
-        fontsize=12,
-    )
-    ax.grid(axis="x", alpha=0.3)
-    ax.legend(
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.08),
-        ncol=3,
-        fontsize=9,
-        frameon=False,
-    )
-    ax.invert_yaxis()
-    plt.tight_layout()
-    return fig
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Coverage-target sweep
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1788,7 +793,6 @@ def sweep_target_savings(
     df_full: pd.DataFrame,
     policies: Mapping[str, Mapping],
     *,
-    metadata: FormMetadata,
     start: float = 0.50,
     end: float = 0.95,
     step: float = 0.05,
@@ -1827,7 +831,7 @@ def sweep_target_savings(
     for c in targets:
         cfg = replace(base_cfg, target_catch_rate=c, min_null_precision=c)
         new_policies = redecide_policies(policies, config=cfg)
-        savings = estimate_hitl_savings(df_full, new_policies, metadata)
+        savings = estimate_hitl_savings(df_full, new_policies)
         p = savings["portfolio"]
         rows.append(
             {
@@ -1847,57 +851,3 @@ def sweep_target_savings(
             }
         )
     return pd.DataFrame(rows)
-
-
-def plot_target_sweep(
-    df_sweep: pd.DataFrame,
-    *,
-    ax: "plt.Axes | None" = None,
-) -> "plt.Axes":
-    """Plot the output of :func:`sweep_target_savings` — three lines
-    (total / null-track / non-null LR-track) over the swept target."""
-    if df_sweep.empty:
-        raise ValueError("df_sweep is empty")
-
-    if ax is None:
-        _, ax = plt.subplots(figsize=(11, 5.5))
-
-    x = df_sweep["target"].to_numpy()
-    series = [
-        ("hitl_savings_pct", "Total portfolio savings",       "navy",            "o"),
-        ("null_savings_pct", "Null-track savings",            "steelblue",       "s"),
-        ("lr_savings_pct",   "Non-null (LR) calibration savings", "mediumseagreen", "^"),
-    ]
-    for col, label, color, marker in series:
-        y = df_sweep[col].to_numpy()
-        ax.plot(x, y, marker=marker, color=color, lw=2.0, label=label)
-        for xi, yi in zip(x, y):
-            if pd.notna(yi):
-                ax.annotate(
-                    f"{yi:.0%}", xy=(xi, yi), xytext=(0, 6),
-                    textcoords="offset points",
-                    ha="center", fontsize=8.5, color=color, fontweight="bold",
-                )
-
-    y_max = max(0.55, float(df_sweep["hitl_savings_pct"].max()) + 0.10)
-    ax.set_xlim(min(x) - 0.01, max(x) + 0.01)
-    ax.set_ylim(0, y_max)
-    ax.set_xticks(x)
-    ax.set_xticklabels([f"{t:.0%}" for t in x])
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0%}"))
-    ax.set_xlabel(
-        "Coverage target  (applied to both target_catch_rate and min_null_precision)",
-        fontsize=11,
-    )
-    ax.set_ylabel("Portfolio HITL savings vs all-HITL baseline", fontsize=11)
-    ax.set_title(
-        "HITL savings vs coverage target — null-track vs non-null LR-track contributions",
-        fontsize=12,
-    )
-    ax.grid(alpha=0.3)
-    ax.legend(
-        loc="upper center", bbox_to_anchor=(0.5, -0.12),
-        ncol=3, fontsize=9, frameon=False,
-    )
-    plt.tight_layout()
-    return ax

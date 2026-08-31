@@ -31,12 +31,12 @@ import pandas as pd
 
 from acu_calibrator import (
     CalibrationConfig,
-    FormMetadata,
     build_routing_policies,
     estimate_hitl_savings,
     redecide_policy,
     sweep_target_savings,
 )
+from acu_calibrator import _is_null_value as _is_null
 
 
 DEMO_DATA_PATH = Path(__file__).resolve().parent / "data" / "cord_demo.parquet"
@@ -45,15 +45,6 @@ DEMO_DATA_PATH = Path(__file__).resolve().parent / "data" / "cord_demo.parquet"
 # interval clears this bar -- i.e. we are 95% sure its confidence ranks correct
 # values above incorrect ones better than a coin flip.
 MIN_AUC_CI_LOWER = 0.50
-
-# ``estimate_hitl_savings`` takes FormMetadata for API symmetry but never reads
-# it. This lab treats every receipt as one logical form.
-_FORM = FormMetadata(
-    form_type="receipt",
-    form_version="1",
-    form_id="receipt",
-    acu_analyzer="cord_receipt_v1",
-)
 
 _REQUIRED_COLUMNS = (
     "document_id",
@@ -124,7 +115,7 @@ def fit_base_policies(
     *,
     split: str = "train",
     score_mode: str = "raw_confidence",
-    n_bootstrap: int = 500,
+    n_bootstrap: int = 2000,
     random_state: int = 42,
 ) -> dict[str, dict]:
     """Measure each field's confidence signal once, on the training split.
@@ -226,7 +217,7 @@ def savings_attribution(
 ) -> tuple[pd.DataFrame, dict]:
     """Split the expected review savings into its blank-track and filled-track
     contributions, per field and for the portfolio."""
-    savings = estimate_hitl_savings(calibration_frame, policies, _FORM)
+    savings = estimate_hitl_savings(calibration_frame, policies)
     return savings["per_field"], savings["portfolio"]
 
 
@@ -243,7 +234,6 @@ def savings_sweep(
     return sweep_target_savings(
         calibration_frame,
         base_policies,
-        metadata=_FORM,
         start=start,
         end=end,
         step=step,
@@ -464,8 +454,9 @@ def coverage_tracking(
     delivered on an unseen split -- the "does the dial behave like a dial" test.
 
     ``calibrated_catch`` isolates the fields whose routing came from a fitted
-    confidence cutoff; the overall figure mixes in fully reviewed fields and the
-    blank track, which both push it up.
+    confidence cutoff, and is the figure the target actually governs. The
+    overall figure mixes in fully reviewed fields, which push it up, and
+    auto-approved blanks, which push it down.
     """
     rows: list[dict[str, Any]] = []
     for target in target_range(start, end, step):
@@ -556,7 +547,3 @@ def _sigmoid(value: float) -> float:
         return 1.0 / (1.0 + math.exp(-value))
     exponential = math.exp(value)
     return exponential / (1.0 + exponential)
-
-
-def _is_null(value: Any) -> bool:
-    return value is None or (isinstance(value, float) and math.isnan(value))
