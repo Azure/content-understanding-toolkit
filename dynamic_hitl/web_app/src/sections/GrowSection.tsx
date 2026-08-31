@@ -36,6 +36,7 @@ export function GrowSection({
         <div style={{ marginBottom: 18 }}>
           <Toggle
             layoutId="engine-toggle"
+            label="Scoring engine"
             value={engine}
             onChange={onEngineChange}
             options={[

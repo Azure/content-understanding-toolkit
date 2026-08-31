@@ -84,7 +84,9 @@ function useDialVisibility(): boolean {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    let frame = 0;
     const update = () => {
+      frame = 0;
       const start = document.getElementById('dial');
       const end = document.getElementById('grow');
       if (!start || !end) return;
@@ -92,12 +94,18 @@ function useDialVisibility(): boolean {
       const bottom = end.getBoundingClientRect().bottom;
       setVisible(top < window.innerHeight * 0.65 && bottom > window.innerHeight * 0.5);
     };
+    // One layout read per frame, however fast the scroll fires.
+    const schedule = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(update);
+    };
     update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
     return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
     };
   }, []);
 

@@ -7,7 +7,10 @@ import { colors } from '../lib/theme';
 
 export function ShortcutSection() {
   const { cutoffs, perField, overall } = payload.globalCutoff;
-  const [index, setIndex] = useState(() => cutoffs.findIndex((value) => value >= 0.7));
+  const [index, setIndex] = useState(() => {
+    const found = cutoffs.findIndex((value) => value >= 0.7);
+    return found === -1 ? 0 : found;
+  });
 
   const points = useMemo(() => {
     const result: Record<string, (typeof perField)[string][number]> = {};

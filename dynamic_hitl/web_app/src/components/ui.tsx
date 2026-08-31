@@ -107,22 +107,23 @@ export function Toggle<T extends string>({
   value,
   onChange,
   layoutId,
+  label,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
   layoutId: string;
+  label: string;
 }) {
   return (
-    <div className="toggle" role="tablist">
+    <div className="toggle" role="group" aria-label={label}>
       {options.map((option) => {
         const active = option.value === value;
         return (
           <button
             key={option.value}
             type="button"
-            role="tab"
-            aria-selected={active}
+            aria-pressed={active}
             data-active={active}
             onClick={() => onChange(option.value)}
           >

@@ -155,8 +155,16 @@ export const { meta, fields, engines } = payload;
 /** Field keys in the order they should always be drawn. */
 export const fieldKeys: string[] = fields.map((field) => field.field);
 
-/** Index into every per-target array for a given coverage target. */
+/** Index into every per-target array for the closest coverage target on the grid. */
 export function targetIndex(target: number): number {
-  const index = meta.targets.findIndex((value) => Math.abs(value - target) < 1e-9);
-  return index === -1 ? 0 : index;
+  let best = 0;
+  let bestDistance = Infinity;
+  meta.targets.forEach((value, index) => {
+    const distance = Math.abs(value - target);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = index;
+    }
+  });
+  return best;
 }

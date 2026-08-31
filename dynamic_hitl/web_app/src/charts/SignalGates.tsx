@@ -169,7 +169,7 @@ function Interval({
         strokeWidth={4}
         paintOrder="stroke"
       >
-        Not enough datapoints
+        Not enough data points
       </text>
     );
   }
