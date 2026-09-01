@@ -3,7 +3,7 @@
 |`BankAddress`|`string`|`extract`|Listed address of the bank|123 Main St, Redmond, WA 98052|
 |`BankName`|`string`|`extract`|Listed name of the bank|Contoso Bank|
 |`AccountHolderAddress`|`string`|`extract`|Address of the account holder|456 Main St, Redmond, WA 98052|
-|`AccountHolderName`|`string`|`extract`|Name of the account holder|JOHN DEO|
+|`AccountHolderName`|`string`|`extract`|Name of the account holder|JOHN DOE|
 |`StatementStartDate`|`date`|`extract`|Start date of the bank statement|2017-07-01|
 |`StatementEndDate`|`date`|`extract`|End date of the bank statement|2017-07-31|
 |`Accounts`|`array`|`generate`|||
