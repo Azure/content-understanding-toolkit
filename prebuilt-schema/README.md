@@ -69,8 +69,8 @@ This directory documents the field schemas produced by Azure Content Understandi
 | `purchaseOrder` | `prebuilt-purchaseOrder` | [link](2025-11-01/procurement/purchaseOrder.md) | [link](2026-06-01-preview/procurement/purchaseOrder.md) | Buyer-issued ordering document authorizing a vendor to provide goods or services. |
 | `utilityBill` | `prebuilt-utilityBill` | [link](2025-11-01/procurement/utilityBill.md) | [link](2026-06-01-preview/procurement/utilityBill.md) | Recurring service bill for utilities/metered or subscription services. |
 | `creditMemo` | `prebuilt-creditMemo` | [link](2025-11-01/procurement/creditMemo.md) | [link](2026-06-01-preview/procurement/creditMemo.md) | Billing adjustment document (credit/debit memo, correction, refund) referencing a prior invoice. |
-| `receipt.generic` | `prebuilt-receipt.generic` | [link](2025-11-01/procurement/receipt.generic.md) | [link](2026-06-01-preview/procurement/receipt.generic.md) | Point-of-sale or immediate-payment proof of purchase. |
-| `receipt.hotel` | `prebuilt-receipt.hotel` | [link](2025-11-01/procurement/receipt.hotel.md) | [link](2026-06-01-preview/procurement/receipt.hotel.md) | Lodging folio or hotel stay statement. |
+
+`receipt.generic` and `receipt.hotel` are also valid `procurement` categories (see the [procurement index](2025-11-01/procurement/procurement.md)); they use the same analyzer IDs as the schemas listed under "Receipts" below, so pick either index page as your entry point.
 
 ### Receipts
 
