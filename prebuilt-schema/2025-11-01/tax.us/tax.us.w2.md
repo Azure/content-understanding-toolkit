@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.w2`
+
+**Description:** Wage and Tax Statement.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`W2Copies`|`array`|`generate`|Array of IRS W-2 copy instances found in the document.||

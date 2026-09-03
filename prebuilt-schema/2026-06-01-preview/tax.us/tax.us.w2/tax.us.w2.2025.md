@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.w2.2025`
+
+**Description:** Extract tax US w2 document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`W2Copies`|`array`|`generate`|Array of IRS W-2 copy instances found in the document.||

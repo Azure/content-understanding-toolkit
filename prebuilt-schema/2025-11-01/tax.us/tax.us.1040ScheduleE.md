@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1040ScheduleE`
+
+**Description:** Supplemental Income and Loss.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1040-ScheduleE.|2025|

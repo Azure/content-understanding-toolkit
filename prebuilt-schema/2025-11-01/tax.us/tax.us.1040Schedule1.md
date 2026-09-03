@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1040Schedule1`
+
+**Description:** Additional Income and Adjustments to Income.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1040-Schedule1.|2025|

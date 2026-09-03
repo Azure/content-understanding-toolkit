@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-idDocument.passport`
+
+**Description:** Passport books and passport cards.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`DocumentNumber`|`string`|`extract`|Passport number printed in the VIZ|340020013|

@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099Combo`
+
+**Description:** Combined 1099 forms.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1099-COMBO.|2025|

@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-utilityBill`
+
+**Description:** Utility bills (electricity, water, gas, internet, phone).
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`AccountNumber`|`string`|`extract`||1234567890-1|

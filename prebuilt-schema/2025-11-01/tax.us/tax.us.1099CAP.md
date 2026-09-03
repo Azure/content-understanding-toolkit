@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099CAP`
+
+**Description:** Changes in Corporate Control and Capital Structure.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099CAPCopies`|`array`|`generate`|Array of IRS Form 1099-CAP copy instances found in the document.||

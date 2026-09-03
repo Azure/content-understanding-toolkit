@@ -6,27 +6,23 @@ This directory documents the field schemas produced by Azure Content Understandi
 
 - Every analyzer has an **analyzer ID**. To call it through the Content Understanding API, prefix the ID with `prebuilt-` (for example, category `receipt.generic` -> analyzer ID `prebuilt-receipt.generic`).
 - Categories that group multiple document sub-types (mortgage, procurement, receipt, tax) have an index page (e.g. [`tax.us/tax.us.md`](2025-11-01/tax.us/tax.us.md)) listing each sub-type, its analyzer ID, and a description to help pick the closest match.
-- When classifying a document of unknown type, prefer the most specific matching category. If nothing matches, fall back to `other` (analyzer ID `prebuilt-documentFields`, schema [`documentFieldSchema.md`](2025-11-01/documentFieldSchema.md)), which returns a proposed schema instead of fixed fields.
+- When classifying a document of unknown type, prefer the most specific matching category. If no prebuilt category matches, consider creating a custom analyzer with a schema that defines the fields to extract. To generate a suggested schema from a sample file with `prebuilt-documentFieldSchema`, use the Content Understanding CLI command `cu analyzer schema create --from-sample`, then create the custom analyzer with `cu analyzer create --schema`.
 - Pick an API version folder based on the API version you're targeting:
   - [`2025-11-01/`](2025-11-01) — stable, generally available schemas.
-  - [`2026-06-01-preview/`](2026-06-01-preview) — preview schemas. Adds an index page per tax form and year-versioned analyzers (e.g. `tax.us.1040.2025`, analyzer ID `prebuilt-tax.us.1040.2025`) alongside the non-versioned analyzer, plus the additional `tax.us.mn.m1` category.
+  - [`2026-06-01-preview/`](2026-06-01-preview) — preview schemas. Adds an index page per tax form and year-versioned analyzers (e.g. `tax.us.1040.2025`, analyzer ID `prebuilt-tax.us.1040.2025`) alongside the non-versioned analyzer, plus `tax.us.mn.m1` and Schedule K-1 categories for Forms 1041, 1065, 1120-S, and 8865.
 
 ## Categories
 
-### General document fields
-
-| Category | Analyzer ID | Schema (2025-11-01) | Schema (2026-06-01-preview) | Description |
-|:---------|:------------|:---------------------|:------------------------------|:-------------|
-| `documentFieldSchema` | `prebuilt-documentFields` | [link](2025-11-01/documentFieldSchema.md) | [link](2026-06-01-preview/documentFieldSchema.md) | Fallback analyzer that proposes a field schema for a document that doesn't match any other category. |
+Directory groupings follow the [Content Understanding prebuilt analyzer categories](https://learn.microsoft.com/azure/ai-services/content-understanding/concepts/prebuilt-analyzers#domain-specific-analyzers-in-detail) where practical. Some analyzers appear in multiple categories in the official documentation; each schema has one canonical location here.
 
 ### Financial documents
 
 | Category | Analyzer ID | Schema (2025-11-01) | Schema (2026-06-01-preview) | Description |
 |:---------|:------------|:---------------------|:------------------------------|:-------------|
-| `bankStatement.us` | `prebuilt-bankStatement.us` | [link](2025-11-01/bankStatement.us.md) | [link](2026-06-01-preview/bankStatement.us.md) | U.S. bank statement; account holder/bank details, statement period, per-account balances and transactions. |
-| `check.us` | `prebuilt-check.us` | [link](2025-11-01/check.us.md) | [link](2026-06-01-preview/check.us.md) | U.S. personal or business check; payer/payee, amount (numeric and in words), MICR line, signature presence. |
-| `creditCard` | `prebuilt-creditCard` | [link](2025-11-01/creditCard.md) | [link](2026-06-01-preview/creditCard.md) | Payment card; card number, issuing bank, payment network, cardholder name, validity dates, customer service numbers. |
-| `payStub.us` | `prebuilt-payStub.us` | [link](2025-11-01/payStub.us.md) | [link](2026-06-01-preview/payStub.us.md) | U.S. pay stub; employee/employer details, pay period, current and year-to-date gross pay, taxes, deductions, net pay. |
+| `bankStatement.us` | `prebuilt-bankStatement.us` | [link](2025-11-01/finance/bankStatement.us.md) | [link](2026-06-01-preview/finance/bankStatement.us.md) | U.S. bank statement; account holder/bank details, statement period, per-account balances and transactions. |
+| `check.us` | `prebuilt-check.us` | [link](2025-11-01/finance/check.us.md) | [link](2026-06-01-preview/finance/check.us.md) | U.S. personal or business check; payer/payee, amount (numeric and in words), MICR line, signature presence. |
+| `creditCard` | `prebuilt-creditCard` | [link](2025-11-01/finance/creditCard.md) | [link](2026-06-01-preview/finance/creditCard.md) | Payment card; card number, issuing bank, payment network, cardholder name, validity dates, customer service numbers. |
+| `payStub.us` | `prebuilt-payStub.us` | [link](2025-11-01/finance/payStub.us.md) | [link](2026-06-01-preview/finance/payStub.us.md) | U.S. pay stub; employee/employer details, pay period, current and year-to-date gross pay, taxes, deductions, net pay. |
 
 ### Identity documents
 
@@ -36,18 +32,18 @@ This directory documents the field schemas produced by Azure Content Understandi
 | `idDocument.generic` | `prebuilt-idDocument.generic` | [link](2025-11-01/idDocument/idDocument.generic.md) | [link](2026-06-01-preview/idDocument/idDocument.generic.md) | Government-issued ID cards/permits other than passports (driver's license, national ID, residence permit, etc.). |
 | `idDocument.passport` | `prebuilt-idDocument.passport` | [link](2025-11-01/idDocument/idDocument.passport.md) | [link](2026-06-01-preview/idDocument/idDocument.passport.md) | Passport booklets and passport cards. |
 
-### Insurance & vital records
+### Personal records
 
 | Category | Analyzer ID | Schema (2025-11-01) | Schema (2026-06-01-preview) | Description |
 |:---------|:------------|:---------------------|:------------------------------|:-------------|
-| `healthInsuranceCard.us` | `prebuilt-healthInsuranceCard.us` | [link](2025-11-01/healthInsuranceCard.us.md) | [link](2026-06-01-preview/healthInsuranceCard.us.md) | U.S. health insurance card; insurer, member, dependents, plan, copays, prescription and Medicare/Medicaid info. |
-| `marriageCertificate.us` | `prebuilt-marriageCertificate.us` | [link](2025-11-01/marriageCertificate.us.md) | [link](2026-06-01-preview/marriageCertificate.us.md) | U.S. marriage certificate; both spouses' details, document number, issue and marriage date/place. |
+| `healthInsuranceCard.us` | `prebuilt-healthInsuranceCard.us` | [link](2025-11-01/personalRecords/healthInsuranceCard.us.md) | [link](2026-06-01-preview/personalRecords/healthInsuranceCard.us.md) | U.S. health insurance card; insurer, member, dependents, plan, copays, prescription and Medicare/Medicaid info. |
+| `marriageCertificate.us` | `prebuilt-marriageCertificate.us` | [link](2025-11-01/personalRecords/marriageCertificate.us.md) | [link](2026-06-01-preview/personalRecords/marriageCertificate.us.md) | U.S. marriage certificate; both spouses' details, document number, issue and marriage date/place. |
 
 ### Legal documents
 
 | Category | Analyzer ID | Schema (2025-11-01) | Schema (2026-06-01-preview) | Description |
 |:---------|:------------|:---------------------|:------------------------------|:-------------|
-| `contract` | `prebuilt-contract` | [link](2025-11-01/contract.md) | [link](2026-06-01-preview/contract.md) | Legal contract; title, contract ID, parties, execution/effective/expiration/renewal dates, duration, jurisdictions. |
+| `contract` | `prebuilt-contract` | [link](2025-11-01/legal/contract.md) | [link](2026-06-01-preview/legal/contract.md) | Legal contract; title, contract ID, parties, execution/effective/expiration/renewal dates, duration, jurisdictions. |
 
 ### Mortgage (US)
 
@@ -86,5 +82,15 @@ This directory documents the field schemas produced by Azure Content Understandi
 |:---------|:------------|:---------------------|:------------------------------|:-------------|
 | `tax.us` (index) | — | [link](2025-11-01/tax.us/tax.us.md) | [link](2026-06-01-preview/tax.us/tax.us.md) | Index of all U.S. federal tax form sub-types (1040 family, 1099 family, W-2, W-4, etc.). |
 | `tax.us.mn.m1` (preview only) | `prebuilt-tax.us.mn.m1` | — | [link](2026-06-01-preview/tax.us.mn.m1/tax.us.mn.m1.md) | Minnesota state Form M1 (Individual Income Tax). |
+| `tax.us.1041ScheduleK1` (preview only) | `prebuilt-tax.us.1041ScheduleK1` | — | [link](2026-06-01-preview/tax.us/tax.us.1041ScheduleK1/tax.us.1041ScheduleK1.md) | Schedule K-1 (Form 1041); beneficiary's share of income, deductions, and credits from an estate or trust. |
+| `tax.us.1065ScheduleK1` (preview only) | `prebuilt-tax.us.1065ScheduleK1` | — | [link](2026-06-01-preview/tax.us/tax.us.1065ScheduleK1/tax.us.1065ScheduleK1.md) | Schedule K-1 (Form 1065); partner's share of partnership income, deductions, and credits. |
+| `tax.us.1120SScheduleK1` (preview only) | `prebuilt-tax.us.1120SScheduleK1` | — | [link](2026-06-01-preview/tax.us/tax.us.1120SScheduleK1/tax.us.1120SScheduleK1.md) | Schedule K-1 (Form 1120-S); shareholder's share of S corporation income, deductions, and credits. |
+| `tax.us.8865ScheduleK1` (preview only) | `prebuilt-tax.us.8865ScheduleK1` | — | [link](2026-06-01-preview/tax.us/tax.us.8865ScheduleK1/tax.us.8865ScheduleK1.md) | Schedule K-1 (Form 8865); U.S. partner's share of income, deductions, and credits from a foreign partnership. |
 
 Each entry in the `tax.us` index page links to its own schema file, for example [`tax.us.1040.md`](2025-11-01/tax.us/tax.us.1040.md) (Form 1040) or [`tax.us.w2.md`](2025-11-01/tax.us/tax.us.w2.md) (Form W-2). In `2026-06-01-preview`, each tax form additionally has its own folder with a non-versioned schema (e.g. [`tax.us.1040/tax.us.1040.md`](2026-06-01-preview/tax.us/tax.us.1040/tax.us.1040.md)) and a year-versioned schema (e.g. [`tax.us.1040/tax.us.1040.2025.md`](2026-06-01-preview/tax.us/tax.us.1040/tax.us.1040.2025.md), analyzer ID `prebuilt-tax.us.1040.2025`).
+
+### Custom analyzer schema suggestion
+
+| Category | Analyzer ID | Schema (2025-11-01) | Schema (2026-06-01-preview) | Description |
+|:---------|:------------|:---------------------|:------------------------------|:-------------|
+| `documentFieldSchema` | `prebuilt-documentFieldSchema` | [link](2025-11-01/schemaProposer/documentFieldSchema.md) | [link](2026-06-01-preview/schemaProposer/documentFieldSchema.md) | Suggests a field schema from a sample document when no domain-specific prebuilt analyzer fits, to help create a custom analyzer. |

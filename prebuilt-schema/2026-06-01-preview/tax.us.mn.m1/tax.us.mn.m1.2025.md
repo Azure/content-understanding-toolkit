@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.mn.m1.2025`
+
+**Description:** Extract tax US Minnesota M1 document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax year shown on Form M1|2025|

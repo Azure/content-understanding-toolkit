@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1040ScheduleA`
+
+**Description:** Itemized Deductions.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1040-ScheduleA.|2025|

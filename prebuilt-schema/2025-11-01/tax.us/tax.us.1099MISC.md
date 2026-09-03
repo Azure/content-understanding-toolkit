@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099MISC`
+
+**Description:** Miscellaneous Income.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099MISCCopies`|`array`|`generate`|Array of IRS Form 1099-MISC copy instances found in the document.||

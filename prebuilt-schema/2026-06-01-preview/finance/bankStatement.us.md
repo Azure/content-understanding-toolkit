@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-bankStatement.us`
+
+**Description:** US bank statements.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`BankAddress`|`string`|`extract`|Listed address of the bank|123 Main St, Redmond, WA 98052|

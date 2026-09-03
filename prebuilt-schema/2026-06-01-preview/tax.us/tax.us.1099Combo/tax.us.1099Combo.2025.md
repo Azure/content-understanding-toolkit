@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099Combo.2025`
+
+**Description:** Extract tax US 1099 combo document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1099-COMBO.|2025|

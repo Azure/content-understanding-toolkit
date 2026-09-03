@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1040ScheduleJ`
+
+**Description:** Income Averaging for Farmers.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1040-ScheduleJ.|2025|

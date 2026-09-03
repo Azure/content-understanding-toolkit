@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us`
+
+**Description:** A composed prebuilt analyzer that classifies and routes a US tax form to the correct tax analyzer for extraction.
+
 | Category | Analyzer ID | Description |
 |:------|:-----|:--------|
 |`tax.us.1040`|[`prebuilt-tax.us.1040`](tax.us.1040.md)|U.S. Individual Income Tax Return main form; shows filing status, dependents, income totals, adjustments, tax, credits, payments, refund/amount due. Title "Form 1040" at top; year prominently printed; signature lines for taxpayer and spouse.|

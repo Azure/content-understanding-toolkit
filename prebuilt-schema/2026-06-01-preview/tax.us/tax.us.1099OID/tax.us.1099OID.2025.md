@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099OID.2025`
+
+**Description:** Extract tax US 1099 oid document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099OIDCopies`|`array`|`generate`|Array of IRS Form 1099-OID copy instances found in the document.||

@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099SB`
+
+**Description:** Seller's Investment in Life Insurance Contract.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099SBCopies`|`array`|`generate`|Array of IRS Form 1099-SB copy instances found in the document.||

@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099A`
+
+**Description:** Acquisition or Abandonment of Secured Property.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099ACopies`|`array`|`generate`|Array of IRS Form 1099-A copy instances found in the document.||

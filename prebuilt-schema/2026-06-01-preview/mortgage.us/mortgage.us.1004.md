@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-mortgage.us.1004`
+
+**Description:** Uniform Residential Appraisal Report.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Subject`|`object`|`generate`|Extracted subject information.||

@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099QA.2025`
+
+**Description:** Extract tax US 1099 qa document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099QACopies`|`array`|`generate`|Array of IRS Form 1099-QA copy instances found in the document.||

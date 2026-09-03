@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099CAP.2025`
+
+**Description:** Extract tax US 1099 cap document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099CAPCopies`|`array`|`generate`|Array of IRS Form 1099-CAP copy instances found in the document.||

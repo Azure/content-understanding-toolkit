@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099DIV`
+
+**Description:** Dividends and Distributions.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099DIVCopies`|`array`|`generate`|Array of IRS Form 1099-DIV copy instances found in the document.||

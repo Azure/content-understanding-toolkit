@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-receipt.hotel`
+
+**Description:** Hotel receipts and folios.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`MerchantName`|`string`|`extract`|Name of the merchant issuing the receipt|Contoso|

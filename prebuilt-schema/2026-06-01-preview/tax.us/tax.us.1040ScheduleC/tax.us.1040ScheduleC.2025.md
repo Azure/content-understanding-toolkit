@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1040ScheduleC.2025`
+
+**Description:** Extract tax US 1040 schedule c document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1040-ScheduleC.|2025|

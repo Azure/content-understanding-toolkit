@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-mortgage.us`
+
+**Description:** A composed prebuilt analyzer that classifies and routes a mortgage document to the correct mortgage analyzer for extraction.
+
 | Category | Analyzer ID | Description |
 |:------|:-----|:--------|
 |`mortgage.us.1003`|[`prebuilt-mortgage.us.1003`](mortgage.us.1003.md)|Uniform Residential Loan Application (URLA). Borrower-completed form with sections like Borrower Information, Financial Information—Assets and Liabilities, Real Estate Owned, Declarations, Acknowledgments and Agreements, and Demographic Information (HMDA). Includes property/loan purpose, income, housing expenses, and loan originator details; signed by borrower(s). Often labeled Fannie Mae Form 1003/Freddie Mac Form 65. Distinct from underwriting summaries (1008), appraisal reports (1004), and employer verifications (1005).|

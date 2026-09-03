@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-healthInsuranceCard.us`
+
+**Description:** US health insurance cards.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Insurer`|`string`|`extract`|Health insurance provider name|PREMERA<br>BLUE CROSS|

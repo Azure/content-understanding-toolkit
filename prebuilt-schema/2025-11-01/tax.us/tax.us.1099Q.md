@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099Q`
+
+**Description:** Payments from Qualified Education Programs.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099QCopies`|`array`|`generate`|Array of IRS Form 1099-Q copy instances found in the document.||

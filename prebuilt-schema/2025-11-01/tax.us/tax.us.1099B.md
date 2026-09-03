@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099B`
+
+**Description:** Proceeds from Broker and Barter Exchange Transactions.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099BCopies`|`array`|`generate`|Array of IRS Form 1099-B copy instances found in the document.||

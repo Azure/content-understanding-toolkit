@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1040ScheduleB.2025`
+
+**Description:** Extract tax US 1040 schedule b document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1040-ScheduleB.|2025|

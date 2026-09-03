@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099C`
+
+**Description:** Cancellation of Debt.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099CCopies`|`array`|`generate`|Array of IRS Form 1099-C copy instances found in the document.||

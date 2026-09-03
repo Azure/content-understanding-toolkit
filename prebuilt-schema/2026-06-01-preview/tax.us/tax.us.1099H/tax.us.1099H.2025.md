@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099H.2025`
+
+**Description:** Extract tax US 1099 h document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099HCopies`|`array`|`generate`|Array of IRS Form 1099-H copy instances found in the document.||

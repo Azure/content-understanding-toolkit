@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-receipt`
+
+**Description:** A composed prebuilt analyzer for sales receipts.
+
 | Category | Analyzer ID | Description |
 |:------|:-----|:--------|
 |`receipt.generic`|[`prebuilt-receipt.generic`](receipt.generic.md)|Proof of payment for retail/restaurant or general POS transactions. Often shows “Receipt” or “Sales Receipt,” store name/location, date/time, itemized products or services (SKU/PLU), subtotal, tax, tip (optional), total paid, payment method (cash/card last 4), and change due. Exclude hotel folios (use receipt.hotel).|

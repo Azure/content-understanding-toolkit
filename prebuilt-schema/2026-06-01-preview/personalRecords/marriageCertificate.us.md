@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-marriageCertificate.us`
+
+**Description:** US marriage certificates.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Spouse1FirstName`|`string`|`extract`|Spouse1's first name|Wesley|

@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-idDocument`
+
+**Description:** A composed prebuilt analyzer for various ID documentation types.
+
 | Category | Analyzer ID | Description |
 |:------|:-----|:--------|
 |`idDocument.generic`|[`prebuilt-idDocument.generic`](idDocument.generic.md)|Government-issued identity cards or permits other than passports; usually plastic cards or paper permits. Examples: driver's license/learner's permit, national ID card, residence/PR permit, military ID, social security card, state/territory photo ID, Aadhaar. Typical features: person's name, photo (SSN may lack), date of birth, ID/license/UIN number, issuing authority logo/seal, issue/expiry dates; may include address, signature, license class/restrictions; barcodes/QR codes or MRZ not starting with 'P<'. Excludes anything explicitly labeled 'Passport' or visa/stamp pages.|

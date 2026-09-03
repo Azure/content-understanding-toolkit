@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-idDocument.generic`
+
+**Description:** Generic identification documents from various regions.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`CountryRegion`|`string`|`generate`|Country or region code|USA|

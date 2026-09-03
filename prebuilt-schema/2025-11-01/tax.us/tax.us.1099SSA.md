@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099SSA`
+
+**Description:** Social Security Benefit Statement.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1099-SSA.|2022|

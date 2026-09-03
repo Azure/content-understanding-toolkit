@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1098E.2025`
+
+**Description:** Extract tax US 1098 e document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1098ECopies`|`array`|`generate`|Array of IRS Form 1098-E copy instances found in the document.||

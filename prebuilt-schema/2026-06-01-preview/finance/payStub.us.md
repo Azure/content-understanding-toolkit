@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-payStub.us`
+
+**Description:** US pay stubs and earnings statements.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`EmployeeAddress`|`string`|`extract`|Address of the employee|123 Maple Street, Springfield, IL, 62701|

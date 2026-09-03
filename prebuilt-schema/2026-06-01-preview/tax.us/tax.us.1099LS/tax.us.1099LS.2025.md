@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099LS.2025`
+
+**Description:** Extract tax US 1099 ls document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099LSCopies`|`array`|`generate`|Array of IRS Form 1099-LS copy instances found in the document.||

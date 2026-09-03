@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-mortgage.us.closingDisclosure`
+
+**Description:** Closing Disclosure.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Closing`|`object`|`generate`|Extracted closing information||

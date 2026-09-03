@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099DIV.2025`
+
+**Description:** Extract tax US 1099 div document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099DIVCopies`|`array`|`generate`|Array of IRS Form 1099-DIV copy instances found in the document.||

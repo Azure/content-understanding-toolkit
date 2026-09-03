@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099NEC`
+
+**Description:** Nonemployee Compensation.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099NECCopies`|`array`|`generate`|Array of IRS Form 1099-NEC copy instances found in the document.||

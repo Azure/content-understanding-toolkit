@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099LS`
+
+**Description:** Reportable Life Insurance Sale.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099LSCopies`|`array`|`generate`|Array of IRS Form 1099-LS copy instances found in the document.||

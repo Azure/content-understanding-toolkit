@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1095C`
+
+**Description:** Employer-Provided Health Insurance.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1095-C.|2024|

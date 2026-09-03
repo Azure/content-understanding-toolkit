@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099SSA.2025`
+
+**Description:** Extract tax US 1099 ssa document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1099-SSA.|2022|

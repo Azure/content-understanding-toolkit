@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-mortgage.us.1008`
+
+**Description:** Uniform Underwriting and Transmittal Summary.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Borrower`|`object`|`generate`|Extracted borrower information||

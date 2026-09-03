@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-creditCard`
+
+**Description:** Credit card statements.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`CardNumber`|`string`|`extract`|A unique identifier for the card|4275 0000 0000 0000|

@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099PATR`
+
+**Description:** Taxable Distributions from Cooperatives.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099PATRCopies`|`array`|`generate`|Array of IRS Form 1099-PATR copy instances found in the document.||

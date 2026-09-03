@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099G`
+
+**Description:** Certain Government Payments.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099GCopies`|`array`|`generate`|Array of IRS Form 1099-G copy instances found in the document.||

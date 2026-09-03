@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1040Senior`
+
+**Description:** Form 1040 for senior taxpayers.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1040-SR.|2025|

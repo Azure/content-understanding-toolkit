@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1098`
+
+**Description:** Mortgage Interest Statement.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1098Copies`|`array`|`generate`|Array of IRS Form 1098 copy instances found in the document.||

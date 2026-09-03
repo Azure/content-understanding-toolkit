@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099LTC`
+
+**Description:** Long-Term Care Benefits.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099LTCCopies`|`array`|`generate`|Array of IRS Form 1099-LTC copy instances found in the document.||

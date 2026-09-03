@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099K`
+
+**Description:** Payment Card and Third Party Network Transactions.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099KCopies`|`array`|`generate`|Array of IRS Form 1099-K copy instances found in the document.||

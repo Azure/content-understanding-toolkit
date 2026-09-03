@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-receipt.generic`
+
+**Description:** General sales receipts.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`MerchantName`|`string`|`extract`|Name of the merchant issuing the receipt|Contoso|

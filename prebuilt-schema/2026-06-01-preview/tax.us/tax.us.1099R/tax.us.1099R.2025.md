@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099R.2025`
+
+**Description:** Extract tax US 1099 r document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099RCopies`|`array`|`generate`|Array of IRS Form 1099-R copy instances found in the document.||

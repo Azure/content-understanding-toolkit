@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099S`
+
+**Description:** Proceeds from Real Estate Transactions.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099SCopies`|`array`|`generate`|Array of IRS Form 1099-S copy instances found in the document.||

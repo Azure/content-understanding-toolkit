@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099OID`
+
+**Description:** Original Issue Discount.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099OIDCopies`|`array`|`generate`|Array of IRS Form 1099-OID copy instances found in the document.||

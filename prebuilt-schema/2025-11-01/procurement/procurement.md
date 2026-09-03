@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-procurement`
+
+**Description:** A composed prebuilt analyzer that classifies and routes a procurement document to the correct procurement analyzer for extraction.
+
 | Category | Analyzer ID | Description |
 |:------|:-----|:--------|
 |`invoice`|[`prebuilt-invoice`](invoice.md)|Seller-issued billing document requesting payment for goods or services. Typically includes an invoice title, invoice number, invoice date, seller and customer (bill-to/ship-to) identities, itemized charges (description, quantity, unit price), tax/VAT breakdown, subtotal and total amount due/payable, and payment terms (due date, net terms) and/or remittance/bank details.|

@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-creditMemo`
+
+**Description:** Credit memos and refund documents.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`AdjustmentReason`|`string`|`extract`|Reason for the adjustment.|Returned goods due to quality issues. Credit is issued to offset the original invoice amount.|

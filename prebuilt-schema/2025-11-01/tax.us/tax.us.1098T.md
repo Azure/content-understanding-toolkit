@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1098T`
+
+**Description:** Tuition Statement.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1098TCopies`|`array`|`generate`|Array of IRS Form 1098-T copy instances found in the document.||

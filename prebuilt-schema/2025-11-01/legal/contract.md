@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-contract`
+
+**Description:** Business contracts and agreements.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Title`|`string`|`extract`|Contract title|SERVICE AGREEMENT|

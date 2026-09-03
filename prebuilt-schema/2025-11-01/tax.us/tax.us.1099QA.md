@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099QA`
+
+**Description:** Distributions from ABLE Accounts.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099QACopies`|`array`|`generate`|Array of IRS Form 1099-QA copy instances found in the document.||

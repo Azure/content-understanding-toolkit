@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1040ScheduleD`
+
+**Description:** Capital Gains and Losses.
+
 | Category | Analyzer ID | Description |
 |:------|:-----|:--------|
 |`tax.us.1040ScheduleD.2025`|[`prebuilt-tax.us.1040ScheduleD.2025`](tax.us.1040ScheduleD.2025.md)|Extract tax US 1040 schedule d document fields of 2025 form.|

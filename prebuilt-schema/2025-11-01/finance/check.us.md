@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-check.us`
+
+**Description:** US bank checks.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`PayerName`|`string`|`extract`|Name of the payer (drawer)|Jane Doe|

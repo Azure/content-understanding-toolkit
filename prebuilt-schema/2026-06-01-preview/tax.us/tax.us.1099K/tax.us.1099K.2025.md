@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099K.2025`
+
+**Description:** Extract tax US 1099 k document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099KCopies`|`array`|`generate`|Array of IRS Form 1099-K copy instances found in the document.||

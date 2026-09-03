@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099INT`
+
+**Description:** Interest Income.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099INTCopies`|`array`|`generate`|Array of IRS Form 1099-INT copy instances found in the document.||

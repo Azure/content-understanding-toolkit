@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1095A`
+
+**Description:** Health Insurance Marketplace Statement.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1095-A.|2024|

@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.8865ScheduleK1.2025`
+
+**Description:** Extract tax US 8865 Schedule K-1 document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax year shown on the Schedule K-1 (Form 8865)|2025|

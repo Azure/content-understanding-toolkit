@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099H`
+
+**Description:** Health Coverage Tax Credit Advance Payments.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099HCopies`|`array`|`generate`|Array of IRS Form 1099-H copy instances found in the document.||

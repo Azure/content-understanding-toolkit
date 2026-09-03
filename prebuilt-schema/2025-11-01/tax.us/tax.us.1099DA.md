@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099DA`
+
+**Description:** Debt Cancellation from Foreclosure.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099DACopies`|`array`|`generate`|Array of IRS Form 1099-DA copy instances found in the document.||

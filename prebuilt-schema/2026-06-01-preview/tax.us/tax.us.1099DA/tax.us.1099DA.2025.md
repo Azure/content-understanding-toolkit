@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099DA.2025`
+
+**Description:** Extract tax US 1099 da document fields of 2025 form.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099DACopies`|`array`|`generate`|Array of IRS Form 1099-DA copy instances found in the document.||

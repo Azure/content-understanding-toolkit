@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099R`
+
+**Description:** Distributions from Pensions and Annuities.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099RCopies`|`array`|`generate`|Array of IRS Form 1099-R copy instances found in the document.||

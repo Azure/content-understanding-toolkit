@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1040`
+
+**Description:** Form 1040 (US Individual Income Tax Return).
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`TaxYear`|`string`|`extract`|Tax Year extracted from Form 1040.|2025|

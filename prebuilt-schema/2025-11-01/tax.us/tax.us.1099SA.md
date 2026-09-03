@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1099SA`
+
+**Description:** Distributions from Health Savings Account (HSA) or Medical Savings Account (MSA).
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1099SACopies`|`array`|`generate`|Array of IRS Form 1099-SA copy instances found in the document.||

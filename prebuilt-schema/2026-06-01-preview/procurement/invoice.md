@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-invoice`
+
+**Description:** Invoices, utility bills, sales orders, purchase orders.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`AmountDue`|`object`|`generate`|Total Amount Due to the vendor||

@@ -1,3 +1,7 @@
+**Analyzer ID:** `prebuilt-tax.us.1098E`
+
+**Description:** Student Loan Interest Statement.
+
 | Field | Type | Method | Description | Example |
 |:------|:-----|:-------|:------------|:--------|
 |`Form1098ECopies`|`array`|`generate`|Array of IRS Form 1098-E copy instances found in the document.||
