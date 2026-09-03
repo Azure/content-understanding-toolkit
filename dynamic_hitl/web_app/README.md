@@ -1,6 +1,6 @@
 # Dynamic HITL Explainer
 
-An interactive, static site that explains — to a non-technical audience — how to turn
+An interactive, static site that explains — to customers and technical stakeholders — how to turn
 **Azure AI Content Understanding** confidence scores into a defensible human-review
 policy, and how much review effort that saves.
 
