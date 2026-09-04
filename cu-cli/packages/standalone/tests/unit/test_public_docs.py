@@ -13,6 +13,7 @@ pytestmark = pytest.mark.unit
 
 _PRODUCT_ROOT = Path(__file__).resolve().parents[4]
 _README = _PRODUCT_ROOT / "README.md"
+_PROVISIONING_GUIDE = _PRODUCT_ROOT / "docs" / "provisioning.md"
 _USAGE_GUIDE = _PRODUCT_ROOT / "docs" / "usage-guide.md"
 _REGION_SUPPORT_URL = (
     "https://learn.microsoft.com/azure/ai-services/content-understanding/"
@@ -28,13 +29,11 @@ def test_documented_custom_analyzer_ids_use_valid_format():
 
 
 def test_documented_provision_region_and_support_link_are_current():
-    readme = _README.read_text(encoding="utf-8")
-    usage_guide = _USAGE_GUIDE.read_text(encoding="utf-8")
+    provisioning_guide = _PROVISIONING_GUIDE.read_text(encoding="utf-8")
 
-    assert "--location westus3" in usage_guide
-    assert "--location westus2" not in usage_guide
-    assert _REGION_SUPPORT_URL in readme
-    assert _REGION_SUPPORT_URL in usage_guide
+    assert "--location <supported-region>" in provisioning_guide
+    assert "--location westus2" not in provisioning_guide
+    assert _REGION_SUPPORT_URL in provisioning_guide
 
 
 def test_readme_documents_analyzer_short_option():
