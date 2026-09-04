@@ -50,18 +50,20 @@ jobs:
           python-version: "3.12"
       - name: Validate release request
         env:
+          RELEASE_TARGET: ${{ inputs.target }}
           RELEASE_PACKAGE: ${{ inputs.package }}
           RELEASE_VERSION: ${{ inputs.version }}
           EXPECTED_COMMIT: ${{ inputs.commit }}
         run: >-
           python scripts/validate_release.py
+          --index "${RELEASE_TARGET}"
           --package "${RELEASE_PACKAGE}"
           --version "${RELEASE_VERSION}"
           --expected-commit "${EXPECTED_COMMIT}"
           --actual-commit "${GITHUB_SHA}"
           --repository "${GITHUB_REPOSITORY}"
           --ref "${GITHUB_REF}"
-          ${{ inputs.package == 'cli' && '--verify-core-on-pypi' || '' }}
+          ${{ inputs.package == 'cli' && '--verify-core-on-index' || '' }}
       - name: Test exact release commit
         run: bash scripts/ci.sh
       - name: Build selected distribution

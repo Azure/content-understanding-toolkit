@@ -71,13 +71,14 @@ def _write_release_tree(
 def _validate(root: Path, **overrides: object) -> None:
     arguments = {
         "root": root,
+        "index": "pypi",
         "package": "core",
         "expected_version": "0.1.0",
         "expected_commit": SHA,
         "actual_commit": SHA,
         "repository": "Azure/content-understanding-toolkit",
         "ref": "refs/heads/main",
-        "verify_core_on_pypi": False,
+        "verify_core_on_index": False,
     }
     arguments.update(overrides)
     validate_release.validate_release(**arguments)
@@ -149,11 +150,21 @@ def test_cli_derives_upper_bound_from_core_minor_version(tmp_path: Path) -> None
     )
 
 
-def test_cli_requires_published_core(
+@pytest.mark.parametrize(
+    ("index", "expected_url"),
+    [
+        ("pypi", "https://pypi.org/pypi/cu-cli-core/json"),
+        ("testpypi", "https://test.pypi.org/pypi/cu-cli-core/json"),
+    ],
+)
+def test_cli_requires_core_on_selected_index(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    index: str,
+    expected_url: str,
 ) -> None:
     _write_release_tree(tmp_path)
+    requested_urls: list[str] = []
 
     class Response:
         def __enter__(self) -> Response:
@@ -165,12 +176,19 @@ def test_cli_requires_published_core(
         def read(self) -> bytes:
             return json.dumps({"releases": {}}).encode()
 
-    monkeypatch.setattr(validate_release, "urlopen", lambda *_args, **_kwargs: Response())
+    def open_index(url: str, **_kwargs: object) -> Response:
+        requested_urls.append(url)
+        return Response()
 
-    with pytest.raises(ValueError, match="must be published before cu-cli"):
+    monkeypatch.setattr(validate_release, "urlopen", open_index)
+
+    with pytest.raises(ValueError, match=f"published to {index}"):
         _validate(
             tmp_path,
+            index=index,
             package="cli",
             expected_version="0.2.0",
-            verify_core_on_pypi=True,
+            verify_core_on_index=True,
         )
+
+    assert requested_urls == [expected_url]

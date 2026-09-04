@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Validate that a PyPI release request matches the selected source commit."""
+"""Validate that a package-index release matches the selected source commit."""
 
 from __future__ import annotations
 
@@ -26,6 +26,10 @@ SHA_PATTERN = re.compile(r"[0-9a-f]{40}")
 PACKAGE_PATHS = {
     "core": Path("packages/core/pyproject.toml"),
     "cli": Path("packages/standalone/pyproject.toml"),
+}
+PACKAGE_INDEX_API_URLS = {
+    "pypi": "https://pypi.org/pypi",
+    "testpypi": "https://test.pypi.org/pypi",
 }
 
 
@@ -81,9 +85,7 @@ def validate_cli_metadata(root: Path, cli_version: str) -> str:
     ):
         raise ValueError(f"{cli_path} does not define string dependencies")
 
-    expected_requirement = (
-        f"cu-cli-core>={core_version},<{core_upper_bound}"
-    )
+    expected_requirement = f"cu-cli-core>={core_version},<{core_upper_bound}"
     if expected_requirement not in dependencies:
         raise ValueError(
             "cu-cli must require the stable core release exactly as "
@@ -109,27 +111,32 @@ def validate_cli_metadata(root: Path, cli_version: str) -> str:
     return core_version
 
 
-def verify_pypi_release(project_name: str, version: str) -> None:
-    url = f"https://pypi.org/pypi/{project_name}/json"
+def verify_package_release(
+    project_name: str,
+    version: str,
+    index: str,
+) -> None:
+    url = f"{PACKAGE_INDEX_API_URLS[index]}/{project_name}/json"
     with urlopen(url, timeout=30) as response:
         payload = json.load(response)
     releases = payload.get("releases")
     if not isinstance(releases, dict) or not releases.get(version):
         raise ValueError(
-            f"{project_name} {version} must be published before cu-cli"
+            f"{project_name} {version} must be published to {index} before cu-cli"
         )
 
 
 def validate_release(
     *,
     root: Path,
+    index: str,
     package: str,
     expected_version: str,
     expected_commit: str,
     actual_commit: str,
     repository: str,
     ref: str,
-    verify_core_on_pypi: bool,
+    verify_core_on_index: bool,
 ) -> None:
     validate_request_context(
         expected_commit=expected_commit,
@@ -146,35 +153,39 @@ def validate_release(
         )
     if package == "cli":
         core_version = validate_cli_metadata(root, actual_version)
-        if verify_core_on_pypi:
-            verify_pypi_release("cu-cli-core", core_version)
+        if verify_core_on_index:
+            verify_package_release("cu-cli-core", core_version, index)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--index", required=True, choices=sorted(PACKAGE_INDEX_API_URLS)
+    )
     parser.add_argument("--package", required=True, choices=sorted(PACKAGE_PATHS))
     parser.add_argument("--version", required=True)
     parser.add_argument("--expected-commit", required=True)
     parser.add_argument("--actual-commit", required=True)
     parser.add_argument("--repository", required=True)
     parser.add_argument("--ref", required=True)
-    parser.add_argument("--verify-core-on-pypi", action="store_true")
+    parser.add_argument("--verify-core-on-index", action="store_true")
     args = parser.parse_args()
 
     try:
         validate_release(
             root=ROOT,
+            index=args.index,
             package=args.package,
             expected_version=args.version,
             expected_commit=args.expected_commit,
             actual_commit=args.actual_commit,
             repository=args.repository,
             ref=args.ref,
-            verify_core_on_pypi=args.verify_core_on_pypi,
+            verify_core_on_index=args.verify_core_on_index,
         )
     except (OSError, ValueError) as error:
         parser.error(str(error))
-    print(f"Validated {args.package} {args.version} at {args.actual_commit}.")
+    print(f"Validated {args.package} {args.version} for {args.index} at {args.actual_commit}.")
     return 0
 
 
