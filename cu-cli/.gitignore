@@ -230,6 +230,9 @@ PublishScripts/
 **/[Pp]ackages/*
 # except build/, which is used as an MSBuild target.
 !**/[Pp]ackages/build/
+# CU CLI keeps its publishable Python package sources in packages/.
+!packages/
+!packages/**
 # Uncomment if necessary however generally it will be regenerated when needed
 #!**/[Pp]ackages/repositories.config
 # NuGet v3's project.json files produces more ignorable files
@@ -428,10 +431,24 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
-# Python virtual environments (any sub-directory)
-**/.venv/
+# Python / packaging (cu-cli)
+*.egg-info/
+.eggs/
+dist/
+build/
 .venv/
-
-# Local-only files/directories (any sub-directory)
-**/_local_only/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 _local_only/
+
+*.result.md
+*.result.json
+
+# cu provision output (azd template, generated locally)
+provision/
+provision.*/
+.vscode/settings.json

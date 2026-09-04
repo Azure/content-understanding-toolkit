@@ -1,0 +1,60 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_tmpl_classifier_v1?api-version=2025-11-01
+  response:
+    body:
+      string: "{\"analyzerId\":\"cu_cli_tmpl_classifier_v1\",\"description\":\"TODO:
+        classify inputs into the categories below; give each a clear description.
+        Optional: add \\\"analyzerId\\\": \\\"<existing-analyzer-id>\\\" to a category
+        to route matching content to that analyzer for extraction (the analyzer \u2014
+        prebuilt like prebuilt-invoice or a custom one \u2014 must already exist,
+        otherwise create fails with InvalidAnalyzerId).\",\"createdAt\":\"2026-07-23T17:43:57Z\",\"lastModifiedAt\":\"2026-07-23T17:43:57Z\",\"baseAnalyzerId\":\"prebuilt-document\",\"config\":{\"returnDetails\":false,\"enableOcr\":true,\"enableLayout\":true,\"enableFormula\":true,\"enableFigureDescription\":false,\"enableFigureAnalysis\":false,\"chartFormat\":\"chartjs\",\"tableFormat\":\"html\",\"estimateFieldSourceAndConfidence\":true,\"contentCategories\":{\"invoice\":{\"description\":\"Vendor
+        invoices requesting payment for goods or services, typically including vendor
+        details, line items, totals, and payment terms.\",\"analyzerId\":\"prebuilt-invoice\"},\"purchase_order\":{\"description\":\"Purchase
+        orders that authorize a purchase, typically including a PO number, buyer/supplier
+        details, ordered items, quantities, and prices.\",\"analyzerId\":\"cu_cli_route_target_v1\"},\"receipt\":{\"description\":\"Retail
+        or expense receipts confirming a completed payment, typically including merchant,
+        date, purchased items, and total paid.\"},\"other\":{\"description\":\"Fallback
+        category for content that does not match any category above.\"}},\"enableSegment\":true,\"omitContent\":false,\"segmentPerPage\":false,\"annotationFormat\":\"markdown\"},\"warnings\":[],\"status\":\"ready\",\"processingLocation\":\"geography\",\"supportedModels\":{\"completion\":[\"gpt-4o\",\"gpt-4o-mini\",\"gpt-4.1\",\"gpt-4.1-mini\",\"gpt-4.1-nano\",\"gpt-5.2\"],\"embedding\":[\"text-embedding-3-small\",\"text-embedding-3-large\",\"text-embedding-ada-002\"]},\"models\":{\"completion\":\"gpt-5.2\",\"embedding\":\"text-embedding-3-large\"}}"
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:58 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - c623b922-8f32-49ec-a517-7b5434b0ab30
+      request-id:
+      - c623b922-8f32-49ec-a517-7b5434b0ab30
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '210'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

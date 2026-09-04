@@ -1,0 +1,290 @@
+interactions:
+- request:
+    body: <binary-scrubbed>
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '295'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: PUT
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_route_target_v1?api-version=2025-11-01
+  response:
+    body:
+      string: '{"analyzerId":"cu_cli_route_target_v1","createdAt":"2026-07-23T17:43:51Z","lastModifiedAt":"2026-07-23T17:43:51Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"fields":{"vendor_name":{"type":"string","method":"extract","description":"Full
+        legal vendor name from the invoice header."}}},"warnings":[],"status":"creating","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"prebuilt-analyzer-embedding"}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:52 GMT
+      Operation-Location:
+      - https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_route_target_v1/operations/a1b7562b-6ef5-48f8-bf9e-ccbe85949552?api-version=2025-11-01
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - a1b7562b-6ef5-48f8-bf9e-ccbe85949552
+      request-id:
+      - a1b7562b-6ef5-48f8-bf9e-ccbe85949552
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '430'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 201
+      message: Created
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_route_target_v1/operations/a1b7562b-6ef5-48f8-bf9e-ccbe85949552?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"a1b7562b-6ef5-48f8-bf9e-ccbe85949552","status":"Running","result":{"analyzerId":"cu_cli_route_target_v1","createdAt":"2026-07-23T17:43:51Z","lastModifiedAt":"2026-07-23T17:43:51Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"fields":{"vendor_name":{"type":"string","method":"extract","description":"Full
+        legal vendor name from the invoice header."}}},"warnings":[],"status":"creating","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"prebuilt-analyzer-embedding"}}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:52 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 0ccc30a2-b05e-4a46-b712-c9490280ccbf
+      request-id:
+      - 0ccc30a2-b05e-4a46-b712-c9490280ccbf
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '82'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_route_target_v1/operations/a1b7562b-6ef5-48f8-bf9e-ccbe85949552?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"a1b7562b-6ef5-48f8-bf9e-ccbe85949552","status":"Running","result":{"analyzerId":"cu_cli_route_target_v1","createdAt":"2026-07-23T17:43:51Z","lastModifiedAt":"2026-07-23T17:43:51Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"fields":{"vendor_name":{"type":"string","method":"extract","description":"Full
+        legal vendor name from the invoice header."}}},"warnings":[],"status":"creating","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"prebuilt-analyzer-embedding"}}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:52 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 27ff4b7e-f12a-44bc-84e0-b863a71af6c3
+      request-id:
+      - 27ff4b7e-f12a-44bc-84e0-b863a71af6c3
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '296'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_route_target_v1/operations/a1b7562b-6ef5-48f8-bf9e-ccbe85949552?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"a1b7562b-6ef5-48f8-bf9e-ccbe85949552","status":"Running","result":{"analyzerId":"cu_cli_route_target_v1","createdAt":"2026-07-23T17:43:51Z","lastModifiedAt":"2026-07-23T17:43:51Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"fields":{"vendor_name":{"type":"string","method":"extract","description":"Full
+        legal vendor name from the invoice header."}}},"warnings":[],"status":"creating","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"prebuilt-analyzer-embedding"}}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:53 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 4d0b7095-dfb1-4a38-b8c9-df82fe99926b
+      request-id:
+      - 4d0b7095-dfb1-4a38-b8c9-df82fe99926b
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '54'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_route_target_v1/operations/a1b7562b-6ef5-48f8-bf9e-ccbe85949552?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"a1b7562b-6ef5-48f8-bf9e-ccbe85949552","status":"Succeeded","result":{"analyzerId":"cu_cli_route_target_v1","createdAt":"2026-07-23T17:43:51Z","lastModifiedAt":"2026-07-23T17:43:51Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"fields":{"vendor_name":{"type":"string","method":"extract","description":"Full
+        legal vendor name from the invoice header."}}},"warnings":[],"status":"ready","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"prebuilt-analyzer-embedding"}}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:53 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 60a89cd5-0c5e-493f-adb3-d005e54d6a7f
+      request-id:
+      - 60a89cd5-0c5e-493f-adb3-d005e54d6a7f
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '91'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_route_target_v1?api-version=2025-11-01
+  response:
+    body:
+      string: '{"analyzerId":"cu_cli_route_target_v1","createdAt":"2026-07-23T17:43:51Z","lastModifiedAt":"2026-07-23T17:43:51Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"fields":{"vendor_name":{"type":"string","method":"extract","description":"Full
+        legal vendor name from the invoice header."}}},"warnings":[],"status":"ready","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"prebuilt-analyzer-embedding"}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:54 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 675f466a-faf7-4906-b71d-72cee7769d8f
+      request-id:
+      - 675f466a-faf7-4906-b71d-72cee7769d8f
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '23'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

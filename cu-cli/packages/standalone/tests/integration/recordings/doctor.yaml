@@ -1,0 +1,48 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/defaults?api-version=2025-11-01
+  response:
+    body:
+      string: '{"modelDeployments":{"gpt-5.2":"gpt-5.2-225597","text-embedding-3-large":"text-embedding-3-large-438217","prebuilt-analyzer-completion":"gpt-5.2-225597","prebuilt-analyzer-completion-mini":"gpt-5.2-225597","prebuilt-analyzer-embedding":"text-embedding-3-large-438217"}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:42 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - b9c6e139-4376-4fbb-9760-9e560f4db790
+      request-id:
+      - b9c6e139-4376-4fbb-9760-9e560f4db790
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '28'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1
