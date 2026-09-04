@@ -105,7 +105,7 @@ so the freshly provisioned resource is saved in the default CU CLI profile
 immediately after `azd up`, with `prebuilt-layout` configured as the default
 analyzer. The hook prints the redacted `cu profile show --name default` result.
 If the default profile already has saved values, the hook preserves it and
-explains how to rerun `cu provision --force` before `azd up` to replace values.
+explains how to rerun `cu infra generate --force` before `azd up` to replace values.
 
 The post-provision hook only prints the custom-analyzer workflow after it
 verifies succeeded chat completion and embeddings model deployments and

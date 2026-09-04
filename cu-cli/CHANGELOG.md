@@ -5,7 +5,7 @@
 ### Features Added
 
 - Initial release of CU CLI for using Azure Content Understanding from the terminal.
-- Added `cu provision` to configure a new or existing Microsoft Foundry resource, optionally deploy supported models, and configure Content Understanding defaults.
+- Added `cu infra generate` to generate an azd/Bicep project used to provision a new or existing Microsoft Foundry resource, optionally deploy supported models, and configure Content Understanding defaults.
 - Added `cu profile` to manage named profiles, resource endpoints, authentication, API versions, and model mappings.
 - Added `cu doctor` to diagnose authentication, resource connectivity, and model readiness.
 - Added `cu env-var` to document supported environment variables and inspect currently configured values with sensitive values redacted.

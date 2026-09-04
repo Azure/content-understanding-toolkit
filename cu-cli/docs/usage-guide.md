@@ -293,7 +293,7 @@ for the service concepts behind these mappings.
 
 ## Provisioning
 
-`cu provision` is separate from analyzer authoring. It generates a deployable
+`cu infra generate` is separate from analyzer authoring. It generates a deployable
 azd/Bicep directory that provisions the required Microsoft Foundry resource. It
 can also deploy selected supported LLMs and embeddings models, configure Content
 Understanding defaults, and configure the default CU CLI profile. It never
@@ -336,16 +336,16 @@ Start with the interactive wizard when you are learning the workflow:
 
 ```bash
 # Generate an azd template and answer the setup prompts.
-cu provision
+cu infra generate
 ```
 
 The wizard resembles this abbreviated session:
 
 ```text
-cu provision -> /work/provision
+cu infra generate -> /work/provision
   Azure subscription: My Azure Subscription (00000000-0000-0000-0000-000000000000)
 
-`cu provision` generates an azd template ...
+`cu infra generate` generates an azd template ...
 Enter your environment name ... [dev]: yslin-selfhost
 
 Content Understanding supported regions
@@ -384,7 +384,7 @@ model deployment:
 
 ```bash
 # Generate a new-resource template with no LLM or embeddings deployment.
-cu provision --models none
+cu infra generate --models none
 
 # Enter the generated azd project.
 cd provision
@@ -405,7 +405,7 @@ Supply every choice to make template generation deterministic:
 ```bash
 # Generate under ./provision for the dev deployment stack in West US 3.
 # The post-provision hook selects recommended CU-supported models during azd up.
-cu provision \
+cu infra generate \
   --output-dir ./provision \
   --environment dev \
   --location westus3 \
@@ -434,7 +434,7 @@ Use `--foundry-prefix` to make a new resource easier to identify:
 
 ```bash
 # Generate a resource name such as my-cu-<unique-suffix>.
-cu provision --foundry-prefix my-cu --models none
+cu infra generate --foundry-prefix my-cu --models none
 ```
 
 The suffix makes the Microsoft Foundry resource name globally unique because
@@ -449,7 +449,7 @@ CU-supported model deployments or Content Understanding defaults are missing:
 
 ```bash
 # Verify the endpoint through Azure CLI and select recommended supported models.
-cu provision \
+cu infra generate \
   --foundry-endpoint https://my-foundry-resource.services.ai.azure.com/ \
   --models recommended
 
@@ -465,7 +465,7 @@ names instead of the recommended pair:
 
 ```bash
 # Validate these names against the live CU-supported catalog during azd up.
-cu provision \
+cu infra generate \
   --foundry-endpoint https://my-foundry-resource.services.ai.azure.com/ \
   --models gpt-5.2,text-embedding-3-large
 
@@ -537,7 +537,7 @@ usable and prints a focused repair command instead of claiming full readiness.
 
 Default CU CLI profile setup is automatic. If the default profile already has
 saved values, the post-provision hook preserves it unless the template was
-generated with `cu provision --force`; the hook reports whether it configured
+generated with `cu infra generate --force`; the hook reports whether it configured
 or preserved the profile. Set
 `CU_DISABLE_AUTO_PROFILE_SETUP=true` before `azd up` only when you want to skip
 profile setup entirely.

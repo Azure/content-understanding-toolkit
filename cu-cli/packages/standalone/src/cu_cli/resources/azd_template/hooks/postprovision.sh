@@ -121,7 +121,7 @@ if [ "$profile_status" -eq 0 ] && [ "$profile_setup_force" != "true" ]; then
   if ! "$CU_CMD" profile show --name default; then
     echo "Could not display the preserved default CU CLI profile."
   fi
-  echo "To replace its values, rerun cu provision with --force, then run azd up."
+  echo "To replace its values, rerun cu infra generate with --force, then run azd up."
   exit 0
 elif [ "$profile_status" -ne 0 ] && [ "$profile_status" -ne 3 ]; then
   echo "Could not inspect the default CU CLI profile; refusing to overwrite it."

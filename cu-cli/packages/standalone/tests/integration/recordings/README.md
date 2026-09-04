@@ -48,5 +48,5 @@ secrets and real hostnames scrubbed, so they are safe to commit.
 - Manage connectivity and defaults
   - `doctor.yaml`
 
-Note: `cu profile` and `cu provision` setup flows are covered
+Note: `cu profile` and `cu infra generate` setup flows are covered
 in offline command tests, not in cassette-backed cloud playback.

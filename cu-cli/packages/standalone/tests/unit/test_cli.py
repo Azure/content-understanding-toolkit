@@ -51,7 +51,7 @@ def test_help_lists_all_commands():
     res = _run("--help")
     assert res.exit_code == 0
     for cmd in (
-        "provision", "profile", "doctor", "env-var", "defaults", "analyze",
+        "infra", "profile", "doctor", "env-var", "defaults", "analyze",
         "analyzer", "upgrade",
     ):
         assert cmd in res.output
@@ -63,7 +63,8 @@ def test_main_help_ends_with_supported_api_versions():
     assert output.endswith(API_VERSION_HELP)
     assert "Environment variables:" not in output
     assert "For environment-variable help, run cu env-var -h." in output
-    assert "provisions the required Microsoft Foundry resource" in output
+    assert "generates an azd/Bicep project used to provision" in output
+    assert "`azd up` performs the Azure provisioning" in output
     assert "local CU CLI profile" in output
     assert "ready-to-use prebuilt analyzer or create a custom analyzer" in output
     assert "If CU CLI is not connected" not in output
@@ -88,7 +89,7 @@ def test_main_help_ends_with_supported_api_versions():
         ("defaults", "show", "--help"),
         ("defaults", "set", "--help"),
         ("doctor", "--help"),
-        ("provision", "--help"),
+        ("infra", "generate", "--help"),
     ],
 )
 def test_api_version_help_is_consistent(args):
@@ -173,7 +174,7 @@ def test_env_var_list_redacts_sensitive_values_in_all_formats(monkeypatch):
         (
             ("--help",),
             (
-                "cu provision",
+                "cu infra generate",
                 "cu profile set endpoint https://<resource-name>.services.ai.azure.com/",
                 "cu doctor",
                 "cu analyze sample.pdf -a prebuilt-layout",
@@ -208,10 +209,10 @@ def test_env_var_list_redacts_sensitive_values_in_all_formats(monkeypatch):
             ("cu env-var list", "cu env-var list --json"),
         ),
         (
-            ("provision", "--help"),
+            ("infra", "generate", "--help"),
             (
-                "cu provision",
-                "cu provision --foundry-endpoint URL",
+                "cu infra generate",
+                "cu infra generate --foundry-endpoint URL",
             ),
         ),
         (
@@ -451,10 +452,10 @@ def test_analyze_help_separates_warning_from_common_commands():
             ),
         ),
         (
-            ("provision", "--help"),
+            ("infra", "generate", "--help"),
             (
-                "Provision the resource, optionally deploy selected supported LLMs and embeddings models, and configure Content Understanding defaults.",
-                "Optionally deploy selected supported LLMs and embeddings models and configure Content Understanding defaults.",
+                "Generate a project for a new resource and optional model deployments. Run azd up to provision it.",
+                "Generate a project for optional model deployments and defaults on an existing resource. Run azd up to apply it.",
             ),
         ),
         (
@@ -2319,9 +2320,9 @@ def test_service_commands_offer_common_time_flag():
 
 def test_check_az_subscription_resolves_override_without_mutating_default(monkeypatch):
     calls = []
-    monkeypatch.setattr("cu_cli.commands.provision.shutil.which", lambda _name: "/usr/bin/az")
+    monkeypatch.setattr("cu_cli.commands.infra.shutil.which", lambda _name: "/usr/bin/az")
     monkeypatch.setattr(
-        "cu_cli.commands.provision.subprocess.run",
+        "cu_cli.commands.infra.subprocess.run",
         lambda args, **_kwargs: (
             calls.append(args)
             or SimpleNamespace(
@@ -2336,7 +2337,7 @@ def test_check_az_subscription_resolves_override_without_mutating_default(monkey
         ),
     )
 
-    from cu_cli.commands.provision import _check_az_subscription
+    from cu_cli.commands.infra import _check_az_subscription
 
     account = _check_az_subscription("Requested Subscription")
 
@@ -2356,9 +2357,9 @@ def test_check_az_subscription_resolves_override_without_mutating_default(monkey
 
 
 def test_check_az_subscription_rejects_incomplete_account_json(monkeypatch):
-    monkeypatch.setattr("cu_cli.commands.provision.shutil.which", lambda _name: "/usr/bin/az")
+    monkeypatch.setattr("cu_cli.commands.infra.shutil.which", lambda _name: "/usr/bin/az")
     monkeypatch.setattr(
-        "cu_cli.commands.provision.subprocess.run",
+        "cu_cli.commands.infra.subprocess.run",
         lambda *_args, **_kwargs: SimpleNamespace(
             returncode=0,
             stdout=json.dumps({"id": "sub-id", "tenantId": "tenant-id"}),
@@ -2366,14 +2367,14 @@ def test_check_az_subscription_rejects_incomplete_account_json(monkeypatch):
         ),
     )
 
-    from cu_cli.commands.provision import _check_az_subscription
+    from cu_cli.commands.infra import _check_az_subscription
 
     with pytest.raises(CuCliError, match="subscription id, name, and tenant id"):
         _check_az_subscription()
 
 
 def test_resolve_existing_foundry_account_matches_custom_subdomain(monkeypatch):
-    monkeypatch.setattr("cu_cli.commands.provision.shutil.which", lambda _name: "/usr/bin/az")
+    monkeypatch.setattr("cu_cli.commands.infra.shutil.which", lambda _name: "/usr/bin/az")
     calls = []
     payload = [
         {
@@ -2390,9 +2391,9 @@ def test_resolve_existing_foundry_account_matches_custom_subdomain(monkeypatch):
         calls.append(args)
         return SimpleNamespace(returncode=0, stdout=json.dumps(payload), stderr="")
 
-    monkeypatch.setattr("cu_cli.commands.provision.subprocess.run", _run_az)
+    monkeypatch.setattr("cu_cli.commands.infra.subprocess.run", _run_az)
 
-    from cu_cli.commands.provision import _resolve_existing_foundry_account
+    from cu_cli.commands.infra import _resolve_existing_foundry_account
 
     name, rg, location = _resolve_existing_foundry_account(
         "https://mmi-sample-foundry-west-us.services.ai.azure.com/",
@@ -2405,7 +2406,7 @@ def test_resolve_existing_foundry_account_matches_custom_subdomain(monkeypatch):
 
 
 def test_resolve_existing_foundry_account_matches_account_name_label(monkeypatch):
-    monkeypatch.setattr("cu_cli.commands.provision.shutil.which", lambda _name: "/usr/bin/az")
+    monkeypatch.setattr("cu_cli.commands.infra.shutil.which", lambda _name: "/usr/bin/az")
     payload = [
         {
             "name": "mmi-sample-foundry-west-us",
@@ -2417,11 +2418,11 @@ def test_resolve_existing_foundry_account_matches_account_name_label(monkeypatch
         }
     ]
     monkeypatch.setattr(
-        "cu_cli.commands.provision.subprocess.run",
+        "cu_cli.commands.infra.subprocess.run",
         lambda *_a, **_k: SimpleNamespace(returncode=0, stdout=json.dumps(payload), stderr=""),
     )
 
-    from cu_cli.commands.provision import _resolve_existing_foundry_account
+    from cu_cli.commands.infra import _resolve_existing_foundry_account
 
     name, rg, location = _resolve_existing_foundry_account(
         "https://mmi-sample-foundry-west-us.services.ai.azure.com/",

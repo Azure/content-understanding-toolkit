@@ -43,7 +43,7 @@ param principalType string = 'User'
 param assignRolesToPrincipal string = 'true'
 
 // Model deployments are loaded from infra/models.json so the file is
-// hand-editable and round-trippable through other tooling (e.g. `cu provision`).
+// hand-editable and round-trippable through other tooling (e.g. `cu infra generate`).
 var modelDeployments = loadJsonContent('models.json')
 
 var foundryUniqueSuffix = toLower(uniqueString(subscription().id, environmentName, location))

@@ -1,4 +1,4 @@
-"""``cu provision`` — generate an azd template for CU infrastructure."""
+"""``cu infra generate`` — generate an azd template for CU infrastructure."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from ..core.foundry import endpoint_host, host_label, normalize_foundry_endpoint
 from ..errors import CuCliError, friendly_errors
 from ..exit_codes import VALIDATION_FAILURE
 from ..output import console
+from ._help import common_commands
 from ._infra_wizard import _validate_azd_environment_name, run_wizard
 
 AZURE_SIGNUP_URL = "https://azure.microsoft.com/free/"
@@ -34,7 +35,7 @@ def _check_az_subscription(subscription: str | None = None) -> AzureAccount:
         raise CuCliError(
             "Provisioning requires Azure CLI (`az`), which was not found on PATH.",
             hint=f"install it (https://aka.ms/azcli), sign up at {AZURE_SIGNUP_URL}, "
-            "then rerun `cu provision`.",
+            "then rerun `cu infra generate`.",
         )
     command = [az, "account", "show"]
     if subscription:
@@ -49,7 +50,7 @@ def _check_az_subscription(subscription: str | None = None) -> AzureAccount:
         raise CuCliError(
             f"Azure subscription{target} is not accessible.",
             hint=f"run `az login`, select a subscription, or sign up at "
-            f"{AZURE_SIGNUP_URL}, then rerun `cu provision`.",
+            f"{AZURE_SIGNUP_URL}, then rerun `cu infra generate`.",
         )
     try:
         payload = json.loads(result.stdout or "")
@@ -165,19 +166,41 @@ def _resolve_existing_foundry_account(
     )
 
 
-@click.command(
-    "provision",
-    help="Provision a Microsoft Foundry resource and configure Content Understanding.",
-    epilog=(
-        "[bold cyan]Common commands:[/bold cyan]\n\n"
-        "[bold green]cu provision[/bold green]\n\n"
-        "[white]\u00a0\u00a0Provision the resource, optionally deploy selected supported "
-        "LLMs and embeddings models, and configure Content Understanding "
-        "defaults.[/white]\n\n"
-        "[bold green]cu provision[/bold green] "
-        "[bold cyan]--foundry-endpoint[/bold cyan] [bold yellow]URL[/bold yellow]\n\n"
-        "[white]\u00a0\u00a0Optionally deploy selected supported LLMs and embeddings "
-        "models and configure Content Understanding defaults.[/white]"
+@click.group(
+    "infra",
+    help=(
+        "Generate infrastructure-as-code used to provision and configure "
+        "Content Understanding resources."
+    ),
+    epilog=common_commands(
+        (
+            "cu infra generate",
+            "Generate an azd/Bicep project. Run azd up to provision Azure resources.",
+        ),
+    ),
+)
+def infra_group() -> None:
+    """Infrastructure-as-code generation commands."""
+
+
+@infra_group.command(
+    "generate",
+    help=(
+        "Generate an azd/Bicep project used to provision a Microsoft Foundry "
+        "resource and configure Content Understanding. This command writes files "
+        "only; run `azd up` to provision Azure resources."
+    ),
+    epilog=common_commands(
+        (
+            "cu infra generate",
+            "Generate a project for a new resource and optional model deployments. "
+            "Run azd up to provision it.",
+        ),
+        (
+            "cu infra generate --foundry-endpoint URL",
+            "Generate a project for optional model deployments and defaults on an "
+            "existing resource. Run azd up to apply it.",
+        ),
     ),
 )
 @click.option(
@@ -212,7 +235,7 @@ def _resolve_existing_foundry_account(
 )
 @click.option("--force", is_flag=True, help="Overwrite an existing generated template.")
 @friendly_errors
-def cmd_provision(
+def cmd_infra_generate(
     output_dir: Path,
     environment: str | None,
     location: str | None,
@@ -252,7 +275,7 @@ def cmd_provision(
 
     target = output_dir.resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
-    console.print(f"\n[bold]cu provision[/bold] -> [cyan]{target}[/cyan]")
+    console.print(f"\n[bold]cu infra generate[/bold] -> [cyan]{target}[/cyan]")
     console.print(
         f"  [dim]Azure subscription: {account.subscription_name} "
         f"({account.subscription_id})[/dim]"
