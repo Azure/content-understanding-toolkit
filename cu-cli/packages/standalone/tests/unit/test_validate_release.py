@@ -44,7 +44,7 @@ dependencies = [
 def _write_release_tree(
     root: Path,
     *,
-    core_version: str = "0.1.0",
+    core_version: str = "0.1.0b1",
     dated_changelog: bool = True,
 ) -> None:
     core_major, core_minor, _ = core_version.split(".")
@@ -58,12 +58,12 @@ def _write_release_tree(
     _write_project(
         root / "packages/standalone/pyproject.toml",
         name="cu-cli",
-        version="0.2.0",
+        version="0.1.0b1",
         dependencies=[f"cu-cli-core>={core_version},<{core_upper_bound}"],
     )
     status = "2026-09-04" if dated_changelog else "Unreleased"
     (root / "CHANGELOG.md").write_text(
-        f"# Release History\n\n## 0.2.0 ({status})\n",
+        f"# Release History\n\n## 0.1.0b1 ({status})\n",
         encoding="utf-8",
     )
 
@@ -73,7 +73,7 @@ def _validate(root: Path, **overrides: object) -> None:
         "root": root,
         "index": "pypi",
         "package": "core",
-        "expected_version": "0.1.0",
+        "expected_version": "0.1.0b1",
         "expected_commit": SHA,
         "actual_commit": SHA,
         "repository": "Azure/content-understanding-toolkit",
@@ -119,7 +119,7 @@ def test_cli_requires_dated_changelog(tmp_path: Path) -> None:
         _validate(
             tmp_path,
             package="cli",
-            expected_version="0.2.0",
+            expected_version="0.1.0b1",
         )
 
 
@@ -128,25 +128,25 @@ def test_cli_requires_stable_core_dependency(tmp_path: Path) -> None:
     _write_project(
         tmp_path / "packages/standalone/pyproject.toml",
         name="cu-cli",
-        version="0.2.0",
+        version="0.1.0b1",
         dependencies=["cu-cli-core>=0.1.0.dev0,<0.2.0"],
     )
 
-    with pytest.raises(ValueError, match="stable core release"):
+    with pytest.raises(ValueError, match="stable or preview PEP 440 release"):
         _validate(
             tmp_path,
             package="cli",
-            expected_version="0.2.0",
+            expected_version="0.1.0b1",
         )
 
 
 def test_cli_derives_upper_bound_from_core_minor_version(tmp_path: Path) -> None:
-    _write_release_tree(tmp_path, core_version="0.2.0")
+    _write_release_tree(tmp_path, core_version="0.2.0b1")
 
     _validate(
         tmp_path,
         package="cli",
-        expected_version="0.2.0",
+        expected_version="0.1.0b1",
     )
 
 
@@ -187,7 +187,7 @@ def test_cli_requires_core_on_selected_index(
             tmp_path,
             index=index,
             package="cli",
-            expected_version="0.2.0",
+            expected_version="0.1.0b1",
             verify_core_on_index=True,
         )
 

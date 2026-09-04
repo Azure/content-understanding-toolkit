@@ -73,9 +73,15 @@ def validate_request_context(
 def validate_cli_metadata(root: Path, cli_version: str) -> str:
     core_path = root / PACKAGE_PATHS["core"]
     core_version = project_version(load_project(core_path), core_path)
-    core_version_match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", core_version)
+    core_version_match = re.fullmatch(
+        r"(\d+)\.(\d+)\.(\d+)(?:(?:a|b|rc)\d+)?",
+        core_version,
+    )
     if core_version_match is None:
-        raise ValueError(f"cu-cli-core version must be stable SemVer: {core_version}")
+        raise ValueError(
+            "cu-cli-core version must be a stable or preview PEP 440 release: "
+            f"{core_version}"
+        )
     core_major, core_minor, _ = (int(part) for part in core_version_match.groups())
     core_upper_bound = f"{core_major}.{core_minor + 1}.0"
     cli_path = root / PACKAGE_PATHS["cli"]
@@ -88,7 +94,7 @@ def validate_cli_metadata(root: Path, cli_version: str) -> str:
     expected_requirement = f"cu-cli-core>={core_version},<{core_upper_bound}"
     if expected_requirement not in dependencies:
         raise ValueError(
-            "cu-cli must require the stable core release exactly as "
+            "cu-cli must require the selected core release exactly as "
             f"{expected_requirement}"
         )
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import re
 import shlex
+from importlib.metadata import version
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -491,7 +492,7 @@ def test_common_command_examples_explain_their_purpose(args, descriptions):
 def test_version():
     res = _run("--version")
     assert res.exit_code == 0
-    assert "0.2.0" in res.output
+    assert version("cu-cli") in res.output
 
 
 def test_schema_template_stamps_default_version():
@@ -1184,7 +1185,7 @@ def test_service_command_rejects_malformed_environment_endpoint(monkeypatch):
 
 def test_upgrade_check_up_to_date(monkeypatch):
     monkeypatch.setattr("cu_cli.commands.upgrade.fetch_latest_version_detailed",
-                        lambda **_: ("0.1.0", "ok"))
+                        lambda **_: (version("cu-cli"), "ok"))
     res = _run("upgrade", "--check")
     assert res.exit_code == 0
     assert "up to date" in res.output

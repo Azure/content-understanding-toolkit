@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cu-cli"
-version = "0.2.0"
+version = "0.1.0b1"
 description = "Author, validate, and run Azure Content Understanding custom analyzers from the terminal — advanced document layout, industry-leading OCR, and grounded field extraction with confidence, all backed by Azure Content Understanding."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,7 +27,7 @@ classifiers = [
     "Topic :: Text Processing",
 ]
 dependencies = [
-    "cu-cli-core>=0.1.0,<0.2.0",
+    "cu-cli-core>=0.1.0b1,<0.2.0",
     "azure-ai-contentunderstanding>=1.2.0b3",
     "azure-identity>=1.19",
     # Management-plane clients used by `cu analyzer copy` to resolve
