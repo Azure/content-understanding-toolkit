@@ -13,6 +13,7 @@ pytestmark = pytest.mark.unit
 
 _PRODUCT_ROOT = Path(__file__).resolve().parents[4]
 _README = _PRODUCT_ROOT / "README.md"
+_PACKAGE_README = Path(__file__).resolve().parents[2] / "README.md"
 _PROVISIONING_GUIDE = _PRODUCT_ROOT / "docs" / "provisioning.md"
 _USAGE_GUIDE = _PRODUCT_ROOT / "docs" / "usage-guide.md"
 _REGION_SUPPORT_URL = (
@@ -34,6 +35,10 @@ def test_readme_links_are_absolute_for_pypi():
 
     assert targets
     assert all(target.startswith(("https://", "http://")) for target in targets)
+
+
+def test_pypi_readme_matches_product_readme():
+    assert _PACKAGE_README.read_bytes() == _README.read_bytes()
 
 
 def test_documented_provision_region_and_support_link_are_current():
