@@ -131,35 +131,34 @@ analyzer.
 `cu infra generate` only writes files and performs control-plane discovery. It
 does not deploy resources or call the Content Understanding data plane.
 
-The generated Bicep deploys at subscription scope. For the complete
-new-resource path, the identity running `azd up` needs **Contributor** (or
-**Owner**) on the selected subscription, or a custom role with equivalent
-permissions to create the resource group, Foundry resource and project, and
-model deployments. The existing-resource path still runs a subscription-scope
-deployment and also needs permission to create any selected model deployments
-on that resource. Contributor on the selected subscription satisfies both
-requirements; an organization can instead provide a narrower custom role with
-the required deployment and resource actions.
+The generated project supports two deployment paths:
 
-Contributor cannot create role assignments. If `azd up` should also assign the
-generated data-plane roles, the identity additionally needs **Role Based Access
-Control Administrator**, **User Access Administrator**, or **Owner** on the
-subscription. If you have Contributor only, decline the role-assignment prompt;
-the generated post-provision step uses key authentication instead.
+- **Create a new Microsoft Foundry resource**: `azd up` creates a new resource
+  group, a Microsoft Foundry resource (an Azure AI Services account with kind
+  `AIServices`), a Foundry project, and the selected model deployments.
+- **Use an existing Microsoft Foundry resource**: `azd up` reuses the selected
+  Microsoft Foundry resource and its resource group. It does not create another
+  resource group, Foundry resource, or Foundry project, but it does create the
+  selected model deployments on that resource.
 
-Using CU CLI with Microsoft Entra ID authentication requires the **Cognitive
-Services User** role on the Microsoft Foundry resource. This role grants the
-Content Understanding data-plane access used to configure defaults and to
-create, manage, and run analyzers. It is required even for a resource owner
-because management-plane roles such as Owner and Contributor don't grant
-Content Understanding data-plane access. For a new resource, the generated
-project can assign this role during `azd up` when role assignment is enabled.
-For an existing resource, grant the identity this role first (Azure portal →
-your resource → **Access control (IAM)** → **Add role assignment** →
-**Cognitive Services User**). Without it, Entra-authenticated commands such as
-`cu defaults set`, `cu analyzer create`, and `cu analyze` fail with an
-authorization error. Key authentication uses the resource key instead of this
-role assignment.
+The generated Bicep deploys at subscription scope in both paths. Use the
+following scenarios to determine the required access:
+
+| Scenario | Required access |
+| --- | --- |
+| Create a new Microsoft Foundry resource **and automatically assign roles** | **Owner** on the selected subscription, or **Contributor** plus **Role Based Access Control Administrator** or **User Access Administrator**. |
+| Create a new Microsoft Foundry resource **without assigning roles** | **Contributor** or **Owner** on the selected subscription, or a custom role with equivalent permissions to create the resource group, Foundry resource and project, and model deployments. If you have Contributor only, decline the role-assignment prompt; the generated post-provision step uses key authentication. |
+| Use an existing Microsoft Foundry resource | Permission to run the subscription-scope deployment and to create model deployments on the selected resource. **Contributor** on the selected subscription satisfies both; an organization can instead provide a narrower custom role with the required deployment and resource actions. This path does not create role assignments. |
+| Use CU CLI with Microsoft Entra ID authentication | **Cognitive Services User** on the Microsoft Foundry resource. This grants the Content Understanding data-plane access used to configure defaults and create, manage, and run analyzers. Owner and Contributor do not include this access. |
+| Use CU CLI with key authentication | A valid resource key; **Cognitive Services User** is not required for requests authenticated with that key. |
+
+For a new Microsoft Foundry resource, `azd up` can assign **Cognitive Services
+User** when automatic role assignment is enabled. For an existing Microsoft
+Foundry resource, grant the identity this role first (Azure portal → the
+Microsoft Foundry resource → **Access control (IAM)** → **Add role assignment**
+→ **Cognitive Services User**). Without it, Entra-authenticated commands such
+as `cu defaults set`, `cu analyzer create`, and `cu analyze` fail with an
+authorization error.
 
 See [Azure built-in privileged roles](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/privileged#contributor)
 and [Cognitive Services User](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning#cognitive-services-user)
