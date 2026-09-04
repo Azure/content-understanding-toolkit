@@ -1,5 +1,8 @@
 # Support
 
+The repository-wide [support policy](../SUPPORT.md) applies to CU CLI. The
+guidance below provides CU CLI-specific resources.
+
 ## How to file issues and get help
 
 This project uses GitHub Issues to track bugs and feature requests. Please search
@@ -17,4 +20,5 @@ For help and questions about using this project:
 
 ## Microsoft Support Policy
 
-Support for **cu-cli** is limited to the resources listed above.
+Support for **CU CLI** is limited to the resources listed above unless the
+repository-wide support policy states otherwise.

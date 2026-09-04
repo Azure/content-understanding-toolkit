@@ -38,13 +38,23 @@ Full docs: [aka.ms/cu-doc](https://aka.ms/cu-doc).
 
 ## Contributing
 
-This project welcomes contributions and suggestions. Per-tool contribution guides live in each tool directory (for example [`cu-cli/CONTRIBUTING.md`](cu-cli/CONTRIBUTING.md)).
-
-Most contributions require you to agree to a Microsoft Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for repository-wide contribution and
+Contributor License Agreement (CLA) guidance. Each tool may also provide
+development instructions in its own directory.
 
 ## Security
 
 See [SECURITY.md](SECURITY.md) for how to report security issues.
+
+## Support
+
+See [SUPPORT.md](SUPPORT.md) for toolkit support channels and the distinction
+between GitHub issues and Azure service support.
+
+## Code of conduct
+
+This project follows the
+[Microsoft Open Source Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Data collection
 
