@@ -1,4 +1,7 @@
 #!/usr/bin/env pwsh
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 # Post-provision hook: prints a summary and optionally wires the `cu` CLI
 # to the freshly provisioned Foundry endpoint.
 #

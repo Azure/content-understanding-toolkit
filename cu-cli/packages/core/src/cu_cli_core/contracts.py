@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Typed request and planning contracts shared by CU command frontends."""
 
 from __future__ import annotations

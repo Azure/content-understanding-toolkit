@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Doctor checks (Click-free): model-requirement analysis.
 
 The ``cu doctor`` command is an interactive diagnostic whose output is printed

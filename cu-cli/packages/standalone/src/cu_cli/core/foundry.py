@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Foundry endpoint helpers (Click-free, pure).
 
 Small URL helpers shared by ``cu infra generate`` and ``cu profile`` for endpoint

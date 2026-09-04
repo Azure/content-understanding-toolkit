@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Telemetry opt-out is honored.
 
 Covers the PR #4 review: when the user opts out, the ``User-Agent`` prefix must

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Translate framework-neutral command arguments into Click decorators."""
 
 from __future__ import annotations

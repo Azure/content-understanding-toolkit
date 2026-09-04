@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Static environment-variable metadata and redacted process inspection."""
 
 from __future__ import annotations

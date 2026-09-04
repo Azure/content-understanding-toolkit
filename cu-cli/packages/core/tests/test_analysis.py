@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Unit tests for the Click-free analyze engine in :mod:`cu_cli_core.analysis`.
 
 These prove the engine is usable and testable **without** the CLI or a cloud

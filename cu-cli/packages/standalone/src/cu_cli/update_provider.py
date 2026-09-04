@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Update source abstraction used by the shared upgrade workflow."""
 
 from __future__ import annotations

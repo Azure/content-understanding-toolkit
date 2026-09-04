@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """``cu profile`` — manage resource-specific settings in Azure CLI configuration."""
 
 from __future__ import annotations

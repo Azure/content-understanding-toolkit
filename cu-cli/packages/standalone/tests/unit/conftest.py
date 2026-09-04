@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Unit-test-only fixtures.
 
 The universal fixtures (_isolate_env, _fixed_cli_width) live in the top-level

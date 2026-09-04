@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Tests for the complete core schema-validation operation."""
 
 from __future__ import annotations

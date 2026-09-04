@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Discover and inspect supported CU CLI environment variables."""
 
 from __future__ import annotations

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Build a ContentUnderstandingClient honoring config precedence + api-version.
 
 The CLI is cloud-only: every client build requires an endpoint. The

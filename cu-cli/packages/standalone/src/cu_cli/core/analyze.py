@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Compatibility imports for the analysis engine now provided by cu-cli-core."""
 
 from cu_cli_core.analysis import (

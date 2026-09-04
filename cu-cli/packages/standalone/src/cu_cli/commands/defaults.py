@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """``cu defaults`` — read and update Content Understanding defaults.
 
 Wraps the CU SDK's ``get_defaults`` and ``update_defaults`` operations so users

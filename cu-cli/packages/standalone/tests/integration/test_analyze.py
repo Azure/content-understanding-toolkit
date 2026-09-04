@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Integration tests for the ``analyze`` command.
 
 Covers single-file markdown output, directory batch with --output-dir, and prebuilt

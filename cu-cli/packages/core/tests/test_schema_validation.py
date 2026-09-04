@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Schema validation: exact messages, exit-2 semantics, warnings."""
 
 from __future__ import annotations

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Input discovery and result-path planning for ``cu analyze`` (Click-free).
 
 Expands user-supplied inputs (files, directories, globs) into concrete local

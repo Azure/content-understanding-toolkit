@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Top-level CLI: registers all command groups under ``cu`` / ``cu-cli``.
 
 Uses ``rich-click`` for the help UX. Running ``cu`` with no subcommand prints

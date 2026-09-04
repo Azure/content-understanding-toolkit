@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Shared CU profile storage and resolution over Azure CLI configuration."""
 
 from __future__ import annotations

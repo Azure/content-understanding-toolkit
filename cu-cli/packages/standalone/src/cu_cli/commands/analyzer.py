@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """``cu analyzer`` — manage and author custom analyzers.
 
 MVP command surface: ``list``, ``show``, ``create``, ``delete``,

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Integration tests for the ``doctor`` command and ``defaults show``.
 
 Covers service connectivity checks and reading the CU service defaults

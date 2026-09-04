@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """``friendly_errors`` surfaces the SDK's inner error details.
 
 Regression coverage for the reviewer's finding (PR #4, analyzers.py): the CU

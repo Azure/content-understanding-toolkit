@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """CU CLI — Azure Content Understanding Command Line Interface.
 
 A deterministic, no-LLM CLI over the Content Understanding SDK for authoring,

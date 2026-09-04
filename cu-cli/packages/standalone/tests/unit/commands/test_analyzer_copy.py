@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """CLI-level unit tests for ``cu analyzer copy`` — no network calls.
 
 Focus areas:

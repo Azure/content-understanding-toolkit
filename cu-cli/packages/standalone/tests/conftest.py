@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Shared pytest fixtures.
 
 Profiles use Azure CLI configuration; these fixtures redirect HOME,

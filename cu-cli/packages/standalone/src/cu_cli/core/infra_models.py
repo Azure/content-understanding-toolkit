@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Live CU model discovery and deployment helpers for generated infrastructure."""
 
 from __future__ import annotations

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Custom-analyzer schema authoring (Click-free).
 
 Pure helpers to generate a starter analyzer schema and to pick a template

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Output helpers: JSON / markdown / pretty tables.
 
 ``console`` is routed to stderr so the stdout pipe contract for

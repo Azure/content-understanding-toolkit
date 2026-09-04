@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """``cu infra generate`` — generate an azd template for CU infrastructure."""
 
 from __future__ import annotations

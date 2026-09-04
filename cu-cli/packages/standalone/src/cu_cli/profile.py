@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Standalone access to the shared CU profile implementation."""
 
 from cu_cli_core.profiles import (

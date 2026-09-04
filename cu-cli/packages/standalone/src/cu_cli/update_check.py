@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Package update check.
 
 Follows the pip convention: compare the installed version against the latest

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Shared orchestration for analyze and analyzer-test commands."""
 
 from __future__ import annotations

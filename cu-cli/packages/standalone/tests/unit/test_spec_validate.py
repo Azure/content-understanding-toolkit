@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Tests for spec-backed validation against the bundled CU OpenAPI spec."""
 
 from __future__ import annotations
