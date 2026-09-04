@@ -1,0 +1,102 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cu-cli"
+version = "0.2.0"
+description = "Author, validate, and run Azure Content Understanding custom analyzers from the terminal — advanced document layout, industry-leading OCR, and grounded field extraction with confidence, all backed by Azure Content Understanding."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Microsoft Corporation" }]
+keywords = [
+    "azure", "content-understanding", "document-intelligence", "ocr",
+    "pdf", "extract", "field-extraction", "analyzer", "cli", "markdown",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing",
+]
+dependencies = [
+    "cu-cli-core>=0.1.0.dev0,<0.2.0",
+    "azure-ai-contentunderstanding>=1.2.0b3",
+    "azure-identity>=1.19",
+    # Management-plane clients used by `cu analyzer copy` to resolve
+    # Foundry endpoint URLs / account names / ARM IDs to canonical
+    # (ARM-ID, region, endpoint) tuples for cross-resource copy.
+    "azure-mgmt-cognitiveservices>=13.5",
+    "click>=8.1",
+    "packaging>=23.2",
+    "requests>=2.31",
+    "rich>=13.7",
+    "rich-click>=1.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/Azure/content-understanding-toolkit/tree/main/cu-cli"
+Repository = "https://github.com/Azure/content-understanding-toolkit"
+Issues = "https://github.com/Azure/content-understanding-toolkit/issues"
+Documentation = "https://aka.ms/cu-doc"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    # Upper bounds pin the linter/type-checker rule sets that CI was validated
+    # against (ruff 0.16 and mypy 2.0 changed defaults); bump deliberately.
+    "mypy>=1.8,<2",
+    "ruff>=0.5,<0.16",
+    "tomli>=2.0; python_version < '3.11'",
+    "vcrpy>=6.0",
+]
+
+[project.scripts]
+cu = "cu_cli.cli:main"
+cu-cli = "cu_cli.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"cu_cli" = ["py.typed"]
+"cu_cli.resources" = [
+    "azd_template/azure.yaml",
+    "azd_template/README.md",
+    "azd_template/infra/*.bicep",
+    "azd_template/infra/*.json",
+    "azd_template/infra/modules/*.bicep",
+    "azd_template/hooks/*.ps1",
+    "azd_template/hooks/*.sh",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests", "../core/src", "../../../../internal"]
+addopts = "-q --import-mode=importlib"
+markers = [
+    "unit: fast offline tests; no external services or network calls",
+    "integration: cloud-gated tests; replays cassettes in CI (playback), hits a live endpoint with CU_TEST_REC_MODE=record/live",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Newer click / rich-click use 3.10+ syntax (match statements) internally; do
+# not type-check their source.
+module = ["click.*", "rich_click.*"]
+follow_imports = "skip"
