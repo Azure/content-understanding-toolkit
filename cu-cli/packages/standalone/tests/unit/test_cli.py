@@ -1185,7 +1185,7 @@ def test_service_command_rejects_malformed_environment_endpoint(monkeypatch):
 
 def test_upgrade_check_up_to_date(monkeypatch):
     monkeypatch.setattr("cu_cli.commands.upgrade.fetch_latest_version_detailed",
-                        lambda **_: ("0.1.0", "ok"))
+                        lambda **_: (version("cu-cli"), "ok"))
     res = _run("upgrade", "--check")
     assert res.exit_code == 0
     assert "up to date" in res.output
