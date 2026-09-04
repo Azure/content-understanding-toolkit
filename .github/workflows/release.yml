@@ -15,7 +15,7 @@ on:
         required: true
         type: string
       commit:
-        description: Exact 40-character commit SHA approved for release
+        description: Full 40-character main commit SHA to release
         required: true
         type: string
 
@@ -89,7 +89,7 @@ jobs:
         with:
           name: dist-${{ inputs.package }}-${{ inputs.version }}
           path: dist
-      - name: Publish approved distribution
+      - name: Publish selected distribution
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: dist/

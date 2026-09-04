@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Validate that a PyPI release request matches the approved source commit."""
+"""Validate that a PyPI release request matches the selected source commit."""
 
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ def validate_request_context(
         raise ValueError("expected commit must be a lowercase 40-character SHA")
     if expected_commit != actual_commit:
         raise ValueError(
-            f"approved commit {expected_commit} does not match workflow commit "
+            f"selected commit {expected_commit} does not match workflow commit "
             f"{actual_commit}"
         )
 
