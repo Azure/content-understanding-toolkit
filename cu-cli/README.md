@@ -59,10 +59,6 @@ cu --version
 cu --help
 ```
 
-Preview releases use the PEP 440 beta suffix, such as `0.1.0b1`. While only
-preview releases exist, the standard install command selects the latest
-available preview. Pin an exact version when reproducibility is required.
-
 macOS includes an unrelated system command named `cu`. Use the equivalent
 `cu-cli` executable on macOS:
 
