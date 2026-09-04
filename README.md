@@ -7,6 +7,7 @@ The **Azure Content Understanding Toolkit** is a set of tools that ease integrat
 | Tool | Location | Description |
 | --- | --- | --- |
 | **CU CLI** | [`cu-cli/`](cu-cli/README.md) | Analyze files, create and test custom analyzers, manage resource profiles and model defaults, and generate Azure infrastructure. Install with `pip install cu-cli`. |
+| **Prebuilt schema definitions** | [`prebuilt-schema/`](prebuilt-schema/README.md) | Browse domain-specific prebuilt analyzer schemas by API version, or use the [single-file analyzer index](prebuilt-schema/SUPPORTED_ANALYZERS.md). |
 
 More tools will be added over time.
 
