@@ -453,3 +453,15 @@ The standalone distribution is `cu-cli`. It depends on the separately built
 `cu-cli-core` implementation package in this same product tree. `cu-cli-core`
 is an internal implementation boundary for official CU command-line frontends;
 install and use `cu-cli` rather than importing the core package directly.
+
+## Telemetry
+
+CU CLI adds `cu-cli/<version>` to the standard Azure SDK `User-Agent` header on
+requests to the Azure Content Understanding service. Microsoft uses this
+identifier to understand CU CLI adoption. CU CLI does not add customer content
+or separate usage and analytics events to this telemetry.
+
+To remove the `cu-cli/<version>` identifier, set `CU_TELEMETRY=off` (also
+accepts `0`, `false`, or `no`) before running CU CLI. The Azure SDK continues to
+send its standard `User-Agent` as part of service requests. See the repository
+[data collection notice](../README.md#data-collection) for more information.
