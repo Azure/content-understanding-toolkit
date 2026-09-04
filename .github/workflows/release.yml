@@ -3,6 +3,13 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: Package index to publish to
+        required: true
+        type: choice
+        options:
+          - testpypi
+          - pypi
       package:
         description: Package to publish; publish core before cli
         required: true
@@ -23,7 +30,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: pypi-release-${{ inputs.package }}
+  group: ${{ inputs.target }}-release-${{ inputs.package }}
   cancel-in-progress: false
 
 defaults:
@@ -73,12 +80,33 @@ jobs:
           python -m twine check dist/*
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: dist-${{ inputs.package }}-${{ inputs.version }}
+          name: dist-${{ inputs.target }}-${{ inputs.package }}-${{ inputs.version }}
           path: cu-cli/dist/*
           if-no-files-found: error
 
-  publish:
+  publish-testpypi:
+    name: Publish ${{ inputs.package }} to TestPyPI
+    if: inputs.target == 'testpypi'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: dist-${{ inputs.target }}-${{ inputs.package }}-${{ inputs.version }}
+          path: dist
+      - name: Publish selected distribution
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
+          attestations: false
+
+  publish-pypi:
     name: Publish ${{ inputs.package }} to PyPI
+    if: inputs.target == 'pypi'
     needs: build
     runs-on: ubuntu-latest
     environment: pypi
@@ -87,7 +115,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: dist-${{ inputs.package }}-${{ inputs.version }}
+          name: dist-${{ inputs.target }}-${{ inputs.package }}-${{ inputs.version }}
           path: dist
       - name: Publish selected distribution
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
