@@ -491,7 +491,7 @@ def test_common_command_examples_explain_their_purpose(args, descriptions):
 def test_version():
     res = _run("--version")
     assert res.exit_code == 0
-    assert "0.2.0" in res.output
+    assert "0.1.0" in res.output
 
 
 def test_schema_template_stamps_default_version():
