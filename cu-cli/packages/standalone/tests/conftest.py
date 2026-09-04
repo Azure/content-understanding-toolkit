@@ -49,15 +49,16 @@ def _isolate_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture(autouse=True)
 def _fixed_cli_width(monkeypatch: pytest.MonkeyPatch):
-    """Pin rich-click's render width so CLI-output assertions are deterministic.
+    """Pin rich-click rendering so CLI-output assertions are deterministic.
 
     Rich derives the console width from the real std streams — a TTY locally
     (capped at ``MAX_WIDTH``) but none in CI, where it falls back to 80. That
-    makes help and error-panel text wrap at different points and breaks
-    substring checks. Forcing a fixed width removes the environment dependency
-    so local and CI render identically.
+    changes wrapping, while GitHub Actions forces terminal styling that inserts
+    ANSI sequences into captured output. Disable terminal styling and force a
+    fixed width so local and CI render identically.
     """
     import rich_click
 
+    monkeypatch.setattr(rich_click.rich_click, "FORCE_TERMINAL", False, raising=False)
     monkeypatch.setattr(rich_click.rich_click, "WIDTH", 100, raising=False)
     monkeypatch.setattr(rich_click.rich_click, "MAX_WIDTH", 100, raising=False)
