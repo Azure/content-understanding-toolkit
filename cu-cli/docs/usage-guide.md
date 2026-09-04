@@ -302,21 +302,33 @@ agent-instruction files. `azd up` performs the Azure deployment.
 
 ### Required access and sign-in
 
-The required Azure role depends on the provisioning path:
+The generated Bicep deploys at subscription scope. The required Azure role
+depends on what that deployment performs:
 
-- To create the resource group and Microsoft Foundry resource with the generated
-  subscription-scope template, use **Contributor** or **Owner** on the selected
-  subscription, or a custom role with equivalent resource-creation permissions.
-- To deploy models on an existing Microsoft Foundry resource, use **Contributor**
-  or **Owner**, or **Foundry Account Owner** or **Foundry Owner**, at an
-  applicable scope. **Reader** can discover a resource but cannot deploy models.
-- To let the generated template assign data-plane roles to your identity, you
-  also need **Owner** or **User Access Administrator** on the subscription. If
-  you don't have role-assignment permission, answer `n` to that wizard prompt;
-  the generated hook uses resource-key authentication instead.
+- For the complete new-resource path, use **Contributor** or **Owner** on the
+  selected subscription, or a custom role with equivalent permissions. This
+  creates the resource group, Microsoft Foundry resource and project, and
+  selected model deployments.
+- Contributor can create and manage resources but cannot create Azure role
+  assignments. To let the generated template also assign data-plane roles, add
+  **Role Based Access Control Administrator** or **User Access Administrator**
+  on the subscription, or use **Owner**. If you have Contributor only, answer
+  `n` to the role-assignment prompt; the generated hook uses resource-key
+  authentication instead.
+- The existing-resource path still runs a subscription-scope deployment. It
+  also needs permission on the existing resource to create any selected model
+  deployments. Contributor on the selected subscription satisfies both
+  requirements; an organization can instead provide a narrower custom role
+  containing the required deployment and resource actions.
 
-See [Role-based access control for Microsoft Foundry](https://learn.microsoft.com/azure/foundry/concepts/rbac-foundry)
-for current role capabilities. Your organization can use equivalent custom
+These management-plane roles are separate from Content Understanding data-plane
+access. With Entra authentication, **Cognitive Services User** on the Microsoft
+Foundry resource permits CU CLI to configure defaults and create, manage, and
+run analyzers. Owner and Contributor do not include that data-plane access.
+
+See [Azure built-in roles for AI and machine learning](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning#cognitive-services-user)
+and [Azure built-in privileged roles](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/privileged#contributor)
+for the current role definitions. Your organization can use equivalent custom
 roles.
 
 Before generation, run both sign-in commands because Azure CLI and azd maintain

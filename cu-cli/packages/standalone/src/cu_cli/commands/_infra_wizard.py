@@ -342,7 +342,8 @@ def _prompt_assign_roles() -> bool:
     console.print()
     console.print(
         "[bold]RBAC roles[/bold]: required for Entra-based auth from `cu`. "
-        "Needs Owner or User Access Administrator on the subscription. "
+        "Needs Owner, User Access Administrator, or Role Based Access Control "
+        "Administrator on the subscription. "
         "Pick 'n' if you only have Contributor — cu can use the resource "
         "API key instead."
     )

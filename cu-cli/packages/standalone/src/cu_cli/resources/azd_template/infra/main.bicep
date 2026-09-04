@@ -39,7 +39,7 @@ param principalId string
 @allowed([ 'User', 'ServicePrincipal' ])
 param principalType string = 'User'
 
-@description('If "true", assign Cognitive Services / OpenAI / Azure AI Developer roles to principalId. Requires Owner or User Access Administrator. Set to "false" when you only have Contributor.')
+@description('If "true", assign Cognitive Services / OpenAI / Azure AI Developer roles to principalId. Requires Owner, User Access Administrator, or Role Based Access Control Administrator. Set to "false" when you only have Contributor.')
 param assignRolesToPrincipal string = 'true'
 
 // Model deployments are loaded from infra/models.json so the file is

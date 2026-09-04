@@ -19,6 +19,26 @@ azd up
 That's it. No app code, no Container Apps, no AI Search — just the bits you
 need to start authoring analyzers.
 
+## Permissions required for `azd up`
+
+This template deploys at subscription scope. For the complete new-resource
+path, the identity running `azd up` needs **Contributor** or **Owner** on the
+selected subscription, or a custom role with equivalent permissions. This
+allows the deployment to create the resource group, Foundry resource and
+project, and selected model deployments.
+
+Contributor cannot create Azure role assignments. If the deployment should
+also assign the generated data-plane roles, the identity additionally needs
+**Role Based Access Control Administrator**, **User Access Administrator**, or
+**Owner** on the subscription. If you have Contributor only, set
+`AZURE_ASSIGN_ROLES` to `false`; the post-provision hook uses resource-key
+authentication instead.
+
+With Entra authentication, CU CLI also requires **Cognitive Services User** on
+the Microsoft Foundry resource to configure defaults and create, manage, and run
+analyzers. This is data-plane access and is not included in Owner or
+Contributor.
+
 ## What gets provisioned
 
 | Resource | Purpose |
