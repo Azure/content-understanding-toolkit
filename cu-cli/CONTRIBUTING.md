@@ -74,6 +74,9 @@ change, and keep the deterministic (no-LLM) contract of the CLI intact.
 - Ensure `pytest`, `ruff`, and `mypy` pass before requesting review.
 - Reference the related issue in your PR description.
 
+Maintainers should follow [RELEASING.md](RELEASING.md) for approval-gated PyPI
+publishing.
+
 ## Trademarks
 
 This project may contain trademarks or logos for projects, products, or services.
