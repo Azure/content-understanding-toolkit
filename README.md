@@ -38,13 +38,47 @@ Full docs: [aka.ms/cu-doc](https://aka.ms/cu-doc).
 
 ## Contributing
 
-This project welcomes contributions and suggestions. Per-tool contribution guides live in each tool directory (for example [`cu-cli/CONTRIBUTING.md`](cu-cli/CONTRIBUTING.md)).
-
-Most contributions require you to agree to a Microsoft Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for repository-wide contribution and
+Contributor License Agreement (CLA) guidance. Each tool may also provide
+development instructions in its own directory.
 
 ## Security
 
 See [SECURITY.md](SECURITY.md) for how to report security issues.
+
+## Support
+
+See [SUPPORT.md](SUPPORT.md) for toolkit support channels and the distinction
+between GitHub issues and Azure service support.
+
+## Code of conduct
+
+This project follows the
+[Microsoft Open Source Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Data collection
+
+The CU CLI adds `cu-cli/<version>` to the standard Azure SDK `User-Agent`
+header on requests to the Azure Content Understanding service. Microsoft uses
+this identifier to understand CU CLI adoption. CU CLI does not add customer
+content or separate usage and analytics events to this telemetry.
+
+To remove the `cu-cli/<version>` identifier, set `CU_TELEMETRY=off` (also
+accepts `0`, `false`, or `no`) before running CU CLI. The Azure SDK continues to
+send its standard `User-Agent` as part of service requests.
+
+**Data Collection.** The software may collect information about you and your
+use of the software and send it to Microsoft. Microsoft may use this
+information to provide services and improve our products and services. You may
+turn off the telemetry as described in the repository. There are also some
+features in the software that may enable you and Microsoft to collect data from
+users of your applications. If you use these features, you must comply with
+applicable law, including providing appropriate notices to users of your
+applications together with a copy of [Microsoft's privacy
+statement](https://go.microsoft.com/fwlink/?LinkID=824704). You can learn more
+about data collection and use in the help documentation and our privacy
+statement. Your use of the software operates as your consent to these
+practices.
 
 ## Trademarks
 
@@ -52,7 +86,7 @@ This project may contain trademarks or logos for projects, products, or services
 
 ## License
 
-Licensed under the [MIT License](LICENSE).
+Licensed under the [MIT License](LICENSE.txt).
 
 [cu_overview]: https://learn.microsoft.com/azure/ai-services/content-understanding/overview
 [cu_prebuilt_analyzers]: https://learn.microsoft.com/azure/ai-services/content-understanding/concepts/prebuilt-analyzers
