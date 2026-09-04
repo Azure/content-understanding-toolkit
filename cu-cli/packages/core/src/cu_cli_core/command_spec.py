@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Framework-neutral metadata for the shared CU command surface."""
 
 from __future__ import annotations

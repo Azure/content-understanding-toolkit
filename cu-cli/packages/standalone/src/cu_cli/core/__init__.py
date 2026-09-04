@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Click-free, reusable business logic for the CU CLI.
 
 Modules under ``cu_cli.core`` contain the real work behind each command: input

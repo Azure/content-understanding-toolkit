@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Shared Click option decorators and small render helpers for commands.
 
 This is command-layer (Click) glue, deliberately kept out of ``cu_cli.core``.

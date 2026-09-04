@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Telemetry.
 
 The CLI's only telemetry is the Azure-SDK ``User-Agent`` header on CU service

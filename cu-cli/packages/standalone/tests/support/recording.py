@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Record / playback test harness for cloud-gated CU CLI commands.
 
 Implements the three-mode model the dev plan borrows from the CU SDK:

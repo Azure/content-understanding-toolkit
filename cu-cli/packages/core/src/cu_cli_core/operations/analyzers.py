@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Client-injected analyzer operations."""
 
 from __future__ import annotations

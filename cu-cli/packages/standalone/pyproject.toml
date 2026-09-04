@@ -80,7 +80,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "tests", "../core/src", "../../../../internal"]
+pythonpath = ["src", "tests", "../core/src"]
 addopts = "-q --import-mode=importlib"
 markers = [
     "unit: fast offline tests; no external services or network calls",

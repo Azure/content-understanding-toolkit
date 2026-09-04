@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Unit tests for the Windows detached self-upgrade helper."""
 from __future__ import annotations
 

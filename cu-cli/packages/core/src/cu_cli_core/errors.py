@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Frontend-neutral CU error types."""
 
 from __future__ import annotations

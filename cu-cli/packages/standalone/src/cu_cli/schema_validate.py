@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Compatibility exports for schema validation now owned by ``cu-cli-core``."""
 
 from cu_cli_core.schema_validation import (

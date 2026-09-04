@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Shared profile operations with frontend-injected storage and discovered models."""
 
 from __future__ import annotations

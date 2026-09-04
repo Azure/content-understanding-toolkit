@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Friendly error handling for CLI commands.
 
 ``CuCliError`` is a ``ClickException`` that prints a single-line ``error:`` with

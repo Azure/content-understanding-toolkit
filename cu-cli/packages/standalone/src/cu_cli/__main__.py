@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Enable `python -m cu_cli`."""
 
 from __future__ import annotations

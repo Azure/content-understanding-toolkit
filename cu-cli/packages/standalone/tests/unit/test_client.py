@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Credential-hygiene warnings emitted by ``build_client``.
 
 Regression coverage for an ``--api-key`` value on argv leaking via

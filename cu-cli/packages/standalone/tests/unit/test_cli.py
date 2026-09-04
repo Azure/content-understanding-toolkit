@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """End-to-end CLI tests via Click's CliRunner (offline commands only)."""
 
 from __future__ import annotations

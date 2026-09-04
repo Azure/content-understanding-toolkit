@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Azure resource resolver for ``cu analyzer copy`` (and future cross-resource commands).
 
 Turns a user-supplied ``--from`` / ``--to`` selector (a Foundry endpoint URL, a

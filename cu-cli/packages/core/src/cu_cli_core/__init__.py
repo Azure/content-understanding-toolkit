@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Framework-neutral command contracts and operations for CU frontends."""
 
 from __future__ import annotations

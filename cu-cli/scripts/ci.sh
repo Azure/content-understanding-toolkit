@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 set -euo pipefail
 
 product_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -30,6 +33,11 @@ cd "${core_dir}"
 python -m pip install -e ".[dev]"
 cd "${cli_dir}"
 python -m pip install -e ".[dev]"
+end_section
+
+section "Copyright headers"
+cd "${product_dir}"
+python scripts/check_headers.py
 end_section
 
 section "Lint shared core (ruff)"

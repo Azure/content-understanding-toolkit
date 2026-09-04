@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Lazy Content Understanding client construction with injected credentials."""
 
 from __future__ import annotations

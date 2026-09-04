@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Unit tests for the Click-free analyzer service in :mod:`cu_cli.core.analyzers`."""
 
 from __future__ import annotations

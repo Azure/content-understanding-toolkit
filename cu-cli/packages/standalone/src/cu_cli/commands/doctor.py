@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """``cu doctor`` — verify endpoint, auth, api-version, and model deployments.
 
 Exits non-zero when a required check fails so scripts and coding agents can gate

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Windows-only detached self-upgrade helper.
 
 On Windows, a running ``cu.exe`` holds an exclusive file lock on its own

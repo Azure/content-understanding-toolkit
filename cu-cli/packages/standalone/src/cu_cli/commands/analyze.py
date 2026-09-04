@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """``cu analyze`` standalone adapter."""
 
 from __future__ import annotations

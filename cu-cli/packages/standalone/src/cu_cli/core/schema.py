@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Compatibility imports for schema operations now provided by cu-cli-core."""
 
 from cu_cli_core.schema import (

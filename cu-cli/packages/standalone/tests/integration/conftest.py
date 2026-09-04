@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Integration-test fixtures (cloud-gated: playback / record / live).
 
 The universal fixtures (_isolate_env, _fixed_cli_width) are inherited from the

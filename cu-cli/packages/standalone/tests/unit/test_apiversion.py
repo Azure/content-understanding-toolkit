@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """API-version resolution, support checks, and conflict handling."""
 
 from __future__ import annotations

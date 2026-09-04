@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Shared model setup guidance for Content Understanding commands."""
 
 from __future__ import annotations

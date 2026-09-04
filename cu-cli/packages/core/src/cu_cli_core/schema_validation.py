@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Local, structural schema validation against the bundled rules for an
 api-version.
 

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Infrastructure wizard for ``cu infra generate``.
 
 Drops a self-contained `azd` template under the requested output directory so

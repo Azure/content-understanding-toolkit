@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """The reusable analyze engine (Click-free, concurrent).
 
 This module owns everything about *running* analyze jobs: planning where each

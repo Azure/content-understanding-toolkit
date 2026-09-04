@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Shared rendering for command examples in terminal help."""
 
 from __future__ import annotations

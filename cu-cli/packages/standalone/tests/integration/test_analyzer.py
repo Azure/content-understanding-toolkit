@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Integration tests for analyzer lifecycle commands.
 
 Covers ``analyzer list/show/create/delete/test`` and the schema create ->

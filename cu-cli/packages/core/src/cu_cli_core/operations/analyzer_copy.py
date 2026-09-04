@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Analyzer management service (Click-free, client-injected).
 
 Thin wrappers over the CU SDK's analyzer CRUD that add the small pieces of

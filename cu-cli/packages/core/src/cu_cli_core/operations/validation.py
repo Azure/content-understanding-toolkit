@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Frontend-neutral schema validation."""
 
 from __future__ import annotations

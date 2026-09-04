@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """``cu upgrade`` — pip-convention self-update helper.
 
 ``cu upgrade --check`` reports whether the installed update provider has a newer

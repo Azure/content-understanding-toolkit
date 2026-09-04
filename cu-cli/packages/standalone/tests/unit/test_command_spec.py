@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Tests for the framework-neutral command registry and Click adapter."""
 
 from __future__ import annotations

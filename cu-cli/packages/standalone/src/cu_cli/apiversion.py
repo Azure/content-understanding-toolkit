@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Central API-version resolution and validation.
 
 The CLI explicitly tests ``2025-11-01`` and ``2026-06-01-preview``. Any

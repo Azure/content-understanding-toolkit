@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Unit tests for :mod:`cu_cli.core.inputs` — input expansion and result-path safety.
 
 Regression coverage for directory-walk cost hazards and result-filename

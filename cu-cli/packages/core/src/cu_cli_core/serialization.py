@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Convert CU and Azure SDK values into frontend-neutral plain values."""
 
 from __future__ import annotations

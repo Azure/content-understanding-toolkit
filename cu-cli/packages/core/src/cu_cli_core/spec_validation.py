@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Spec-backed structural validation against the bundled CU OpenAPI (Swagger 2.0).
 
 The CU service contract is published as ``ContentUnderstanding.json`` (Swagger

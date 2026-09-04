@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Unit tests for `cu doctor` — helpers and command flows (no network)."""
 
 from __future__ import annotations

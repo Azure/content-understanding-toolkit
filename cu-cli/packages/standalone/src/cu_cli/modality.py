@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Service-aligned file extensions used for safe discovery."""
 
 from __future__ import annotations

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 """Integration tests for starter-schema generation and validation commands.
 
 Covers offline and sample-derived ``analyzer schema create`` plus the
