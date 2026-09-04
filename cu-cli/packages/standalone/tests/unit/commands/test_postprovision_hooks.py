@@ -464,7 +464,7 @@ def test_postprovision_preserves_populated_default_profile(tmp_path, shell):
     assert result.returncode == 0, output
     assert "already has saved values; preserving it" in output
     assert "CU CLI profile: default" in output
-    assert "rerun cu provision with --force" in output
+    assert "rerun cu infra generate with --force" in output
     assert not any("profile set " in call for call in calls)
 
 

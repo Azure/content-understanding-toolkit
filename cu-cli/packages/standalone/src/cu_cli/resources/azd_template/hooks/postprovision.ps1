@@ -134,7 +134,7 @@ if ($profileStatus -eq 0 -and $profileSetupForce -ne 'true') {
   if ($LASTEXITCODE -ne 0) {
     Write-Host "Could not display the preserved default CU CLI profile." -ForegroundColor Yellow
   }
-  Write-Host "To replace its values, rerun cu provision with --force, then run azd up." -ForegroundColor Yellow
+  Write-Host "To replace its values, rerun cu infra generate with --force, then run azd up." -ForegroundColor Yellow
   return
 } elseif ($profileStatus -ne 0 -and $profileStatus -ne 3) {
   Write-Host "Could not inspect the default CU CLI profile; refusing to overwrite it." -ForegroundColor Yellow

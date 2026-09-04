@@ -18,7 +18,7 @@ def print_model_setup_steps(
         f"\n[bold]{heading}[/bold]\n\n"
         "1. If the required models are not already deployed, provision the "
         "recommended models:\n\n"
-        "   [cyan]cu provision \\\n"
+        "   [cyan]cu infra generate \\\n"
         f"     --foundry-endpoint {endpoint} \\\n"
         "     --models recommended[/cyan]\n\n"
         "   [cyan]cd provision\n"

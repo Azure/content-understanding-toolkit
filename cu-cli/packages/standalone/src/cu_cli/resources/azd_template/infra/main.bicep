@@ -32,18 +32,18 @@ param existingFoundryEndpoint string = ''
 @description('Resource group of the existing Foundry account when existingFoundryEndpoint is set.')
 param existingFoundryResourceGroup string = ''
 
-@description('Object ID of the user or service principal that should receive data-plane roles on the Foundry resource. azd injects AZURE_PRINCIPAL_ID automatically.')
+@description('Object ID of the user or service principal that should receive Cognitive Services User on the Foundry resource. azd injects AZURE_PRINCIPAL_ID automatically.')
 param principalId string
 
 @description('Type of principal for the role assignments.')
 @allowed([ 'User', 'ServicePrincipal' ])
 param principalType string = 'User'
 
-@description('If "true", assign Cognitive Services / OpenAI / Azure AI Developer roles to principalId. Requires Owner or User Access Administrator. Set to "false" when you only have Contributor.')
+@description('If "true", assign Cognitive Services User to principalId for Entra-authenticated CU operations. Requires Owner, User Access Administrator, or Role Based Access Control Administrator. Set to "false" when you only have Contributor.')
 param assignRolesToPrincipal string = 'true'
 
 // Model deployments are loaded from infra/models.json so the file is
-// hand-editable and round-trippable through other tooling (e.g. `cu provision`).
+// hand-editable and round-trippable through other tooling (e.g. `cu infra generate`).
 var modelDeployments = loadJsonContent('models.json')
 
 var foundryUniqueSuffix = toLower(uniqueString(subscription().id, environmentName, location))

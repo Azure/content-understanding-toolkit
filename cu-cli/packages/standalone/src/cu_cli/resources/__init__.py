@@ -1,1 +1,1 @@
-"""Bundled azd/Bicep resources emitted by ``cu provision``."""
+"""Bundled azd/Bicep resources emitted by ``cu infra generate``."""

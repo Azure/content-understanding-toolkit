@@ -91,6 +91,19 @@ def test_write_template_reuses_existing_template_for_new_env(tmp_path):
     assert (target / "keep.txt").read_text(encoding="utf-8") == "do not touch\n"
 
 
+def test_generated_template_assigns_only_cognitive_services_user(tmp_path):
+    target = tmp_path / "provision"
+
+    _write_template(target, _choices("none"), force=False)
+
+    foundry_bicep = (target / "infra" / "modules" / "foundry.bicep").read_text(
+        encoding="utf-8"
+    )
+    assert "a97b65f3-24c7-4388-baec-2e87135dc908" in foundry_bicep
+    assert "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd" not in foundry_bicep
+    assert "64702f94-c441-49e6-a78b-ef80e0188fee" not in foundry_bicep
+
+
 def test_write_template_preserves_existing_azd_state_without_force(tmp_path):
     target = tmp_path / "provision"
     (target / "infra").mkdir(parents=True)

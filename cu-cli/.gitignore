@@ -448,7 +448,7 @@ _local_only/
 *.result.md
 *.result.json
 
-# cu provision output (azd template, generated locally)
+# cu infra generate output (azd template, generated locally)
 provision/
 provision.*/
 .vscode/settings.json

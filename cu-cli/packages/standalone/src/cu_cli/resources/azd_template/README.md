@@ -19,6 +19,26 @@ azd up
 That's it. No app code, no Container Apps, no AI Search — just the bits you
 need to start authoring analyzers.
 
+## Permissions required for `azd up`
+
+This template deploys at subscription scope. For the complete new-resource
+path, the identity running `azd up` needs **Contributor** or **Owner** on the
+selected subscription, or a custom role with equivalent permissions. This
+allows the deployment to create the resource group, Foundry resource and
+project, and selected model deployments.
+
+Contributor cannot create Azure role assignments. If the deployment should
+also assign the generated data-plane role, the identity additionally needs
+**Role Based Access Control Administrator**, **User Access Administrator**, or
+**Owner** on the subscription. If you have Contributor only, set
+`AZURE_ASSIGN_ROLES` to `false`; the post-provision hook uses resource-key
+authentication instead.
+
+With Entra authentication, CU CLI also requires **Cognitive Services User** on
+the Microsoft Foundry resource to configure defaults and create, manage, and run
+analyzers. This is data-plane access and is not included in Owner or
+Contributor.
+
 ## What gets provisioned
 
 | Resource | Purpose |
@@ -27,7 +47,7 @@ need to start authoring analyzers.
 | `Microsoft.CognitiveServices/accounts` (kind `AIServices`) | Microsoft Foundry resource that exposes Content Understanding and other Foundry Tools through one endpoint |
 | `Microsoft.CognitiveServices/accounts/projects` | Foundry project (defaults to `proj-<env>`) |
 | `Microsoft.CognitiveServices/accounts/deployments` | Models selected from the live Content Understanding and Microsoft Foundry resource catalogs, or none |
-| Role assignments on the calling user | `Cognitive Services User`, `Cognitive Services OpenAI User`, `Azure AI Developer` — enough for Entra-auth data-plane access from `cu` |
+| Role assignment on the calling user | `Cognitive Services User` — permits CU CLI to configure defaults and create, manage, and run analyzers with Entra authentication |
 
 The resource endpoint is `https://<resource-name>.services.ai.azure.com/` — the same
 host that serves `/contentunderstanding/...`, `/openai/...`, and the Foundry
@@ -105,7 +125,7 @@ so the freshly provisioned resource is saved in the default CU CLI profile
 immediately after `azd up`, with `prebuilt-layout` configured as the default
 analyzer. The hook prints the redacted `cu profile show --name default` result.
 If the default profile already has saved values, the hook preserves it and
-explains how to rerun `cu provision --force` before `azd up` to replace values.
+explains how to rerun `cu infra generate --force` before `azd up` to replace values.
 
 The post-provision hook only prints the custom-analyzer workflow after it
 verifies succeeded chat completion and embeddings model deployments and

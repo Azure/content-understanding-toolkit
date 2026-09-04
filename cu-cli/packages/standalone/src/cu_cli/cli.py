@@ -18,7 +18,7 @@ from .commands.profile_cmd import profile_group
 from .commands.defaults import defaults_group
 from .commands.doctor import cmd_doctor
 from .commands.env_var import env_var_group
-from .commands.provision import cmd_provision
+from .commands.infra import infra_group
 from .commands.upgrade import cmd_upgrade
 from .commands._help import common_commands
 from .commands._infra_models import cmd_infra_models
@@ -50,7 +50,7 @@ _rc.HEADER_TEXT = (
 _rc.FOOTER_TEXT = ""
 
 _COMMAND_GROUPS: list = [
-    {"name": "Setup", "commands": ["provision", "profile", "doctor", "env-var"]},
+    {"name": "Setup", "commands": ["infra", "profile", "doctor", "env-var"]},
     {"name": "Content Understanding", "commands": ["analyze", "analyzer", "defaults"]},
     {"name": "Maintenance", "commands": ["upgrade"]},
 ]
@@ -63,9 +63,10 @@ CLI_HELP = (
     "returns an analyzer result with extracted content and structured fields. Use "
     "a ready-to-use prebuilt analyzer or create a custom analyzer for your scenario.\n\n"
     "[white] [/white]\n\n"
-    "`cu provision` provisions the required Microsoft Foundry resource, optionally "
-    "deploys selected supported large language models (LLMs) and embeddings models, "
-    "and configures Content Understanding defaults that map model names to deployments. "
+    "`cu infra generate` generates an azd/Bicep project used to provision the required "
+    "Microsoft Foundry resource, optionally deploy supported large language models "
+    "(LLMs) and embeddings models, and configure Content Understanding defaults. "
+    "The command writes files only; `azd up` performs the Azure provisioning. "
     "A local "
     "CU CLI profile stores the resource endpoint, authentication method, API version, "
     "and model mappings."
@@ -83,9 +84,9 @@ class OrderedHelpGroup(click.RichGroup):
     help=CLI_HELP,
     epilog=common_commands(
         (
-            "cu provision",
-            "Create and configure a Microsoft Foundry resource when you do not yet have "
-            "a configured Content Understanding endpoint.",
+            "cu infra generate",
+            "Generate the azd/Bicep project used to provision and configure a Microsoft "
+            "Foundry resource. Run `azd up` from the generated directory to provision it.",
         ),
         (
             "cu profile set endpoint https://<resource-name>.services.ai.azure.com/",
@@ -119,7 +120,7 @@ def main(ctx: click.Context) -> None:
         ctx.exit(0)
 
 
-main.add_command(cmd_provision)
+main.add_command(infra_group)
 main.add_command(profile_group)
 main.add_command(cmd_doctor)
 main.add_command(env_var_group)

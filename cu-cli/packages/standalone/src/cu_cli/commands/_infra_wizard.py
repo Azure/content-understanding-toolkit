@@ -1,4 +1,4 @@
-"""Infrastructure wizard for ``cu provision``.
+"""Infrastructure wizard for ``cu infra generate``.
 
 Drops a self-contained `azd` template under the requested output directory so
 the developer can run `azd up` to provision Foundry, discover the live
@@ -9,7 +9,7 @@ Surface:
                force) -> bool   # True if files were written
   - InfraChoices                                # dataclass of resolved inputs
 
-The wizard is *advisory* — calling code (`cu provision`) is responsible for
+The wizard is *advisory* — calling code (`cu infra generate`) is responsible for
 deciding whether to invoke it (TTY check, --no-infra flag, etc.).
 """
 
@@ -226,7 +226,7 @@ def _resolve_choices(
 def _prompt_env() -> str:
     console.print()
     console.print(
-        "[bold]`cu provision`[/bold] generates an [cyan]azd[/cyan] template. After "
+        "[bold]`cu infra generate`[/bold] generates an [cyan]azd[/cyan] template. After "
         "the Microsoft Foundry resource is provisioned, its post-provision script "
         "can optionally deploy supported chat completion and embeddings models for "
         "prebuilt analyzers such as [cyan]prebuilt-invoice[/cyan] and for custom analyzers."
@@ -342,7 +342,8 @@ def _prompt_assign_roles() -> bool:
     console.print()
     console.print(
         "[bold]RBAC roles[/bold]: required for Entra-based auth from `cu`. "
-        "Needs Owner or User Access Administrator on the subscription. "
+        "Needs Owner, User Access Administrator, or Role Based Access Control "
+        "Administrator on the subscription. "
         "Pick 'n' if you only have Contributor — cu can use the resource "
         "API key instead."
     )

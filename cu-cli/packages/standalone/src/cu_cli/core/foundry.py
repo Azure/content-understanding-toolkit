@@ -1,6 +1,6 @@
 """Foundry endpoint helpers (Click-free, pure).
 
-Small URL helpers shared by ``cu provision`` and ``cu profile`` for endpoint
+Small URL helpers shared by ``cu infra generate`` and ``cu profile`` for endpoint
 normalization and host-label matching. The az-CLI account-resolution functions
 that shell out live in the command modules (they are coupled to
 process/environment state); these pure helpers are the reusable core.

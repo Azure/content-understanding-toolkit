@@ -51,7 +51,7 @@ Requirements:
 
 - Python 3.10 or later
 - [Azure CLI](https://aka.ms/azcli) for login and resource discovery
-- [Azure Developer CLI](https://aka.ms/azd) only when using `cu provision`
+- [Azure Developer CLI](https://aka.ms/azd) only when using `cu infra generate`
 
 ```bash
 python -m pip install cu-cli
@@ -114,28 +114,68 @@ names and prebuilt analyzer model aliases to those deployment names. Setting
 these defaults once on the resource means analyze requests don't need to provide
 the mappings. CU CLI manages them with the `cu defaults` command.
 
-Configuring Content Understanding defaults requires the **Cognitive Services
-User** role on the Microsoft Foundry resource, even for the resource owner —
-Azure roles like Owner or Contributor don't automatically grant this
-data-plane permission. `cu provision` assigns this role for you. If you're
-pointing CU CLI at an existing resource instead, grant yourself this role
-first (Azure portal → your resource → **Access control (IAM)** → **Add role
-assignment** → **Cognitive Services User**), or `cu defaults set` and
-`cu provision` will fail with an authorization error.
-
 The `prebuilt-digitalParse`, `prebuilt-read`, and `prebuilt-layout` content
 extraction analyzers don't require a language model or embeddings model. Other
 prebuilt analyzers and custom analyzers require the model deployments supported
 by that analyzer.
 
-`cu provision` generates an azd/Bicep template; it does not run a deployment.
+`cu infra generate` generates an azd/Bicep template; it does not run a deployment.
 Run `azd up` from the generated `./provision` directory to provision the
 required Microsoft Foundry resource. It can also deploy selected supported LLMs
 and embeddings models, configure Content Understanding defaults, and configure
 the automatic `default` CU CLI profile with `prebuilt-layout` as its default
 analyzer.
 
-Before running `cu provision`, sign in to both command-line tools. Azure CLI and
+### Azure permissions
+
+`cu infra generate` only writes files and performs control-plane discovery. It
+does not deploy resources or call the Content Understanding data plane.
+
+The generated project supports two deployment paths:
+
+- **Create a new Microsoft Foundry resource**: `azd up` creates a new resource
+  group, a Microsoft Foundry resource (an Azure AI Services account with kind
+  `AIServices`), a Foundry project, and the selected model deployments.
+- **Use an existing Microsoft Foundry resource**: `azd up` reuses the selected
+  Microsoft Foundry resource and its resource group. It does not create another
+  resource group, Foundry resource, or Foundry project, but it does create the
+  selected model deployments on that resource.
+
+The generated Bicep deploys at subscription scope in both paths. Use the
+following scenarios to determine the required access:
+
+During the new-resource path, `azd up` can optionally assign **Cognitive
+Services User** on the new Microsoft Foundry resource to the current user or
+service principal running azd. CU CLI adds this role so that principal can use
+Microsoft Entra ID to configure Content Understanding defaults and create,
+manage, and run analyzers without a resource key.
+
+This role-assignment step only grants that principal Entra-based access to the
+new resource so CU CLI can authenticate without a resource key. It does not
+grant the role to other users or change access for any other identity. The
+existing-resource path does not create role assignments.
+
+| Scenario | Required access |
+| --- | --- |
+| Create a new Microsoft Foundry resource **and automatically assign roles** | One of:<ul><li><strong>Owner</strong> on the selected subscription</li><li><strong>Contributor</strong> plus <strong>Role Based Access Control Administrator</strong> on the selected subscription</li><li><strong>Contributor</strong> plus <strong>User Access Administrator</strong> on the selected subscription</li></ul> |
+| Create a new Microsoft Foundry resource **without assigning roles** | One of:<ul><li><strong>Contributor</strong> on the selected subscription</li><li><strong>Owner</strong> on the selected subscription</li><li>A custom role with equivalent permissions</li></ul>The identity needs permission to create the resource group, Foundry resource and project, and model deployments. If you have Contributor only, decline the role-assignment prompt; the generated post-provision step uses key authentication. |
+| Deploy selected models to an existing Microsoft Foundry resource by running the generated `azd up` project | One of:<ul><li><strong>Contributor</strong> on the selected subscription</li><li>A narrower custom role with the required subscription deployment and resource actions</li></ul>The identity needs permission to run the subscription-scope deployment and create model deployments on the selected Microsoft Foundry resource. This path does not create role assignments. |
+| Use an existing Microsoft Foundry resource with CU CLI and Microsoft Entra ID authentication | <ul><li><strong>Cognitive Services User</strong> on the Microsoft Foundry resource</li></ul>Contributor is not required. Cognitive Services User grants the Content Understanding data-plane access used to configure defaults and create, manage, and run analyzers. Owner and Contributor do not include this access. |
+| Use an existing Microsoft Foundry resource with CU CLI and key authentication | <ul><li>A valid resource key</li></ul>Contributor and <strong>Cognitive Services User</strong> are not required for requests authenticated with that key. |
+
+For a new Microsoft Foundry resource, `azd up` can assign **Cognitive Services
+User** when automatic role assignment is enabled. For an existing Microsoft
+Foundry resource, grant the identity this role first (Azure portal → the
+Microsoft Foundry resource → **Access control (IAM)** → **Add role assignment**
+→ **Cognitive Services User**). Without it, Entra-authenticated commands such
+as `cu defaults set`, `cu analyzer create`, and `cu analyze` fail with an
+authorization error.
+
+See [Azure built-in privileged roles](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/privileged#contributor)
+and [Cognitive Services User](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning#cognitive-services-user)
+for the current role definitions.
+
+Before running `cu infra generate`, sign in to both command-line tools. Azure CLI and
 Azure Developer CLI use separate sign-in sessions:
 
 ```bash
@@ -161,7 +201,7 @@ Choose `--models none` when you want to start with content extraction analyzers
 that don't require model deployments:
 
 ```bash
-cu provision --location <supported-region> --models none
+cu infra generate --location <supported-region> --models none
 cd provision
 azd up
 ```
@@ -173,12 +213,12 @@ models are deployed and Content Understanding defaults are set.
 
 ### Microsoft Foundry resource, but no required model deployments
 
-Point `cu provision` at the existing resource and let the generated
+Point `cu infra generate` at the existing resource and let the generated
 post-provision hook deploy a recommended LLM and embeddings model, configure
 Content Understanding defaults, and update the default CU CLI profile:
 
 ```bash
-cu provision \
+cu infra generate \
   --foundry-endpoint https://<resource-name>.services.ai.azure.com/ \
   --models recommended
 cd provision
@@ -191,7 +231,7 @@ for the current requirements. Omit `--models` to choose models interactively.
 
 ### Microsoft Foundry resource and model deployments already exist
 
-You do not need `cu provision`. Configure the local CU CLI profile first, then
+You do not need `cu infra generate`. Configure the local CU CLI profile first, then
 configure Content Understanding defaults. The command is `cu defaults set`
 (plural):
 
@@ -420,7 +460,7 @@ Further reading:
 | `cu analyzer` | List, show, create, copy, delete, and test analyzers; create and validate local analyzer schemas. |
 | `cu defaults` | Read or configure Content Understanding defaults that map models to deployments. |
 | `cu profile` | Manage local CU CLI endpoint, authentication, API, and model settings. |
-| `cu provision` | Provision the required Microsoft Foundry resource, optionally deploy selected supported LLMs and embeddings models, and configure Content Understanding defaults. |
+| `cu infra generate` | Generate an azd/Bicep project used to provision a Microsoft Foundry resource and configure Content Understanding. Run `azd up` to provision it. |
 | `cu doctor` | Verify the active CU CLI profile, authentication, and model readiness. |
 | `cu env-var` | Inspect supported environment-variable overrides. |
 
@@ -429,7 +469,7 @@ Every command provides examples:
 ```bash
 cu profile --help
 cu analyzer copy --help
-cu provision --help
+cu infra generate --help
 ```
 
 ## CU CLI usage guide
