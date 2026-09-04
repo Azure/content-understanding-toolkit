@@ -1,0 +1,32 @@
+name: SDL scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly scan so findings are caught even without code changes.
+    - cron: "0 6 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  microsoft-security-devops:
+    name: Microsoft Security DevOps (PoliCheck, CredScan, etc.)
+    # PoliCheck and CredScan are Windows-only Microsoft-proprietary tools.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Microsoft Security DevOps
+        uses: microsoft/security-devops-action@v1
+        id: msdo
+
+      - name: Upload results to Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.msdo.outputs.sarifFile }}
