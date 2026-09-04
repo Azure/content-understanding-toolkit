@@ -144,27 +144,24 @@ The generated project supports two deployment paths:
 The generated Bicep deploys at subscription scope in both paths. Use the
 following scenarios to determine the required access:
 
-During the new-resource path, `azd up` can optionally assign three roles on the
-new Microsoft Foundry resource to the current user or service principal running
-azd:
-
-- **Cognitive Services User**
-- **Cognitive Services OpenAI User**
-- **Azure AI Developer**
+During the new-resource path, `azd up` can optionally assign **Cognitive
+Services User** on the new Microsoft Foundry resource to the current user or
+service principal running azd. CU CLI adds this role so that principal can use
+Microsoft Entra ID to configure Content Understanding defaults and create,
+manage, and run analyzers without a resource key.
 
 This role-assignment step only grants that principal Entra-based access to the
 new resource so CU CLI can authenticate without a resource key. It does not
-grant these roles to other users. Apart from these assignments, the step does
-not change access for any other identity. The existing-resource path does not
-create role assignments.
+grant the role to other users or change access for any other identity. The
+existing-resource path does not create role assignments.
 
 | Scenario | Required access |
 | --- | --- |
 | Create a new Microsoft Foundry resource **and automatically assign roles** | One of:<ul><li><strong>Owner</strong> on the selected subscription</li><li><strong>Contributor</strong> plus <strong>Role Based Access Control Administrator</strong> on the selected subscription</li><li><strong>Contributor</strong> plus <strong>User Access Administrator</strong> on the selected subscription</li></ul> |
 | Create a new Microsoft Foundry resource **without assigning roles** | One of:<ul><li><strong>Contributor</strong> on the selected subscription</li><li><strong>Owner</strong> on the selected subscription</li><li>A custom role with equivalent permissions</li></ul>The identity needs permission to create the resource group, Foundry resource and project, and model deployments. If you have Contributor only, decline the role-assignment prompt; the generated post-provision step uses key authentication. |
-| Use an existing Microsoft Foundry resource | One of:<ul><li><strong>Contributor</strong> on the selected subscription</li><li>A narrower custom role with the required subscription deployment and resource actions</li></ul>The identity needs permission to run the subscription-scope deployment and create model deployments on the selected Microsoft Foundry resource. This path does not create role assignments. |
-| Use CU CLI with Microsoft Entra ID authentication | <ul><li><strong>Cognitive Services User</strong> on the Microsoft Foundry resource</li></ul>This grants the Content Understanding data-plane access used to configure defaults and create, manage, and run analyzers. Owner and Contributor do not include this access. |
-| Use CU CLI with key authentication | <ul><li>A valid resource key</li></ul><strong>Cognitive Services User</strong> is not required for requests authenticated with that key. |
+| Deploy selected models to an existing Microsoft Foundry resource by running the generated `azd up` project | One of:<ul><li><strong>Contributor</strong> on the selected subscription</li><li>A narrower custom role with the required subscription deployment and resource actions</li></ul>The identity needs permission to run the subscription-scope deployment and create model deployments on the selected Microsoft Foundry resource. This path does not create role assignments. |
+| Use an existing Microsoft Foundry resource with CU CLI and Microsoft Entra ID authentication | <ul><li><strong>Cognitive Services User</strong> on the Microsoft Foundry resource</li></ul>Contributor is not required. Cognitive Services User grants the Content Understanding data-plane access used to configure defaults and create, manage, and run analyzers. Owner and Contributor do not include this access. |
+| Use an existing Microsoft Foundry resource with CU CLI and key authentication | <ul><li>A valid resource key</li></ul>Contributor and <strong>Cognitive Services User</strong> are not required for requests authenticated with that key. |
 
 For a new Microsoft Foundry resource, `azd up` can assign **Cognitive Services
 User** when automatic role assignment is enabled. For an existing Microsoft

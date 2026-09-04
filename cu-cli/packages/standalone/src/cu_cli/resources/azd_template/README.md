@@ -28,7 +28,7 @@ allows the deployment to create the resource group, Foundry resource and
 project, and selected model deployments.
 
 Contributor cannot create Azure role assignments. If the deployment should
-also assign the generated data-plane roles, the identity additionally needs
+also assign the generated data-plane role, the identity additionally needs
 **Role Based Access Control Administrator**, **User Access Administrator**, or
 **Owner** on the subscription. If you have Contributor only, set
 `AZURE_ASSIGN_ROLES` to `false`; the post-provision hook uses resource-key
@@ -47,7 +47,7 @@ Contributor.
 | `Microsoft.CognitiveServices/accounts` (kind `AIServices`) | Microsoft Foundry resource that exposes Content Understanding and other Foundry Tools through one endpoint |
 | `Microsoft.CognitiveServices/accounts/projects` | Foundry project (defaults to `proj-<env>`) |
 | `Microsoft.CognitiveServices/accounts/deployments` | Models selected from the live Content Understanding and Microsoft Foundry resource catalogs, or none |
-| Role assignments on the calling user | `Cognitive Services User`, `Cognitive Services OpenAI User`, `Azure AI Developer` — enough for Entra-auth data-plane access from `cu` |
+| Role assignment on the calling user | `Cognitive Services User` — permits CU CLI to configure defaults and create, manage, and run analyzers with Entra authentication |
 
 The resource endpoint is `https://<resource-name>.services.ai.azure.com/` — the same
 host that serves `/contentunderstanding/...`, `/openai/...`, and the Foundry

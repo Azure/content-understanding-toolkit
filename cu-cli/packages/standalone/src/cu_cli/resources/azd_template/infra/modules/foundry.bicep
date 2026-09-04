@@ -93,9 +93,7 @@ resource deploymentsOnExisting 'Microsoft.CognitiveServices/accounts/deployments
 // Built-in Azure RBAC role GUIDs.
 // https://learn.microsoft.com/azure/role-based-access-control/built-in-roles
 var roleDefinitions = {
-  cognitiveServicesUser:        'a97b65f3-24c7-4388-baec-2e87135dc908'
-  cognitiveServicesOpenAIUser:  '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
-  azureAIDeveloper:             '64702f94-c441-49e6-a78b-ef80e0188fee'
+  cognitiveServicesUser: 'a97b65f3-24c7-4388-baec-2e87135dc908'
 }
 
 resource roleCogUserOnNew 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!useExistingFoundry && assignRolesToPrincipal && !empty(principalId)) {
@@ -103,26 +101,6 @@ resource roleCogUserOnNew 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   scope: accountNew
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.cognitiveServicesUser)
-    principalId: principalId
-    principalType: principalType
-  }
-}
-
-resource roleOpenAIUserOnNew 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!useExistingFoundry && assignRolesToPrincipal && !empty(principalId)) {
-  name: guid(accountNew.id, principalId, roleDefinitions.cognitiveServicesOpenAIUser)
-  scope: accountNew
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.cognitiveServicesOpenAIUser)
-    principalId: principalId
-    principalType: principalType
-  }
-}
-
-resource roleAIDeveloperOnNew 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!useExistingFoundry && assignRolesToPrincipal && !empty(principalId)) {
-  name: guid(accountNew.id, principalId, roleDefinitions.azureAIDeveloper)
-  scope: accountNew
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.azureAIDeveloper)
     principalId: principalId
     principalType: principalType
   }
