@@ -4,7 +4,7 @@
 Foundry Tools. Use it to provision the required Microsoft Foundry resource,
 optionally deploy selected supported large language models (LLMs) and embeddings
 models, configure Content Understanding defaults, analyze local files, manage
-analyzers, and configure CU CLI profiles.
+analyzers, and manage local configuration.
 
 > [!IMPORTANT]
 > CU CLI is in preview. Commands and package contracts may change before general
@@ -30,11 +30,6 @@ The Content Understanding documentation uses these terms:
 - A **custom analyzer** is an analyzer you define for your scenario. It uses a
   base analyzer for a content type and a field schema that describes the
   structured fields to extract.
-
-CU CLI also uses a **profile**, which is local CLI configuration for one
-Microsoft Foundry resource. A profile isn't an Azure resource. It tells CU CLI
-which resource endpoint, authentication method, and API version to use, and it
-can store model deployment mappings for Content Understanding defaults setup.
 
 CU CLI lets you configure a Microsoft Foundry resource, select an analyzer,
 submit local files, and save analyzer results without calling the REST API
@@ -71,10 +66,13 @@ cu-cli --help
 You need a Microsoft Foundry resource endpoint. LLM-based prebuilt analyzers and
 custom analyzers also need supported LLM and embeddings deployments plus Content
 Understanding defaults. If any of these are missing, follow the complete
-[Microsoft Foundry provisioning guide](docs/provisioning.md).
+[Microsoft Foundry provisioning guide](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/provisioning.md).
 
-For a ready resource, configure the automatic `default` profile. With Microsoft
-Entra ID authentication:
+A CU CLI profile is local configuration for one Microsoft Foundry resource. It
+stores the endpoint, authentication method, API version, and optional model
+deployment mappings; it is not an Azure resource. For a ready resource,
+configure the automatically available `default` profile. With Microsoft Entra
+ID authentication:
 
 ```bash
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
@@ -153,7 +151,7 @@ return the complete analyzer result as JSON. See the
 
 Domain-specific prebuilt analyzers, such as `prebuilt-invoice`, extract a
 defined set of structured fields. They require the model setup described in
-[Deploy models and configure defaults](docs/provisioning.md#deploy-models-and-configure-defaults):
+[Deploy models and configure defaults](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/provisioning.md#deploy-models-and-configure-defaults):
 
 ```bash
 cu analyze ./invoice.pdf --analyzer prebuilt-invoice --json
@@ -198,7 +196,7 @@ cu defaults show
 ```
 
 If the required mappings are missing, follow
-[Configure defaults manually](docs/provisioning.md#configure-defaults-manually)
+[Configure defaults manually](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/provisioning.md#configure-defaults-manually)
 to configure them. Then generate a starter analyzer schema from a representative
 file:
 
@@ -253,9 +251,9 @@ cu infra generate --help
 
 Use this README for installation, resource connection, and the first successful
 analysis. For Azure provisioning, see the
-[Microsoft Foundry provisioning guide](docs/provisioning.md). For detailed
+[Microsoft Foundry provisioning guide](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/provisioning.md). For detailed
 operational guidance, see the
-[CU CLI usage guide](docs/usage-guide.md). It explains:
+[CU CLI usage guide](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/usage-guide.md). It explains:
 
 - CU CLI profile resolution and environment-variable overrides
 - safe batch previews, output handling, and machine-readable reports
@@ -265,8 +263,8 @@ operational guidance, see the
 ## More information
 
 - [Azure Content Understanding documentation](https://aka.ms/cu-doc)
-- [Support](SUPPORT.md)
-- [Contributing](CONTRIBUTING.md)
+- [Support](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/SUPPORT.md)
+- [Contributing](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/CONTRIBUTING.md)
 
 The standalone distribution is `cu-cli`. It depends on the separately built
 `cu-cli-core` implementation package in this same product tree. `cu-cli-core`
@@ -283,7 +281,8 @@ or separate usage and analytics events to this telemetry.
 To remove the `cu-cli/<version>` identifier, set `CU_TELEMETRY=off` (also
 accepts `0`, `false`, or `no`) before running CU CLI. The Azure SDK continues to
 send its standard `User-Agent` as part of service requests. See the repository
-[data collection notice](../README.md#data-collection) for more information.
+[data collection notice](https://github.com/Azure/content-understanding-toolkit#data-collection)
+for more information.
 
 ## Use multiple profiles
 
@@ -302,5 +301,5 @@ cu analyzer list --profile prod
 cu doctor --profile prod
 ```
 
-See the [CU CLI profile usage guide](docs/usage-guide.md#cu-cli-profiles) for
+See the [CU CLI profile usage guide](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/usage-guide.md#cu-cli-profiles) for
 profile resolution and environment-variable overrides.

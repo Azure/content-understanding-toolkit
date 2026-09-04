@@ -28,6 +28,14 @@ def test_documented_custom_analyzer_ids_use_valid_format():
         assert "invoice_v1" in text
 
 
+def test_readme_links_are_absolute_for_pypi():
+    readme = _README.read_text(encoding="utf-8")
+    targets = re.findall(r"\[[^\]]+\]\(([^)]+)\)", readme)
+
+    assert targets
+    assert all(target.startswith(("https://", "http://")) for target in targets)
+
+
 def test_documented_provision_region_and_support_link_are_current():
     provisioning_guide = _PROVISIONING_GUIDE.read_text(encoding="utf-8")
 
