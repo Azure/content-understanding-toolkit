@@ -1,13 +1,13 @@
-# Supported Prebuilt Analyzers
+# Supported Domain-Specific Prebuilt Analyzers
 
-Use this single-file index to select an Azure Content Understanding prebuilt analyzer by API version, then follow its schema link to inspect the returned fields. Analyzer descriptions are sourced from the schema pages and the [official prebuilt analyzer documentation](https://learn.microsoft.com/azure/ai-services/content-understanding/concepts/prebuilt-analyzers).
+Use this single-file index to select an Azure Content Understanding domain-specific prebuilt analyzer by API version, then follow its schema link to inspect the returned fields. Analyzer descriptions are sourced from the schema pages and the [official prebuilt analyzer documentation](https://learn.microsoft.com/azure/ai-services/content-understanding/concepts/prebuilt-analyzers#domain-specific-analyzers-in-detail).
 
 ## Selection guidance
 
 1. Choose the API version first. `2025-11-01` is stable; `2026-06-01-preview` includes preview and year-versioned analyzers.
 2. Prefer the most specific analyzer when the document type is known.
 3. Use a composed family analyzer (`prebuilt-idDocument`, `prebuilt-mortgage.us`, `prebuilt-procurement`, `prebuilt-receipt`, or `prebuilt-tax.us`) when the family is known but the subtype is not.
-4. If no prebuilt analyzer fits, use `prebuilt-documentFieldSchema` to propose a schema as a starting point for a custom analyzer.
+4. If no domain-specific prebuilt analyzer fits, use a [utility analyzer](https://learn.microsoft.com/azure/ai-services/content-understanding/concepts/prebuilt-analyzers#utility-analyzers): `prebuilt-documentFields` to extract key-value pairs, or `prebuilt-documentFieldSchema` to propose a starting schema for a [custom analyzer](https://learn.microsoft.com/azure/ai-services/content-understanding/tutorial/create-custom-analyzer).
 
 Each table contains one row per unique analyzer ID. Duplicate receipt IDs use canonical links to the `receipt/` schemas rather than the `/procurement/` copies.
 
@@ -22,7 +22,6 @@ Stable, generally available API version.
 | `prebuilt-contract` | Business contracts and agreements. | [schema](2025-11-01/legal/contract.md) |
 | `prebuilt-creditCard` | Credit card statements. | [schema](2025-11-01/finance/creditCard.md) |
 | `prebuilt-creditMemo` | Credit memos and refund documents. | [schema](2025-11-01/procurement/creditMemo.md) |
-| `prebuilt-documentFieldSchema` | Analyzes documents to propose an appropriate field schema. | [schema](2025-11-01/schemaProposer/documentFieldSchema.md) |
 | `prebuilt-healthInsuranceCard.us` | US health insurance cards. | [schema](2025-11-01/personalRecords/healthInsuranceCard.us.md) |
 | `prebuilt-idDocument` | A composed prebuilt analyzer for various ID documentation types. | [schema](2025-11-01/idDocument/idDocument.md) |
 | `prebuilt-idDocument.generic` | Generic identification documents from various regions. | [schema](2025-11-01/idDocument/idDocument.generic.md) |
@@ -103,7 +102,6 @@ Preview API version.
 | `prebuilt-contract` | Business contracts and agreements. | [schema](2026-06-01-preview/legal/contract.md) |
 | `prebuilt-creditCard` | Credit card statements. | [schema](2026-06-01-preview/finance/creditCard.md) |
 | `prebuilt-creditMemo` | Credit memos and refund documents. | [schema](2026-06-01-preview/procurement/creditMemo.md) |
-| `prebuilt-documentFieldSchema` | Analyzes documents to propose an appropriate field schema. | [schema](2026-06-01-preview/schemaProposer/documentFieldSchema.md) |
 | `prebuilt-healthInsuranceCard.us` | US health insurance cards. | [schema](2026-06-01-preview/personalRecords/healthInsuranceCard.us.md) |
 | `prebuilt-idDocument` | A composed prebuilt analyzer for various ID documentation types. | [schema](2026-06-01-preview/idDocument/idDocument.md) |
 | `prebuilt-idDocument.generic` | Generic identification documents from various regions. | [schema](2026-06-01-preview/idDocument/idDocument.generic.md) |
