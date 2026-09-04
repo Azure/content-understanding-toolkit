@@ -37,7 +37,8 @@ def test_readme_links_are_absolute_for_pypi():
     assert all(target.startswith(("https://", "http://")) for target in targets)
 
 
-def test_pypi_readme_matches_product_readme():
+def test_pypi_readme_links_to_product_readme():
+    assert _PACKAGE_README.is_symlink()
     assert _PACKAGE_README.read_bytes() == _README.read_bytes()
 
 
