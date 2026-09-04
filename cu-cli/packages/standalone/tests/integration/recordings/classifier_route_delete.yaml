@@ -1,0 +1,66 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      User-Agent:
+      - cu-cli/0.1.0
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_tmpl_classifier_v1?api-version=2025-11-01
+  response:
+    body:
+      string: '{"analyzerId":"cu_cli_tmpl_classifier_v1","createdAt":"2026-07-23T17:43:08Z","lastModifiedAt":"2026-07-23T17:43:08Z","baseAnalyzerId":"prebuilt-document","config":{},"status":"ready","warnings":[]}'
+    headers:
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: DELETE
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_tmpl_classifier_v1?api-version=2025-11-01
+  response:
+    body:
+      string: ''
+    headers:
+      Content-Length:
+      - '0'
+      Date:
+      - Thu, 23 Jul 2026 17:43:59 GMT
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - d2e2da14-5d5a-4676-a60c-c07fff99e94a
+      request-id:
+      - d2e2da14-5d5a-4676-a60c-c07fff99e94a
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '69'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 204
+      message: No Content
+version: 1

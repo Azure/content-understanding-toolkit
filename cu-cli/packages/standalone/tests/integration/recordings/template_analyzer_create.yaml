@@ -1,0 +1,353 @@
+interactions:
+- request:
+    body: <binary-scrubbed>
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2657'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: PUT
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_tmpl_analyzer_v1?api-version=2025-11-01
+  response:
+    body:
+      string: '{"analyzerId":"cu_cli_tmpl_analyzer_v1","description":"TODO: one-sentence
+        description of what this document analyzer extracts.","createdAt":"2026-07-23T17:43:44Z","lastModifiedAt":"2026-07-23T17:43:44Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","estimateFieldSourceAndConfidence":true,"enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"name":"my_analyzer_v1_schema","description":"TODO:
+        one-sentence summary of the extraction.","fields":{"example_string_field":{"type":"string","method":"extract","description":"TODO:
+        replace this field. Describe specifically what to extract, where it appears
+        in the document, and any formatting expectations. Example: ''Full legal name
+        of the vendor as printed in the invoice header.''","estimateSourceAndConfidence":true},"example_number_field":{"type":"number","method":"extract","description":"TODO:
+        replace this field. Use for amounts, totals, rates, or other numeric values.
+        Example: ''Invoice total amount before tax.''","estimateSourceAndConfidence":true},"example_summary":{"type":"string","method":"generate","description":"Provide
+        a one-line summary of the document''s main purpose and key outcome. Keep it
+        concise and factual."},"example_classify_field":{"type":"string","method":"classify","description":"TODO:
+        replace this field. Use `classify` only when the value comes from a closed
+        set. Always include `enum`.","enum":["option_a","option_b","other"],"enumDescriptions":{"option_a":"Primary
+        category when the content strongly matches pattern A.","option_b":"Secondary
+        category when the content matches pattern B.","other":"Fallback category when
+        neither option_a nor option_b applies."}},"example_table_field":{"type":"array","method":"extract","description":"TODO:
+        replace this field. Use for repeating table rows such as line items, transactions,
+        or schedule entries.","items":{"type":"object","description":"One extracted
+        table row.","properties":{"column_description":{"type":"string","method":"extract","description":"Text
+        content for the description column."},"column_amount":{"type":"number","method":"extract","description":"Numeric
+        value in the amount column."},"column_category":{"type":"string","method":"classify","description":"Classify
+        the column value into a stable category used by downstream business logic.","enum":["product","service","fee","tax","other"],"enumDescriptions":{"product":"Physical
+        good or inventory item.","service":"Labor or service charge.","fee":"Non-tax
+        fee such as handling or processing.","tax":"Tax line item.","other":"Row does
+        not fit the predefined categories."}}}}}}},"warnings":[],"status":"creating","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"text-embedding-3-large"}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:44 GMT
+      Operation-Location:
+      - https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_tmpl_analyzer_v1/operations/9f64fcec-83f6-487c-9912-f4dea5d9dab4?api-version=2025-11-01
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 9f64fcec-83f6-487c-9912-f4dea5d9dab4
+      request-id:
+      - 9f64fcec-83f6-487c-9912-f4dea5d9dab4
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '120'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 201
+      message: Created
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_tmpl_analyzer_v1/operations/9f64fcec-83f6-487c-9912-f4dea5d9dab4?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"9f64fcec-83f6-487c-9912-f4dea5d9dab4","status":"Running","result":{"analyzerId":"cu_cli_tmpl_analyzer_v1","description":"TODO:
+        one-sentence description of what this document analyzer extracts.","createdAt":"2026-07-23T17:43:44Z","lastModifiedAt":"2026-07-23T17:43:44Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","estimateFieldSourceAndConfidence":true,"enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"name":"my_analyzer_v1_schema","description":"TODO:
+        one-sentence summary of the extraction.","fields":{"example_string_field":{"type":"string","method":"extract","description":"TODO:
+        replace this field. Describe specifically what to extract, where it appears
+        in the document, and any formatting expectations. Example: ''Full legal name
+        of the vendor as printed in the invoice header.''","estimateSourceAndConfidence":true},"example_number_field":{"type":"number","method":"extract","description":"TODO:
+        replace this field. Use for amounts, totals, rates, or other numeric values.
+        Example: ''Invoice total amount before tax.''","estimateSourceAndConfidence":true},"example_summary":{"type":"string","method":"generate","description":"Provide
+        a one-line summary of the document''s main purpose and key outcome. Keep it
+        concise and factual."},"example_classify_field":{"type":"string","method":"classify","description":"TODO:
+        replace this field. Use `classify` only when the value comes from a closed
+        set. Always include `enum`.","enum":["option_a","option_b","other"],"enumDescriptions":{"option_a":"Primary
+        category when the content strongly matches pattern A.","option_b":"Secondary
+        category when the content matches pattern B.","other":"Fallback category when
+        neither option_a nor option_b applies."}},"example_table_field":{"type":"array","method":"extract","description":"TODO:
+        replace this field. Use for repeating table rows such as line items, transactions,
+        or schedule entries.","items":{"type":"object","description":"One extracted
+        table row.","properties":{"column_description":{"type":"string","method":"extract","description":"Text
+        content for the description column."},"column_amount":{"type":"number","method":"extract","description":"Numeric
+        value in the amount column."},"column_category":{"type":"string","method":"classify","description":"Classify
+        the column value into a stable category used by downstream business logic.","enum":["product","service","fee","tax","other"],"enumDescriptions":{"product":"Physical
+        good or inventory item.","service":"Labor or service charge.","fee":"Non-tax
+        fee such as handling or processing.","tax":"Tax line item.","other":"Row does
+        not fit the predefined categories."}}}}}}},"warnings":[],"status":"creating","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"text-embedding-3-large"}}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:44 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 2a3b89e4-10f7-41ec-b74a-c4c55297dedb
+      request-id:
+      - 2a3b89e4-10f7-41ec-b74a-c4c55297dedb
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '64'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_tmpl_analyzer_v1/operations/9f64fcec-83f6-487c-9912-f4dea5d9dab4?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"9f64fcec-83f6-487c-9912-f4dea5d9dab4","status":"Running","result":{"analyzerId":"cu_cli_tmpl_analyzer_v1","description":"TODO:
+        one-sentence description of what this document analyzer extracts.","createdAt":"2026-07-23T17:43:44Z","lastModifiedAt":"2026-07-23T17:43:44Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","estimateFieldSourceAndConfidence":true,"enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"name":"my_analyzer_v1_schema","description":"TODO:
+        one-sentence summary of the extraction.","fields":{"example_string_field":{"type":"string","method":"extract","description":"TODO:
+        replace this field. Describe specifically what to extract, where it appears
+        in the document, and any formatting expectations. Example: ''Full legal name
+        of the vendor as printed in the invoice header.''","estimateSourceAndConfidence":true},"example_number_field":{"type":"number","method":"extract","description":"TODO:
+        replace this field. Use for amounts, totals, rates, or other numeric values.
+        Example: ''Invoice total amount before tax.''","estimateSourceAndConfidence":true},"example_summary":{"type":"string","method":"generate","description":"Provide
+        a one-line summary of the document''s main purpose and key outcome. Keep it
+        concise and factual."},"example_classify_field":{"type":"string","method":"classify","description":"TODO:
+        replace this field. Use `classify` only when the value comes from a closed
+        set. Always include `enum`.","enum":["option_a","option_b","other"],"enumDescriptions":{"option_a":"Primary
+        category when the content strongly matches pattern A.","option_b":"Secondary
+        category when the content matches pattern B.","other":"Fallback category when
+        neither option_a nor option_b applies."}},"example_table_field":{"type":"array","method":"extract","description":"TODO:
+        replace this field. Use for repeating table rows such as line items, transactions,
+        or schedule entries.","items":{"type":"object","description":"One extracted
+        table row.","properties":{"column_description":{"type":"string","method":"extract","description":"Text
+        content for the description column."},"column_amount":{"type":"number","method":"extract","description":"Numeric
+        value in the amount column."},"column_category":{"type":"string","method":"classify","description":"Classify
+        the column value into a stable category used by downstream business logic.","enum":["product","service","fee","tax","other"],"enumDescriptions":{"product":"Physical
+        good or inventory item.","service":"Labor or service charge.","fee":"Non-tax
+        fee such as handling or processing.","tax":"Tax line item.","other":"Row does
+        not fit the predefined categories."}}}}}}},"warnings":[],"status":"creating","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"text-embedding-3-large"}}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:45 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - f64e15fa-c984-4bad-8f2e-3c5bb65b7ec5
+      request-id:
+      - f64e15fa-c984-4bad-8f2e-3c5bb65b7ec5
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '56'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_tmpl_analyzer_v1/operations/9f64fcec-83f6-487c-9912-f4dea5d9dab4?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"9f64fcec-83f6-487c-9912-f4dea5d9dab4","status":"Succeeded","result":{"analyzerId":"cu_cli_tmpl_analyzer_v1","description":"TODO:
+        one-sentence description of what this document analyzer extracts.","createdAt":"2026-07-23T17:43:44Z","lastModifiedAt":"2026-07-23T17:43:44Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","estimateFieldSourceAndConfidence":true,"enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"name":"my_analyzer_v1_schema","description":"TODO:
+        one-sentence summary of the extraction.","fields":{"example_string_field":{"type":"string","method":"extract","description":"TODO:
+        replace this field. Describe specifically what to extract, where it appears
+        in the document, and any formatting expectations. Example: ''Full legal name
+        of the vendor as printed in the invoice header.''","estimateSourceAndConfidence":true},"example_number_field":{"type":"number","method":"extract","description":"TODO:
+        replace this field. Use for amounts, totals, rates, or other numeric values.
+        Example: ''Invoice total amount before tax.''","estimateSourceAndConfidence":true},"example_summary":{"type":"string","method":"generate","description":"Provide
+        a one-line summary of the document''s main purpose and key outcome. Keep it
+        concise and factual."},"example_classify_field":{"type":"string","method":"classify","description":"TODO:
+        replace this field. Use `classify` only when the value comes from a closed
+        set. Always include `enum`.","enum":["option_a","option_b","other"],"enumDescriptions":{"option_a":"Primary
+        category when the content strongly matches pattern A.","option_b":"Secondary
+        category when the content matches pattern B.","other":"Fallback category when
+        neither option_a nor option_b applies."}},"example_table_field":{"type":"array","method":"extract","description":"TODO:
+        replace this field. Use for repeating table rows such as line items, transactions,
+        or schedule entries.","items":{"type":"object","description":"One extracted
+        table row.","properties":{"column_description":{"type":"string","method":"extract","description":"Text
+        content for the description column."},"column_amount":{"type":"number","method":"extract","description":"Numeric
+        value in the amount column."},"column_category":{"type":"string","method":"classify","description":"Classify
+        the column value into a stable category used by downstream business logic.","enum":["product","service","fee","tax","other"],"enumDescriptions":{"product":"Physical
+        good or inventory item.","service":"Labor or service charge.","fee":"Non-tax
+        fee such as handling or processing.","tax":"Tax line item.","other":"Row does
+        not fit the predefined categories."}}}}}}},"warnings":[],"status":"ready","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"text-embedding-3-large"}}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:46 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - ca098fa8-e2f1-48cc-a934-98791f67a690
+      request-id:
+      - ca098fa8-e2f1-48cc-a934-98791f67a690
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '303'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/cu_cli_tmpl_analyzer_v1?api-version=2025-11-01
+  response:
+    body:
+      string: '{"analyzerId":"cu_cli_tmpl_analyzer_v1","description":"TODO: one-sentence
+        description of what this document analyzer extracts.","createdAt":"2026-07-23T17:43:44Z","lastModifiedAt":"2026-07-23T17:43:44Z","baseAnalyzerId":"prebuilt-document","config":{"returnDetails":false,"enableOcr":true,"enableLayout":true,"enableFormula":true,"enableFigureDescription":false,"enableFigureAnalysis":false,"chartFormat":"chartjs","tableFormat":"html","estimateFieldSourceAndConfidence":true,"enableSegment":false,"omitContent":false,"segmentPerPage":false,"annotationFormat":"markdown"},"fieldSchema":{"name":"my_analyzer_v1_schema","description":"TODO:
+        one-sentence summary of the extraction.","fields":{"example_string_field":{"type":"string","method":"extract","description":"TODO:
+        replace this field. Describe specifically what to extract, where it appears
+        in the document, and any formatting expectations. Example: ''Full legal name
+        of the vendor as printed in the invoice header.''","estimateSourceAndConfidence":true},"example_number_field":{"type":"number","method":"extract","description":"TODO:
+        replace this field. Use for amounts, totals, rates, or other numeric values.
+        Example: ''Invoice total amount before tax.''","estimateSourceAndConfidence":true},"example_summary":{"type":"string","method":"generate","description":"Provide
+        a one-line summary of the document''s main purpose and key outcome. Keep it
+        concise and factual."},"example_classify_field":{"type":"string","method":"classify","description":"TODO:
+        replace this field. Use `classify` only when the value comes from a closed
+        set. Always include `enum`.","enum":["option_a","option_b","other"],"enumDescriptions":{"option_a":"Primary
+        category when the content strongly matches pattern A.","option_b":"Secondary
+        category when the content matches pattern B.","other":"Fallback category when
+        neither option_a nor option_b applies."}},"example_table_field":{"type":"array","method":"extract","description":"TODO:
+        replace this field. Use for repeating table rows such as line items, transactions,
+        or schedule entries.","items":{"type":"object","description":"One extracted
+        table row.","properties":{"column_description":{"type":"string","method":"extract","description":"Text
+        content for the description column."},"column_amount":{"type":"number","method":"extract","description":"Numeric
+        value in the amount column."},"column_category":{"type":"string","method":"classify","description":"Classify
+        the column value into a stable category used by downstream business logic.","enum":["product","service","fee","tax","other"],"enumDescriptions":{"product":"Physical
+        good or inventory item.","service":"Labor or service charge.","fee":"Non-tax
+        fee such as handling or processing.","tax":"Tax line item.","other":"Row does
+        not fit the predefined categories."}}}}}}},"warnings":[],"status":"ready","processingLocation":"geography","supportedModels":{"completion":["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-5.2"],"embedding":["text-embedding-3-small","text-embedding-3-large","text-embedding-ada-002"]},"models":{"completion":"gpt-5.2","embedding":"text-embedding-3-large"}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Jul 2026 17:43:46 GMT
+      Transfer-Encoding:
+      - chunked
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 2ceb5b6f-370c-4059-973a-debc7f28223f
+      request-id:
+      - 2ceb5b6f-370c-4059-973a-debc7f28223f
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '17'
+      x-ms-region:
+      - East US 2
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

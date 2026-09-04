@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cu-cli-core"
+version = "0.1.0"
+description = "Framework-neutral command contracts and operations for Azure Content Understanding CLIs."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Microsoft Corporation" }]
+dependencies = [
+    "azure-ai-contentunderstanding>=1.2.0b3",
+    "jsonschema>=4.18",
+    "referencing>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "mypy>=1.8,<2",
+    "ruff>=0.5,<0.16",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"cu_cli_core" = [
+    "py.typed",
+    "resources/openapi/*/*.json",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q --import-mode=importlib"
+markers = [
+    "unit: fast offline tests; no external services or network calls",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
