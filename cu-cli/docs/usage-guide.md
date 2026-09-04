@@ -302,34 +302,10 @@ agent-instruction files. `azd up` performs the Azure deployment.
 
 ### Required access and sign-in
 
-The generated Bicep deploys at subscription scope. The required Azure role
-depends on what that deployment performs:
-
-- For the complete new-resource path, use **Contributor** or **Owner** on the
-  selected subscription, or a custom role with equivalent permissions. This
-  creates the resource group, Microsoft Foundry resource and project, and
-  selected model deployments.
-- Contributor can create and manage resources but cannot create Azure role
-  assignments. To let the generated template also assign data-plane roles, add
-  **Role Based Access Control Administrator** or **User Access Administrator**
-  on the subscription, or use **Owner**. If you have Contributor only, answer
-  `n` to the role-assignment prompt; the generated hook uses resource-key
-  authentication instead.
-- The existing-resource path still runs a subscription-scope deployment. It
-  also needs permission on the existing resource to create any selected model
-  deployments. Contributor on the selected subscription satisfies both
-  requirements; an organization can instead provide a narrower custom role
-  containing the required deployment and resource actions.
-
-These management-plane roles are separate from Content Understanding data-plane
-access. With Entra authentication, **Cognitive Services User** on the Microsoft
-Foundry resource permits CU CLI to configure defaults and create, manage, and
-run analyzers. Owner and Contributor do not include that data-plane access.
-
-See [Azure built-in roles for AI and machine learning](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning#cognitive-services-user)
-and [Azure built-in privileged roles](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/privileged#contributor)
-for the current role definitions. Your organization can use equivalent custom
-roles.
+Azure permissions are important because infrastructure deployment,
+role-assignment creation, and Content Understanding data-plane access are
+authorized separately. Before generating or deploying the project, review the
+complete [Azure permissions](../README.md#azure-permissions) guidance.
 
 Before generation, run both sign-in commands because Azure CLI and azd maintain
 separate sessions:
