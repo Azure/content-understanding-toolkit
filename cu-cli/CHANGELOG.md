@@ -4,8 +4,6 @@
 
 ### Features Added
 
-- Added complete framework-neutral command metadata, including doctor and
-	infrastructure commands, for generated standalone and Azure CLI frontends.
 - Added HTTPS and Azure Blob SAS URL inputs to `cu analyze` through repeatable
 	`--url` options or standalone positional shortcuts, including URL-based analysis
 	for large audio and video files without downloading them through the CLI.
