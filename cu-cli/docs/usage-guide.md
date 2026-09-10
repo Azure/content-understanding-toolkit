@@ -402,6 +402,8 @@ cu analyze \
   --dry-run
 ```
 
+### Analyze files in local directories
+
 Analyze immediate files in a directory:
 
 ```bash
