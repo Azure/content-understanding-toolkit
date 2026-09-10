@@ -16,7 +16,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from cu_cli_core.serialization import to_plain_value
 from rich.console import Console
@@ -123,7 +123,7 @@ def dump_json(
             raise
 
 
-def render_markdown(result: Any) -> str:
+def render_markdown(result: Any, level: str = "coarse") -> str:
     """Render an analysis result as LLM-friendly markdown via SDK helper only."""
     try:
         from azure.ai.contentunderstanding import to_llm_input
@@ -133,14 +133,28 @@ def render_markdown(result: Any) -> str:
             "Install azure-ai-contentunderstanding>=1.2.0b3."
         ) from exc
 
+    if isinstance(result, Mapping):  # raw service JSON: inject the <!--id--> anchors
+        from cu_cli_core.rich_markdown import unwrap_result, with_rich_markdown
+
+        result = _as_sdk_result(with_rich_markdown(unwrap_result(result), level))
     rendered = to_llm_input(result)
     if not isinstance(rendered, str) or not rendered.strip():
         raise EmptyMarkdownOutputError("to_llm_input() returned empty markdown output.")
     return rendered
 
 
-def dump_markdown(result: Any, out: "Path | None" = None) -> None:
-    body = render_markdown(result)
+def _as_sdk_result(result: Any) -> Any:
+    """Wrap a plain result dict (raw service JSON) in the SDK model when needed."""
+    if isinstance(result, Mapping):
+        from azure.ai.contentunderstanding.models import AnalysisResult
+        from cu_cli_core.rich_markdown import unwrap_result
+
+        return AnalysisResult(dict(unwrap_result(result)))
+    return result
+
+
+def dump_markdown(result: Any, out: "Path | None" = None, level: str = "coarse") -> None:
+    body = render_markdown(result, level)
     if out is None:
         sys.stdout.write(body)
         if not body.endswith("\n"):

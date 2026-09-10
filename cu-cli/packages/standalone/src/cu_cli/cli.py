@@ -16,6 +16,7 @@ import rich_click as click
 from . import __version__
 from .apiversion import API_VERSION_HELP
 from .commands.analyze import cmd_analyze
+from .commands.resolve import cmd_resolve
 from .commands.analyzer import analyzer_group
 from .commands.profile_cmd import profile_group
 from .commands.defaults import defaults_group
@@ -54,7 +55,7 @@ _rc.FOOTER_TEXT = ""
 
 _COMMAND_GROUPS: list = [
     {"name": "Setup", "commands": ["infra", "profile", "doctor", "env-var"]},
-    {"name": "Content Understanding", "commands": ["analyze", "analyzer", "defaults"]},
+    {"name": "Content Understanding", "commands": ["analyze", "resolve", "analyzer", "defaults"]},
     {"name": "Maintenance", "commands": ["upgrade"]},
 ]
 _rc.COMMAND_GROUPS = {"cu": _COMMAND_GROUPS, "cu-cli": _COMMAND_GROUPS}
@@ -102,9 +103,17 @@ class OrderedHelpGroup(click.RichGroup):
             "Content Understanding defaults.",
         ),
         (
-            "cu analyze sample.pdf -a prebuilt-layout",
-            "Analyze a PDF with the prebuilt-layout analyzer and print its extracted text, "
-            "document structure, and layout information as Markdown.",
+            "cu analyze sample.pdf",
+            "Analyze a document with the default analyzer (prebuilt-documentSearch) and print "
+            "Markdown with element anchors such as <!--s3--> and <!--t0-->.",
+        ),
+        (
+            "cu analyze sample.pdf --level paragraph --format both --output-file sample",
+            "Anchor every paragraph; write sample.md and sample.json from one call.",
+        ),
+        (
+            "cu resolve sample.json p30 --around 1",
+            "Page, bounding box and neighbours of paragraph 30 (offline).",
         ),
     )
     + "\n\n[white]For environment-variable help, run "
@@ -128,6 +137,7 @@ main.add_command(profile_group)
 main.add_command(cmd_doctor)
 main.add_command(env_var_group)
 main.add_command(cmd_analyze)
+main.add_command(cmd_resolve)
 main.add_command(analyzer_group)
 main.add_command(defaults_group)
 main.add_command(cmd_upgrade)

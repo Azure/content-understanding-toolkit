@@ -149,6 +149,24 @@ Use `--llm-input` to select this default view explicitly, or use `--json` to
 return the complete analyzer result as JSON. See the
 [Content Understanding SDK `to_llm_input()` helper](https://learn.microsoft.com/azure/ai-services/content-understanding/whats-new#april-2026).
 
+The Markdown carries a small anchor before every section, table and figure
+(`<!--s1-->`, `<!--t0-->`, `<!--f0-->`; `--level paragraph` adds `<!--p3-->` on
+every paragraph). `--format md|json|both` selects the view; `--format both --output-file NAME`
+writes `NAME.md` and `NAME.json` from one service call (`--json` is shorthand for `--format json`,
+`--llm-input` remains as an alias of `--format md`). `cu resolve`
+turns an anchor back into page, bounding box and surrounding text without
+calling the service:
+
+```bash
+cu analyze ./document.pdf --level paragraph --format both --output-file document
+cu resolve document.json p3 --around 1
+```
+
+Without `--analyzer`, `cu analyze` uses `CU_DEFAULT_ANALYZER`, the profile's
+`default_analyzer`, or — by file type — `prebuilt-documentSearch` for documents
+and `prebuilt-imageSearch` / `-audioSearch` / `-videoSearch` otherwise. Every
+result is deleted from the service right after retrieval (`--keep-result` keeps it).
+
 Domain-specific prebuilt analyzers, such as `prebuilt-invoice`, extract a
 defined set of structured fields. They require the model setup described in
 [Deploy models and configure defaults](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/provisioning.md#deploy-models-and-configure-defaults):

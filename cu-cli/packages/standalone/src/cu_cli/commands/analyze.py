@@ -34,6 +34,7 @@ from cu_cli_core.analysis import (
     analyze_one_with_usage,
 )
 from ..errors import CuCliError, _format_service_error, friendly_errors
+from ..modality import default_analyzer_for
 from ..exit_codes import GENERIC_ERROR, VALIDATION_FAILURE
 from ..output import (
     EmptyMarkdownOutputError,
@@ -103,6 +104,18 @@ def _friendly_analyze_error(exc: BaseException) -> str:
     if isinstance(exc, HttpResponseError):
         return _format_service_error(exc)
     return msg
+
+
+def _md_sibling(json_path: Path) -> Path:
+    """``x.result.json`` -> ``x.result.md``; ``x.json`` -> ``x.md``."""
+    return json_path.with_suffix(".md")
+
+
+def _strip_operation_id(envelope: object) -> object:
+    """The result is deleted on the service after retrieval; its id is of no further use."""
+    if isinstance(envelope, dict) and "id" in envelope and "result" in envelope:
+        return {k: v for k, v in envelope.items() if k != "id"}
+    return envelope
 
 
 def _resolve_on_exists(explicit: str | None) -> ExistingResultPolicy:
@@ -278,6 +291,7 @@ def _print_dry_run(plan: ExecutionPlan, *, analyzer_id: str) -> None:
                       "[white]\u00a0\u00a0Analyze immediate files in DIRECTORY and write all "
                       "result files to TARGET_DIR instead of beside each input.[/white]")
 @with_command_arguments(ANALYZE)
+@click.option("--llm-input", "llm_input", is_flag=True, hidden=True, help="Deprecated alias for --format md.")
 @CALLING_TIME_OPTION
 @click.option("-p", "--profile", "profile_name", default=None,
               help="Named CU CLI profile to use (from cu profile).")
@@ -297,8 +311,11 @@ def cmd_analyze(
     analyzer_id,
     out_dir,
     output_file,
-    llm_input,
+    output_format,
     json_output,
+    llm_input,
+    level,
+    keep_result,
     report_path,
     concurrency,
     on_existing,
@@ -316,6 +333,25 @@ def cmd_analyze(
     from cu_cli_core.contracts import ExistingResultPolicy, InputOrigin, ResultView
     from cu_cli_core.input_planning import plan_inputs, plan_outputs
 
+    if llm_input and (json_output or output_format == "json"):
+        raise CuCliError("--llm-input and --json cannot be combined.", exit_code=VALIDATION_FAILURE)
+    if json_output:
+        output_format = "json" if output_format in (None, "json") else output_format
+    both = output_format == "both"
+    json_output = output_format in ("json", "both")
+    if both and output_file is None and out_dir is None:
+        raise CuCliError(
+            "--format both needs a destination.",
+            hint="add --output-file NAME (writes NAME.md and NAME.json) or --output-dir DIR.",
+            exit_code=VALIDATION_FAILURE,
+        )
+    md_path: Path | None = None
+    if both and output_file is not None:  # NAME -> NAME.json (primary) + NAME.md
+        stem = Path(output_file)
+        if stem.suffix.lower() in (".json", ".md"):
+            stem = stem.with_suffix("")
+        output_file, md_path = stem.with_suffix(".json"), stem.with_suffix(".md")
+
     try:
         request = build_request(
             ANALYZE,
@@ -328,8 +364,10 @@ def cmd_analyze(
                 "analyzer_id": analyzer_id,
                 "inline": inline,
                 "show_usage": show_usage,
-                "llm_input": llm_input,
+                "output_format": output_format,
                 "json_output": json_output,
+                "level": level,
+                "keep_result": keep_result,
                 "output_file": output_file,
                 "out_dir": out_dir,
                 "on_existing": on_existing,
@@ -347,11 +385,6 @@ def cmd_analyze(
     if dry_run and assume_yes:
         raise CuCliError(
             "--dry-run and --yes cannot be combined.",
-            exit_code=VALIDATION_FAILURE,
-        )
-    if llm_input and json_output:
-        raise CuCliError(
-            "--llm-input and --json cannot be combined.",
             exit_code=VALIDATION_FAILURE,
         )
     if not dry_run and report_path is not None and report_path.exists():
@@ -379,14 +412,6 @@ def cmd_analyze(
         dry_run=dry_run,
     )
     profile = Profile.load(profile_name=profile_name)
-    effective_analyzer = request.analyzer or profile.default_analyzer
-    if not effective_analyzer:
-        raise CuCliError(
-            "no analyzer was specified and no default_analyzer is configured.",
-            hint="pass --analyzer ANALYZER_ID or run "
-                 "`cu profile set default_analyzer ANALYZER_ID`.",
-            exit_code=VALIDATION_FAILURE,
-        )
     skipped_report = [
         {
             "input": str(item.path),
@@ -400,12 +425,19 @@ def cmd_analyze(
     jobs = [
         AnalyzeJob(
             input_ref=str(output.source.path),
-            analyzer_id=effective_analyzer,
+            analyzer_id=default_analyzer_for(
+                output.source.path,
+                explicit=request.analyzer,
+                profile_default=profile.default_analyzer,
+            ),
             out_path=output.path,
             output_format=fmt,
+            delete_result=not keep_result,
         )
         for output in execution_plan.outputs
     ]
+    analyzers = sorted({job.analyzer_id for job in jobs})
+    effective_analyzer = analyzers[0] if len(analyzers) == 1 else "by file type: " + ", ".join(analyzers)
     to_stdout = len(jobs) == 1 and jobs[0].out_path is None
 
     effective_api_version = ensure_supported(api_version or profile.api_version)
@@ -519,10 +551,10 @@ def cmd_analyze(
         else:
             result = response
         if fmt == "json":
-            dump_json(result)
+            dump_json(_strip_operation_id(result))
         else:
             try:
-                dump_markdown(result)
+                dump_markdown(result, level=level)
             except EmptyMarkdownOutputError as exc:
                 error = _friendly_analyze_error(exc)
                 if report_path is not None:
@@ -579,10 +611,14 @@ def cmd_analyze(
             else:
                 result = outcome.result
             if fmt == "json":
-                dump_json(result, out=job.out_path)
+                dump_json(_strip_operation_id(result), out=job.out_path)
+                if both:
+                    sibling = md_path or _md_sibling(job.out_path)
+                    dump_markdown(result, out=sibling, level=level)
+                    written.append(sibling)
             else:
                 job.out_path.parent.mkdir(parents=True, exist_ok=True)
-                job.out_path.write_text(render_markdown(result), encoding="utf-8")
+                job.out_path.write_text(render_markdown(result, level), encoding="utf-8")
             written.append(job.out_path)
             results_report.append({"input": job.input_ref, "status": "succeeded",
                                    "analyzer": job.analyzer_id, "output": str(job.out_path)})
@@ -607,14 +643,17 @@ def cmd_analyze(
         _write_analyze_report(report_path, analyzer_id=effective_analyzer, fmt=fmt,
                               results=results_report + skipped_report)
         console.print(f"[dim]report:[/dim] wrote {report_path}")
-    summary = [f"[green]{len(written)} ok[/green]", f"[red]{len(failures)} failed[/red]"]
+    summary = [f"[green]{len(results_report) - len(failures)} ok[/green]", f"[red]{len(failures)} failed[/red]"]
     if skipped:
         summary.append(f"[dim]{len(skipped)} skipped (existing)[/dim]")
     if input_plan.skipped:
         summary.append(f"[dim]{len(input_plan.skipped)} skipped (discovery)[/dim]")
     console.print(", ".join(summary))
+    # Every payload went to a file, so stdout is free: list the files there, one per
+    # line, so a caller (or agent) learns the results without parsing diagnostics.
     for path in written:
-        console.print(f"  [green]->[/green] {path}")
+        sys.stdout.write(f"{path}\n")
+    sys.stdout.flush()
     if failures:
         # List every failed input and its full reason — never truncate the file
         # list or the per-file service message, so an agent can act on each one

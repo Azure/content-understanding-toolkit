@@ -236,7 +236,7 @@ ANALYZE = CommandSpec(
             aliases=("-a",),
             field="analyzer",
             parser_name="analyzer_id",
-            help="Analyzer name; defaults to the configured default analyzer.",
+            help="Analyzer name; defaults to CU_DEFAULT_ANALYZER, the profile default_analyzer, or prebuilt-documentSearch / prebuilt-*Search by file type.",
         ),
         ArgumentSpec(
             "--inline",
@@ -254,17 +254,39 @@ ANALYZE = CommandSpec(
             value_type=ArgumentValueType.BOOLEAN,
         ),
         ArgumentSpec(
-            "--llm-input",
-            field="llm_input",
-            parser_name="llm_input",
-            help="Return the analyzer result formatted as generative AI model input.",
-            value_type=ArgumentValueType.BOOLEAN,
+            "--format",
+            field="format",
+            parser_name="output_format",
+            help="View of the result to emit: md (Markdown with element anchors, the default), "
+                 "json (the complete result), or both (writes NAME.md and NAME.json; needs "
+                 "--output-file NAME or --output-dir).",
+            choices=("md", "json", "both"),
+            classification=SurfaceClassification.FRONTEND_PRESENTATION,
         ),
         ArgumentSpec(
             "--json",
             field="json",
             parser_name="json_output",
-            help="Emit the complete analyzer result as JSON.",
+            help="Shorthand for --format json.",
+            value_type=ArgumentValueType.BOOLEAN,
+            classification=SurfaceClassification.FRONTEND_PRESENTATION,
+        ),
+        ArgumentSpec(
+            "--level",
+            field="level",
+            parser_name="level",
+            help="Anchor granularity of the Markdown: coarse (sections, tables, figures) "
+                 "or paragraph (adds <!--p30--> on every paragraph).",
+            choices=("coarse", "paragraph"),
+            default="coarse",
+            classification=SurfaceClassification.FRONTEND_PRESENTATION,
+        ),
+        ArgumentSpec(
+            "--keep-result",
+            field="keep_result",
+            parser_name="keep_result",
+            help="Keep the analysis result on the service. By default it is deleted "
+                 "right after retrieval so it cannot be fetched again by operation id.",
             value_type=ArgumentValueType.BOOLEAN,
             classification=SurfaceClassification.FRONTEND_PRESENTATION,
         ),

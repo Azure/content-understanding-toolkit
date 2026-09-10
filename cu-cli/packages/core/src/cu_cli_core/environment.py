@@ -81,6 +81,14 @@ ENVIRONMENT_VARIABLES = (
         scope="analyze",
         precedence="Used when --on-existing is not specified.",
     ),
+    EnvironmentVariableSpec(
+        name="CU_DEFAULT_ANALYZER",
+        description="Analyzer used by analyze when --analyzer is not given.",
+        accepted_values="analyzer id, e.g. prebuilt-layout",
+        default="prebuilt-documentSearch (documents), prebuilt-*Search by file type",
+        scope="analyze",
+        precedence="Overrides the profile default_analyzer; --analyzer wins.",
+    ),
 )
 
 

@@ -40,6 +40,8 @@ pytestmark = pytest.mark.unit
 
 
 class _FakePoller:
+    operation_id = "operation-id"
+
     def __init__(self, result):
         self._result = result
         self.usage = {"documentPagesStandard": 1}
@@ -118,6 +120,54 @@ def test_analyze_bytes_and_one_use_the_client(tmp_path):
     f.write_bytes(b"%PDF-1.4 hello")
     job = AnalyzeJob(input_ref=str(f), analyzer_id="prebuilt-invoice")
     assert analyze_one(client, job)["analyzer_id"] == "prebuilt-invoice"
+
+
+class _DeletingClient(_FakeClient):
+    def __init__(self, *, fail_delete: bool = False):
+        super().__init__()
+        self.deleted: list[str] = []
+        self._fail_delete = fail_delete
+
+    def delete_result(self, operation_id):
+        if self._fail_delete:
+            raise RuntimeError("403 forbidden")
+        self.deleted.append(operation_id)
+
+
+def test_analyze_bytes_deletes_service_result_after_retrieval(tmp_path):
+    client = _DeletingClient()
+    response = analyze_bytes_with_usage(
+        client, "prebuilt-layout", b"abc", raw_json=True, delete_result=True
+    )
+    assert response.result["id"] == "operation-id"  # result was fetched first
+    assert client.deleted == ["operation-id"]
+    assert response.result_deleted is True
+
+    f = tmp_path / "doc.pdf"
+    f.write_bytes(b"%PDF-1.4 hello")
+    job = AnalyzeJob(
+        input_ref=str(f), analyzer_id="prebuilt-layout", output_format="json", delete_result=True
+    )
+    assert analyze_one(client, job)["status"] == "Succeeded"
+    assert client.deleted == ["operation-id", "operation-id"]
+
+
+def test_analyze_bytes_delete_failure_is_reported_not_raised():
+    client = _DeletingClient(fail_delete=True)
+    response = analyze_bytes_with_usage(
+        client, "prebuilt-layout", b"abc", raw_json=True, delete_result=True
+    )
+    assert response.result["status"] == "Succeeded"
+    assert response.result_deleted is False
+
+
+def test_analyze_bytes_keeps_result_by_default_and_deletes_markdown_runs_too():
+    client = _DeletingClient()
+    assert analyze_bytes_with_usage(client, "a", b"x", raw_json=True).result_deleted is None
+    assert client.deleted == []
+    # The markdown (non-raw) path deletes as well: the id comes from the poller.
+    assert analyze_bytes_with_usage(client, "a", b"x", delete_result=True).result_deleted is True
+    assert client.deleted == ["operation-id"]
 
 
 def test_analyze_bytes_and_one_inline_use_the_synchronous_client_method(tmp_path):

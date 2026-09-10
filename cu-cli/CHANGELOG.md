@@ -1,5 +1,15 @@
 # Release History
 
+## Unreleased
+
+### Features Added
+
+- `cu analyze` no longer requires a configured analyzer: without `--analyzer` it uses `CU_DEFAULT_ANALYZER`, the profile `default_analyzer`, or a default by file type (`prebuilt-documentSearch` for documents, `prebuilt-imageSearch` / `-audioSearch` / `-videoSearch` otherwise).
+- Markdown output carries `<!--s3-->` / `<!--t0-->` / `<!--f0-->` anchors before sections, tables and figures; `--level paragraph` adds `<!--p30-->` per paragraph. Removing the anchors yields the previous Markdown.
+- `--format md|json|both` selects the view (`--json` is shorthand for `--format json`; `--llm-input` stays as an alias of `--format md`). `--format both --output-file NAME` writes `NAME.md` and `NAME.json` from one service call; with `--output-dir` every input gets both `.result.md` and `.result.json`. Written file paths are printed to stdout, one per line.
+- Added `cu resolve RESULT.json ID... [--around N]` to turn anchors into page, bounding box, text and neighbouring blocks without a service call.
+- Analysis results are deleted on the service after retrieval (`--keep-result` opts out); the operation id is omitted from JSON output.
+
 ## 0.1.0b1 (2026-09-04)
 
 ### Features Added

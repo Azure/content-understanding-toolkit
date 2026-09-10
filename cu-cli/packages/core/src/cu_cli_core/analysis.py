@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional, Sequence
 
-RESULT_SUFFIXES = (".result.md", ".result.json")
+RESULT_SUFFIXES = (".result.rich.md", ".result.map.json", ".result.md", ".result.json")
 
 
 def result_path(path: str, fmt: str) -> Path:
@@ -45,6 +45,12 @@ class AnalyzeJob:
     analyzer_id: str
     out_path: Optional[Path] = None  # None => caller streams to stdout
     output_format: str = "markdown"
+    # Additional derived outputs keyed by view name ("rich", "markdown", "json",
+    # "map"); ``None`` streams to stdout. ``out_path`` stays the primary output.
+    outputs: dict = field(default_factory=dict)
+    # Delete the analysis result on the service once it has been retrieved so
+    # it cannot be fetched again by operation id (shared-endpoint isolation).
+    delete_result: bool = False
 
 
 @dataclass
@@ -66,6 +72,25 @@ class AnalyzeResponse:
 
     result: Any
     usage: Any = None
+    # ``True``/``False`` when a service-side delete of the result was attempted,
+    # ``None`` when it was not requested or no operation id was available.
+    result_deleted: Optional[bool] = None
+
+
+def delete_analysis_result(client: Any, operation_id: Optional[str]) -> Optional[bool]:
+    """Best-effort ``DELETE`` of a retrieved analysis result on the service.
+
+    Returns ``True`` on success, ``False`` when the service refused, ``None`` when
+    there was nothing to delete.
+    """
+    delete = getattr(client, "delete_result", None)
+    if not operation_id or delete is None:
+        return None
+    try:
+        delete(operation_id)
+    except Exception:  # noqa: BLE001 - a failed cleanup must not fail the analysis
+        return False
+    return True
 
 
 @dataclass
@@ -216,6 +241,7 @@ def analyze_bytes(
     data: bytes,
     *,
     raw_json: bool = False,
+    delete_result: bool = False,
 ) -> Any:
     """Analyze raw *data* with *analyzer_id* and return the completed result."""
     return analyze_bytes_with_usage(
@@ -223,6 +249,7 @@ def analyze_bytes(
         analyzer_id,
         data,
         raw_json=raw_json,
+        delete_result=delete_result,
     ).result
 
 
@@ -232,8 +259,13 @@ def analyze_bytes_with_usage(
     data: bytes,
     *,
     raw_json: bool = False,
+    delete_result: bool = False,
 ) -> AnalyzeResponse:
-    """Analyze raw *data* and retain usage metadata from the completed poller."""
+    """Analyze raw *data* and retain usage metadata from the completed poller.
+
+    With ``delete_result`` the stored result is deleted from the service right
+    after it has been fetched (operation id from the poller).
+    """
     kwargs = {"cls": _capture_raw_response} if raw_json else {}
     poller = client.begin_analyze_binary(
         analyzer_id=analyzer_id,
@@ -246,7 +278,15 @@ def analyze_bytes_with_usage(
         result = raw_response.json()
     else:
         result = completed
-    return AnalyzeResponse(result=result, usage=getattr(poller, "usage", None))
+    deleted: Optional[bool] = None
+    if delete_result:
+        operation_id = getattr(poller, "operation_id", None) or (
+            result.get("id") if isinstance(result, dict) else None
+        )
+        deleted = delete_analysis_result(client, operation_id)
+    return AnalyzeResponse(
+        result=result, usage=getattr(poller, "usage", None), result_deleted=deleted
+    )
 
 
 def analyze_bytes_inline(
@@ -296,6 +336,7 @@ def analyze_one(client: Any, job: AnalyzeJob) -> Any:
         job.analyzer_id,
         data,
         raw_json=job.output_format == "json",
+        delete_result=job.delete_result,
     )
 
 
@@ -318,6 +359,7 @@ def analyze_one_with_usage(client: Any, job: AnalyzeJob) -> AnalyzeResponse:
         job.analyzer_id,
         data,
         raw_json=job.output_format == "json",
+        delete_result=job.delete_result,
     )
 
 

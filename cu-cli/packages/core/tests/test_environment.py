@@ -25,6 +25,7 @@ def test_environment_registry_matches_preview_contract():
         "CU_TELEMETRY",
         "CU_NO_UPDATE_CHECK",
         "CU_ON_EXISTS",
+        "CU_DEFAULT_ANALYZER",
     }
     assert by_name["CU_API_KEY"].sensitive
     assert by_name["CU_ON_EXISTS"].accepted_values == "error | skip | reanalyze"

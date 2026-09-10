@@ -2,6 +2,13 @@
 
 The **Azure Content Understanding Toolkit** is a set of tools that ease integration with [Azure Content Understanding][cu_overview], together with experimental tools that capture best practices for building on Content Understanding.
 
+*Content Understanding is the Azure service that converts documents, images, audio and video
+into structured output. Prebuilt analyzers (invoices, contracts, tax forms, call recordings, …)
+or a custom field schema define what comes out: LLM-ready markdown, or JSON fields with
+confidence scores grounded to the source (page + bounding box). For documents it also returns
+the layout and hierarchy — sections, paragraphs, tables, figures with their positions — and
+generative descriptions of figures and charts, so the whole content of a page is usable as text.*
+
 ## Tools in this repository
 
 | Tool | Location | Description |
@@ -10,6 +17,40 @@ The **Azure Content Understanding Toolkit** is a set of tools that ease integrat
 | **Prebuilt schema definitions** | [`prebuilt-schema/`](prebuilt-schema/README.md) | Browse domain-specific prebuilt analyzer schemas by API version, or use the [single-file analyzer index](prebuilt-schema/SUPPORTED_ANALYZERS.md). |
 
 More tools will be added over time.
+
+## Quickstart
+
+```bash
+pip install cu-cli
+export CU_ENDPOINT=https://<resource>.services.ai.azure.com/   # az login is enough (or CU_API_KEY=…)
+cu analyze doc.pdf                                             # markdown → stdout
+cu analyze doc.pdf --format both --output-file doc             # doc.md + doc.json from one call
+```
+
+`cu analyze` picks the analyzer by file type (`prebuilt-documentSearch` for documents) and
+prints LLM-ready markdown: text, tables, a document summary, a description of every figure,
+and small anchors — `<!--s1-->` section, `<!--t0-->` table, `<!--f0-->` figure — that
+`cu resolve` turns back into page + bounding box, so an agent can cite where an answer came from.
+For an agent, write the outputs to files: it can then `grep`/`head` the markdown for the parts
+it needs instead of loading the whole document into its context, and `cu resolve` the anchors it cites.
+
+| I want to… | Command | You get |
+| --- | --- | --- |
+| Read a document as markdown | `cu analyze doc.pdf` | Text, tables, summary, figure descriptions, anchors on sections/tables/figures. Default `-a prebuilt-documentSearch`. |
+| …and cite any paragraph later | `cu analyze doc.pdf --level paragraph --format both --output-file doc` | `doc.md` with `<!--p3-->` per paragraph (+6.5 % tokens) and `doc.json`, one call; paths printed to stdout. |
+| Page + bbox + context of an anchor | `cu resolve doc.json p3 --around 1` | Page, bbox (inches), text, block before/after. Local, no endpoint. |
+| Cheapest OCR + layout, no LLM | `cu analyze doc.pdf -a prebuilt-layout` | Markdown + tables, no summary/figure text. `-a prebuilt-read` for text only. |
+| Which fields are in here? | `cu analyze doc.pdf -a prebuilt-documentFields` | LLM-proposed key/values. `-a prebuilt-documentFieldSchema` proposes a schema. |
+| Extract fields (invoice, receipt, ID…) | `cu analyze invoice.pdf -a prebuilt-invoice --json` | Typed fields with **confidence**, **bounding box** (`source`) and **span**. |
+| Extract *my* fields | `cu analyzer schema create --from-sample f.pdf …` → `cu analyzer create` | Custom analyzer — [Create a custom analyzer][cu_custom_analyzer]. |
+| Batch a folder | `cu analyze --source docs/ --format both --output-dir out/ --yes` | `NAME.result.md` + `.result.json` per file, paths on stdout. |
+
+`--format md` (default) or `json` selects the view, `--output-file` / `--output-dir` where it
+goes; `--format both` writes `NAME.md` and `NAME.json` from one service call and lists them on
+stdout. Audio and video give a timestamped transcript in the markdown; cite by time there —
+`cu resolve` is for documents and images. Every result is deleted from
+the service right after retrieval (`--keep-result` keeps it). No endpoint yet? See
+[Provision and configure Azure resources](cu-cli/README.md#provision-and-configure-azure-resources).
 
 ## What is Content Understanding?
 

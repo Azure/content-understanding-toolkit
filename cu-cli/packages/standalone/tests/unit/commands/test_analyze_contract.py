@@ -50,7 +50,7 @@ def test_help_exposes_preview_contract_and_removes_replaced_options():
         "--source",
         "--pattern",
         "--recursive",
-        "--llm-input",
+        "--format",
         "--json",
         "--output-file",
         "--output-dir",

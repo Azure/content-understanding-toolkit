@@ -11,7 +11,7 @@ interactions:
       Content-Length:
       - '151363'
       User-Agent:
-      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      - cu-cli/0.2.0 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.12.12 (macOS-26.6.2-arm64-arm-64bit)
       authorization:
       - REDACTED
       content-type:
@@ -22,30 +22,32 @@ interactions:
     uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/prebuilt-layout:analyzeBinary?api-version=2025-11-01&stringEncoding=codePoint
   response:
     body:
-      string: '{"id":"4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b","status":"Running","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-07-23T17:43:20Z","warnings":[],"contents":[]}}'
+      string: '{"id":"7e344da7-bce9-4ead-b4f3-003c56913eaa","status":"Running","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-09-03T14:54:28Z","warnings":[],"contents":[]}}'
     headers:
       Content-Type:
       - application/json
       Date:
-      - Thu, 23 Jul 2026 17:43:19 GMT
+      - Thu, 03 Sep 2026 14:54:28 GMT
       Operation-Location:
-      - https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b?api-version=2025-11-01
+      - https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/7e344da7-bce9-4ead-b4f3-003c56913eaa?api-version=2025-11-01
+      Request-Id:
+      - 7e344da7-bce9-4ead-b4f3-003c56913eaa
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
       - chunked
+      X-Content-Type-Options:
+      - nosniff
       api-supported-versions:
       - 2025-11-01,2026-06-01-preview
       apim-request-id:
-      - 4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b
-      request-id:
-      - 4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      x-content-type-options:
-      - nosniff
+      - 7e344da7-bce9-4ead-b4f3-003c56913eaa
       x-envoy-upstream-service-time:
-      - '114'
+      - '100'
       x-ms-region:
-      - East US 2
+      - Sweden Central
       x-ms-request-id:
       - REDACTED
     status:
@@ -61,37 +63,39 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      - cu-cli/0.2.0 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.12.12 (macOS-26.6.2-arm64-arm-64bit)
       authorization:
       - REDACTED
       x-ms-client-request-id:
       - REDACTED
     method: GET
-    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b?api-version=2025-11-01
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/7e344da7-bce9-4ead-b4f3-003c56913eaa?api-version=2025-11-01
   response:
     body:
-      string: '{"id":"4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b","status":"Running","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-07-23T17:43:20Z","warnings":[],"contents":[]}}'
+      string: '{"id":"7e344da7-bce9-4ead-b4f3-003c56913eaa","status":"Running","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-09-03T14:54:28Z","warnings":[],"contents":[]}}'
     headers:
       Content-Type:
       - application/json
       Date:
-      - Thu, 23 Jul 2026 17:43:20 GMT
+      - Thu, 03 Sep 2026 14:54:29 GMT
+      Request-Id:
+      - 53ff1b07-8977-4c9c-896b-ecc97abea957
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
       - chunked
+      X-Content-Type-Options:
+      - nosniff
       api-supported-versions:
       - 2025-11-01,2026-06-01-preview
       apim-request-id:
-      - fafea574-a3f0-4e2e-af0a-7a535b91142c
-      request-id:
-      - fafea574-a3f0-4e2e-af0a-7a535b91142c
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      x-content-type-options:
-      - nosniff
+      - 53ff1b07-8977-4c9c-896b-ecc97abea957
       x-envoy-upstream-service-time:
-      - '47'
+      - '276'
       x-ms-region:
-      - East US 2
+      - Sweden Central
       x-ms-request-id:
       - REDACTED
     status:
@@ -107,37 +111,39 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      - cu-cli/0.2.0 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.12.12 (macOS-26.6.2-arm64-arm-64bit)
       authorization:
       - REDACTED
       x-ms-client-request-id:
       - REDACTED
     method: GET
-    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b?api-version=2025-11-01
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/7e344da7-bce9-4ead-b4f3-003c56913eaa?api-version=2025-11-01
   response:
     body:
-      string: '{"id":"4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b","status":"Running","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-07-23T17:43:20Z","warnings":[],"contents":[]}}'
+      string: '{"id":"7e344da7-bce9-4ead-b4f3-003c56913eaa","status":"Running","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-09-03T14:54:28Z","warnings":[],"contents":[]}}'
     headers:
       Content-Type:
       - application/json
       Date:
-      - Thu, 23 Jul 2026 17:43:21 GMT
+      - Thu, 03 Sep 2026 14:54:29 GMT
+      Request-Id:
+      - e206be1c-c02f-49b9-afce-6755a2a8d066
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
       - chunked
+      X-Content-Type-Options:
+      - nosniff
       api-supported-versions:
       - 2025-11-01,2026-06-01-preview
       apim-request-id:
-      - 728a5a4a-1956-407c-ac60-28e450fdb88e
-      request-id:
-      - 728a5a4a-1956-407c-ac60-28e450fdb88e
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      x-content-type-options:
-      - nosniff
+      - e206be1c-c02f-49b9-afce-6755a2a8d066
       x-envoy-upstream-service-time:
-      - '41'
+      - '207'
       x-ms-region:
-      - East US 2
+      - Sweden Central
       x-ms-request-id:
       - REDACTED
     status:
@@ -153,154 +159,16 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
+      - cu-cli/0.2.0 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.12.12 (macOS-26.6.2-arm64-arm-64bit)
       authorization:
       - REDACTED
       x-ms-client-request-id:
       - REDACTED
     method: GET
-    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b?api-version=2025-11-01
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/7e344da7-bce9-4ead-b4f3-003c56913eaa?api-version=2025-11-01
   response:
     body:
-      string: '{"id":"4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b","status":"Running","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-07-23T17:43:20Z","warnings":[],"contents":[]}}'
-    headers:
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 23 Jul 2026 17:43:21 GMT
-      Transfer-Encoding:
-      - chunked
-      api-supported-versions:
-      - 2025-11-01,2026-06-01-preview
-      apim-request-id:
-      - b7832404-925b-4078-8d44-d8b31ceac2c0
-      request-id:
-      - b7832404-925b-4078-8d44-d8b31ceac2c0
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      x-content-type-options:
-      - nosniff
-      x-envoy-upstream-service-time:
-      - '19'
-      x-ms-region:
-      - East US 2
-      x-ms-request-id:
-      - REDACTED
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
-      authorization:
-      - REDACTED
-      x-ms-client-request-id:
-      - REDACTED
-    method: GET
-    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b?api-version=2025-11-01
-  response:
-    body:
-      string: '{"id":"4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b","status":"Running","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-07-23T17:43:20Z","warnings":[],"contents":[]}}'
-    headers:
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 23 Jul 2026 17:43:21 GMT
-      Transfer-Encoding:
-      - chunked
-      api-supported-versions:
-      - 2025-11-01,2026-06-01-preview
-      apim-request-id:
-      - fbf42e1a-72c3-4328-aaa5-c916bc6287a9
-      request-id:
-      - fbf42e1a-72c3-4328-aaa5-c916bc6287a9
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      x-content-type-options:
-      - nosniff
-      x-envoy-upstream-service-time:
-      - '30'
-      x-ms-region:
-      - East US 2
-      x-ms-request-id:
-      - REDACTED
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
-      authorization:
-      - REDACTED
-      x-ms-client-request-id:
-      - REDACTED
-    method: GET
-    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b?api-version=2025-11-01
-  response:
-    body:
-      string: '{"id":"4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b","status":"Running","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-07-23T17:43:20Z","warnings":[],"contents":[]}}'
-    headers:
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 23 Jul 2026 17:43:22 GMT
-      Transfer-Encoding:
-      - chunked
-      api-supported-versions:
-      - 2025-11-01,2026-06-01-preview
-      apim-request-id:
-      - 53a67d48-ff1b-4d0a-a6d0-6c497e5aeabf
-      request-id:
-      - 53a67d48-ff1b-4d0a-a6d0-6c497e5aeabf
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      x-content-type-options:
-      - nosniff
-      x-envoy-upstream-service-time:
-      - '216'
-      x-ms-region:
-      - East US 2
-      x-ms-request-id:
-      - REDACTED
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - cu-cli/0.1.0 azsdk-python-ai-contentunderstanding/1.2.0b2 Python/3.12.3 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.35)
-      authorization:
-      - REDACTED
-      x-ms-client-request-id:
-      - REDACTED
-    method: GET
-    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b?api-version=2025-11-01
-  response:
-    body:
-      string: '{"id":"4a294cf9-fc06-4bb0-ba12-c24bdf60ed5b","status":"Succeeded","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-07-23T17:43:20Z","stringEncoding":"codePoint","warnings":[],"contents":[{"path":"input1","markdown":"CONTOSO
+      string: '{"id":"7e344da7-bce9-4ead-b4f3-003c56913eaa","status":"Succeeded","result":{"analyzerId":"prebuilt-layout","apiVersion":"2025-11-01","createdAt":"2026-09-03T14:54:28Z","stringEncoding":"codePoint","warnings":[],"contents":[{"path":"input1","markdown":"CONTOSO
         LTD.\n\n\n# INVOICE\n\nContoso Headquarters\n123 456th St\nNew York, NY, 10001\n\nINVOICE:
         INV-100\n\nINVOICE DATE: 11/15/2019\n\nDUE DATE: 12/15/2019\n\nCUSTOMER NAME:
         MICROSOFT CORPORATION\n\nSERVICE PERIOD: 10/14/2019 - 11/14/2019\n\nCUSTOMER
@@ -395,26 +263,74 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Thu, 23 Jul 2026 17:43:22 GMT
+      - Thu, 03 Sep 2026 14:54:30 GMT
+      Request-Id:
+      - 119aa81c-6e9a-43a7-b76a-f2940a3b1163
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
       - chunked
+      X-Content-Type-Options:
+      - nosniff
       api-supported-versions:
       - 2025-11-01,2026-06-01-preview
       apim-request-id:
-      - 4d69f74f-e955-4bb6-b9e0-55d789d06e5d
-      request-id:
-      - 4d69f74f-e955-4bb6-b9e0-55d789d06e5d
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      x-content-type-options:
-      - nosniff
+      - 119aa81c-6e9a-43a7-b76a-f2940a3b1163
       x-envoy-upstream-service-time:
-      - '33'
+      - '41'
       x-ms-region:
-      - East US 2
+      - Sweden Central
       x-ms-request-id:
       - REDACTED
     status:
       code: 200
       message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - cu-cli/0.2.0 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.12.12 (macOS-26.6.2-arm64-arm-64bit)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: DELETE
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/7e344da7-bce9-4ead-b4f3-003c56913eaa?api-version=2025-11-01
+  response:
+    body:
+      string: ''
+    headers:
+      Date:
+      - Thu, 03 Sep 2026 14:54:30 GMT
+      Request-Id:
+      - fd57797a-8907-4ad0-9b7e-69a28f73dff8
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - fd57797a-8907-4ad0-9b7e-69a28f73dff8
+      x-envoy-upstream-service-time:
+      - '145'
+      x-ms-region:
+      - Sweden Central
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 204
+      message: No Content
 version: 1
