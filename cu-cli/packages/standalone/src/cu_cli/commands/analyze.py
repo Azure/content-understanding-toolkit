@@ -5,7 +5,9 @@
 
 from __future__ import annotations
 
+from bisect import bisect_right
 import os
+import re
 import sys
 from pathlib import Path
 import tempfile
@@ -33,6 +35,7 @@ from cu_cli_core.analysis import (
     analyze_one_inline_with_usage,
     analyze_one_with_usage,
 )
+from cu_cli_core.input_planning import redact_input_reference, redact_sensitive_urls
 from ..errors import CuCliError, _format_service_error, friendly_errors
 from ..exit_codes import GENERIC_ERROR, VALIDATION_FAILURE
 from ..output import (
@@ -76,6 +79,103 @@ def _run_one_inline_with_usage(client, job: AnalyzeJob):
     return job, analyze_one_inline_with_usage(client, job)
 
 
+def _redact_result_text(text: str, *, input_url: str) -> str:
+    return text.replace(input_url, redact_input_reference(input_url))
+
+
+def _redact_output_payload(value, *, input_url: str | None = None):
+    plain = to_jsonable(value)
+    if isinstance(plain, str):
+        if input_url is not None:
+            return _redact_result_text(plain, input_url=input_url)
+        return redact_sensitive_urls(plain)
+    if isinstance(plain, list):
+        return [_redact_output_payload(item, input_url=input_url) for item in plain]
+    if isinstance(plain, dict):
+        return {
+            key: _redact_output_payload(item, input_url=input_url)
+            for key, item in plain.items()
+        }
+    return plain
+
+
+def _remap_rendering_spans(content: dict, *, markdown: str, input_url: str) -> None:
+    """Keep Markdown character spans aligned in a redacted content result."""
+    starts = [match.start() for match in re.finditer(re.escape(input_url), markdown)]
+    if not starts:
+        return
+    replacement_length = len(redact_input_reference(input_url))
+    length_delta = replacement_length - len(input_url)
+    if not length_delta:
+        return
+
+    def remap(position: int) -> int:
+        index = bisect_right(starts, position) - 1
+        if index < 0:
+            return position
+        start = starts[index]
+        if position < start + len(input_url):
+            return start + index * length_delta + min(position - start, replacement_length)
+        return position + (index + 1) * length_delta
+
+    pending: list[object] = [content]
+    while pending:
+        element = pending.pop()
+        if isinstance(element, list):
+            pending.extend(element)
+            continue
+        if not isinstance(element, dict):
+            continue
+        spans = list(element.get("spans") or [])
+        if element.get("span") is not None:
+            spans.append(element["span"])
+        for span in spans:
+            offset = span.get("offset", 0)
+            end = offset + span.get("length", 0)
+            span["offset"] = remap(offset)
+            span["length"] = remap(end) - span["offset"]
+        for key, value in element.items():
+            if key in {"fields", "valueObject"}:
+                if isinstance(value, dict):
+                    pending.extend(value.values())
+            elif key not in {"span", "spans", "metadata", "valueJson", "content"}:
+                if isinstance(value, (dict, list)):
+                    pending.append(value)
+
+
+def _redact_remote_result(result, *, input_url: str):
+    plain = to_jsonable(result)
+    redacted = _redact_output_payload(plain, input_url=input_url)
+    if not isinstance(plain, dict):
+        return redacted
+    original_result = plain
+    redacted_result = redacted
+    if "contents" not in plain and isinstance(plain.get("result"), dict):
+        original_result = plain["result"]
+        redacted_result = redacted["result"]
+    for original, content in zip(
+        original_result.get("contents") or [], redacted_result.get("contents") or [], strict=True,
+    ):
+        _remap_rendering_spans(
+            content, markdown=original.get("markdown") or "", input_url=input_url,
+        )
+    return redacted
+
+
+def _render_remote_markdown(result, *, input_url: str) -> str:
+    from azure.ai.contentunderstanding.models import AnalysisResult
+
+    return render_markdown(AnalysisResult(_redact_remote_result(result, input_url=input_url)))
+
+
+def _write_markdown_stdout(result, *, input_url: str) -> None:
+    body = _render_remote_markdown(result, input_url=input_url)
+    sys.stdout.write(body)
+    if not body.endswith("\n"):
+        sys.stdout.write("\n")
+    sys.stdout.flush()
+
+
 def _print_usage(usage, *, input_ref: str) -> None:
     """Render request usage to stderr without changing data written to stdout."""
     console.print("\n")
@@ -83,14 +183,14 @@ def _print_usage(usage, *, input_ref: str) -> None:
     if usage is None:
         console.print("[dim]usage details were not returned by the service.[/dim]")
         return
-    console.print_json(data=to_jsonable(usage))
+    console.print_json(data=_redact_output_payload(usage))
 
 
 _ON_EXISTS_ENV = "CU_ON_EXISTS"
 _ON_EXISTS_CHOICES = ("error", "skip", "reanalyze")
 
 
-def _friendly_analyze_error(exc: BaseException) -> str:
+def _friendly_analyze_error(exc: BaseException, *, remote: bool = False) -> str:
     """Return a user-facing error string for per-input analyze failures."""
     msg = str(exc)
     if isinstance(exc, EmptyMarkdownOutputError) or (
@@ -101,8 +201,16 @@ def _friendly_analyze_error(exc: BaseException) -> str:
             "Retry with --json to inspect the complete result."
         )
     if isinstance(exc, HttpResponseError):
-        return _format_service_error(exc)
-    return msg
+        message = _format_service_error(exc)
+        if remote:
+            message += (
+                "\nRemote input could not be read. Verify that the HTTPS URL is reachable "
+                "by Content Understanding. For SAS URLs, grant read permission (sp=r), "
+                "check the start and expiry times, and allow access through storage "
+                "network rules."
+            )
+        return redact_sensitive_urls(message)
+    return redact_sensitive_urls(msg)
 
 
 def _resolve_on_exists(explicit: str | None) -> ExistingResultPolicy:
@@ -152,13 +260,39 @@ def _preflight_output_writes(
 
     directories = {path.parent.resolve(strict=False) for path in output_paths}
     for directory in sorted(directories, key=str):
-        directory.mkdir(parents=True, exist_ok=True)
+        invalid_ancestor = _find_non_directory_ancestor(directory)
+        if invalid_ancestor is not None:
+            raise CuCliError(
+                f"Output parent path is a file: {invalid_ancestor}",
+                hint="choose an output path whose existing parents are directories.",
+                exit_code=VALIDATION_FAILURE,
+            )
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            invalid_ancestor = _find_non_directory_ancestor(directory)
+            if invalid_ancestor is not None:
+                raise CuCliError(
+                    f"Output parent path is a file: {invalid_ancestor}",
+                    hint="choose an output path whose existing parents are directories.",
+                    exit_code=VALIDATION_FAILURE,
+                ) from exc
+            raise
         with tempfile.NamedTemporaryFile(
             dir=directory,
             prefix=".cu-write-check-",
         ) as handle:
             handle.write(b"\0")
             handle.flush()
+
+
+def _find_non_directory_ancestor(path: Path) -> Path | None:
+    candidate = path
+    while not candidate.exists() and candidate != candidate.parent:
+        candidate = candidate.parent
+    if candidate.exists() and not candidate.is_dir():
+        return candidate
+    return None
 
 
 def _write_analyze_report(path: Path, *, analyzer_id, fmt: str, results: list[dict]) -> None:
@@ -175,13 +309,13 @@ def _write_analyze_report(path: Path, *, analyzer_id, fmt: str, results: list[di
             counts[status] += 1
     counts["total"] = len(results)
     payload = dumps_json(
-        {
+        _redact_output_payload({
             "schema": "cu-cli/analyze-report/v1",
             "analyzer": analyzer_id,
             "result_view": "full" if fmt == "json" else "llm-input",
             "counts": counts,
             "results": results,
-        }
+        })
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
@@ -217,7 +351,7 @@ def _print_discovery_skips(input_plan: InputPlan) -> None:
 
 
 def _print_discovery(input_plan: InputPlan, *, analyzer_id: str) -> None:
-    console.print(f"[yellow]Found {len(input_plan.inputs)} files:[/yellow]")
+    console.print(f"[yellow]Found {len(input_plan.inputs)} inputs:[/yellow]")
     _print_extension_counts(input_plan)
     _print_discovery_skips(input_plan)
     console.print(f"\nAnalyzer: {analyzer_id}")
@@ -225,13 +359,13 @@ def _print_discovery(input_plan: InputPlan, *, analyzer_id: str) -> None:
 
 
 def _print_dry_run(plan: ExecutionPlan, *, analyzer_id: str) -> None:
-    from cu_cli_core.input_planning import redact_input_reference
-
     input_plan = plan.input_plan
     console.print("[bold cyan]Dry run[/bold cyan]")
-    console.print(
-        f"Selected: {len(input_plan.inputs)} file(s), {input_plan.total_bytes} byte(s)"
-    )
+    size_summary = f"{input_plan.total_bytes} known local byte(s)"
+    remote_input_count = sum(item.is_remote for item in input_plan.inputs)
+    if remote_input_count:
+        size_summary += f", {remote_input_count} remote size(s) unavailable"
+    console.print(f"Selected: {len(input_plan.inputs)} input(s), {size_summary}")
     _print_extension_counts(input_plan)
     _print_discovery_skips(input_plan)
     console.print(f"Analyzer: {analyzer_id}")
@@ -249,13 +383,14 @@ def _print_dry_run(plan: ExecutionPlan, *, analyzer_id: str) -> None:
                 else plan.on_existing.value
             )
             console.print(
-                f"  {_esc(redact_input_reference(output.source.reference))} -> {_esc(destination)} "
+                f"  {_esc(redact_input_reference(output.source.reference))} "
+                f"-> {_esc(destination)} "
                 f"[dim](exists: {action})[/dim]"
             )
         else:
             console.print(
-                f"  {_esc(redact_input_reference(output.source.reference))} -> "
-                f"{_esc(destination)}"
+                f"  {_esc(redact_input_reference(output.source.reference))} "
+                f"-> {_esc(destination)}"
             )
     console.print(
         "[dim]No service calls or files were written. Analyzer existence, "
@@ -277,6 +412,13 @@ def _print_dry_run(plan: ExecutionPlan, *, analyzer_id: str) -> None:
                       "[bold cyan]-a[/bold cyan] [bold magenta]prebuilt-invoice[/bold magenta] "
                       "[bold cyan]--json[/bold cyan]\n\n"
                       "[white]\u00a0\u00a0Extract invoice fields as JSON.[/white]\n\n"
+                      "[bold green]cu analyze[/bold green] "
+                      "[bold cyan]--url[/bold cyan] "
+                      "[bold yellow]HTTPS_URL[/bold yellow] "
+                      "[bold cyan]-a[/bold cyan] "
+                      "[bold magenta]prebuilt-layout[/bold magenta]\n\n"
+                      "[white]\u00a0\u00a0Analyze an HTTPS or SAS URL without a local "
+                      "download.[/white]\n\n"
                       "[bold green]cu analyze[/bold green] "
                       "[bold cyan]--source[/bold cyan] [bold yellow]DIRECTORY[/bold yellow] "
                       "[bold cyan]--output-dir[/bold cyan] [bold yellow]TARGET_DIR[/bold yellow]\n\n"
@@ -320,11 +462,7 @@ def cmd_analyze(
     show_calling_time,
 ) -> None:
     from cu_cli_core.contracts import ExistingResultPolicy, InputOrigin, ResultView
-    from cu_cli_core.input_planning import (
-        plan_inputs,
-        plan_outputs,
-        redact_input_reference,
-    )
+    from cu_cli_core.input_planning import plan_inputs, plan_outputs
 
     try:
         request = build_request(
@@ -521,10 +659,14 @@ def cmd_analyze(
                     report_path, analyzer_id=effective_analyzer, fmt=fmt,
                     results=[{"input": job.input_ref, "status": "failed",
                               "analyzer": job.analyzer_id,
-                              "error": _friendly_analyze_error(failure)}] + skipped_report,
+                              "error": _friendly_analyze_error(
+                                  failure, remote=job.input_url is not None
+                              )}] + skipped_report,
                 )
                 console.print(f"[dim]report:[/dim] wrote {report_path}")
-            raise failure
+            raise CuCliError(
+                _friendly_analyze_error(failure, remote=job.input_url is not None)
+            ) from failure
         response = batch_result.successes[0].result
         if show_usage:
             assert isinstance(response, AnalyzeResponse)
@@ -532,12 +674,18 @@ def cmd_analyze(
         else:
             result = response
         if fmt == "json":
-            dump_json(result)
+            dump_json(
+                _redact_remote_result(result, input_url=job.input_url)
+                if job.input_url is not None else result
+            )
         else:
             try:
-                dump_markdown(result)
+                if job.input_url is not None:
+                    _write_markdown_stdout(result, input_url=job.input_url)
+                else:
+                    dump_markdown(result)
             except EmptyMarkdownOutputError as exc:
-                error = _friendly_analyze_error(exc)
+                error = _friendly_analyze_error(exc, remote=job.input_url is not None)
                 if report_path is not None:
                     _write_analyze_report(
                         report_path,
@@ -571,14 +719,17 @@ def cmd_analyze(
     written: list[Path] = []
     results_report: list[dict] = []
     usage_results: list[tuple[str, object]] = []
-    console.print(f"[bold]analyze[/bold] {len(jobs)} file(s) -> "
+    console.print(f"[bold]analyze[/bold] {len(jobs)} input(s) -> "
                   f"{out_dir or 'alongside inputs'}")
 
     def _persist(outcome: AnalyzeOutcome) -> None:
         job = outcome.job
         if not outcome.ok:
             assert outcome.error is not None
-            err = _friendly_analyze_error(outcome.error)
+            err = _friendly_analyze_error(
+                outcome.error,
+                remote=job.input_url is not None,
+            )
             failures.append((job.input_ref, err))
             results_report.append({"input": job.input_ref, "status": "failed",
                                    "analyzer": job.analyzer_id, "error": err})
@@ -592,15 +743,26 @@ def cmd_analyze(
             else:
                 result = outcome.result
             if fmt == "json":
-                dump_json(result, out=job.out_path)
+                dump_json(
+                    _redact_remote_result(result, input_url=job.input_url)
+                    if job.input_url is not None else result,
+                    out=job.out_path,
+                )
             else:
                 job.out_path.parent.mkdir(parents=True, exist_ok=True)
-                job.out_path.write_text(render_markdown(result), encoding="utf-8")
+                job.out_path.write_text(
+                    (
+                        _render_remote_markdown(result, input_url=job.input_url)
+                        if job.input_url is not None
+                        else render_markdown(result)
+                    ),
+                    encoding="utf-8",
+                )
             written.append(job.out_path)
             results_report.append({"input": job.input_ref, "status": "succeeded",
                                    "analyzer": job.analyzer_id, "output": str(job.out_path)})
         except Exception as exc:  # noqa: BLE001 — per-file isolation on write
-            err = _friendly_analyze_error(exc)
+            err = _friendly_analyze_error(exc, remote=job.input_url is not None)
             failures.append((job.input_ref, err))
             results_report.append({"input": job.input_ref, "status": "failed",
                                    "analyzer": job.analyzer_id, "error": err})

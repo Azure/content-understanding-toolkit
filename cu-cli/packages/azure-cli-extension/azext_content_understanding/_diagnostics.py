@@ -9,13 +9,34 @@ from typing import Any
 
 from cu_cli_core.command_spec import ENV_VAR_LIST, build_request, resolve_identifier
 from cu_cli_core.defaults import (
+    PREBUILT_COMPLETION_KEY,
+    PREBUILT_COMPLETION_MINI_KEY,
+    PREBUILT_EMBEDDING_KEY,
     extract_model_deployments,
     is_defaults_not_set,
-    missing_model_requirements,
 )
 from cu_cli_core.profiles import Profile
 
 from ._client_factory import create_content_understanding_client, resolve_service_settings
+
+
+def _missing_model_requirements(mapped: dict[str, str]) -> list[str]:
+    """Return model requirements not satisfied by a defaults mapping."""
+
+    missing: list[str] = []
+    has_embedding = bool(mapped.get(PREBUILT_EMBEDDING_KEY)) or any(
+        name.startswith("text-embedding-") for name in mapped
+    )
+    if not has_embedding:
+        missing.append("an embeddings model (for example text-embedding-3-large)")
+    has_completion = bool(mapped.get(PREBUILT_COMPLETION_KEY)) or any(
+        not name.startswith(("prebuilt-analyzer-", "text-embedding-")) for name in mapped
+    )
+    if not has_completion:
+        missing.append("a supported large language model (LLM) deployment")
+    if not mapped.get(PREBUILT_COMPLETION_MINI_KEY):
+        missing.append("Content Understanding's prebuilt analyzer mapping for the selected LLM")
+    return missing
 
 
 def doctor(cmd: Any, **values: Any) -> dict[str, Any]:
@@ -39,7 +60,7 @@ def doctor(cmd: Any, **values: Any) -> dict[str, Any]:
         if not is_defaults_not_set(exc):
             raise
         mappings = {}
-    missing = missing_model_requirements(mappings)
+    missing = _missing_model_requirements(mappings)
     return {
         "ready": not missing,
         "endpoint": endpoint,

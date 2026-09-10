@@ -18,6 +18,7 @@ from cu_cli_core.command_spec import (
     DEFAULTS_SET,
     PROFILE_COPY,
     PROFILE_SET,
+    ArgumentValueType,
     CommandBindingError,
     SurfaceClassification,
     bind_command_arguments,
@@ -134,6 +135,26 @@ def test_analyzer_show_builds_normalized_typed_request():
     )
 
     assert request == AnalyzerShowRequest(name="invoice-v1")
+
+
+def test_analyze_named_urls_bind_as_repeatable_common_strings():
+    spec = get_command_spec("analyze")
+    argument = next(argument for argument in spec.arguments if argument.name == "--url")
+    urls = (
+        "https://example.test/video.mp4?sv=1&sp=r&sig=a%2Bb%3D",
+        "https://example.test/document.pdf",
+    )
+
+    request = build_request(spec, {"urls": list(urls)})
+
+    assert argument.classification is SurfaceClassification.COMMON
+    assert argument.value_type is ArgumentValueType.STRING
+    assert argument.repeatable is True
+    assert request.urls == urls
+    assert request.positional_inputs == ()
+    assert "--url" not in {
+        argument.name for argument in get_command_spec("analyzer", "test").arguments
+    }
 
 
 def test_profile_set_canonical_and_positional_forms_bind_identically():

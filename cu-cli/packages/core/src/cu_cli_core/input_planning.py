@@ -32,18 +32,21 @@ _RESULT_SUFFIX = {
     ResultView.FULL: ".result.json",
 }
 _GENERATED_RESULT_SUFFIXES = tuple(_RESULT_SUFFIX.values())
+_MAX_GENERATED_RESULT_NAME_BYTES = 240
 _MAX_URL_LENGTH = 8192
 _WINDOWS_DRIVE_PATH = re.compile(r"^[a-zA-Z]:[\\/]")
 _WINDOWS_RESERVED_NAMES = {
-    "CON", "PRN", "AUX", "NUL",
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
     *(f"COM{number}" for number in range(1, 10)),
     *(f"LPT{number}" for number in range(1, 10)),
 }
 
 
 def redact_input_reference(value: str | Path) -> str:
-    """Return an input reference safe for diagnostics and persisted reports."""
-
+    """Return an input reference that is safe to display or persist."""
     text = os.fspath(value)
     try:
         parsed = urlsplit(text)
@@ -55,28 +58,37 @@ def redact_input_reference(value: str | Path) -> str:
         if separator and "@" in location:
             base = f"{scheme}://{location.rsplit('@', 1)[-1]}"
         return f"{base}?REDACTED" if "?" in text else base
-    if parsed.scheme.lower() not in {"http", "https"} and "://" not in text:
+    if (
+        parsed.scheme.lower() not in {"http", "https"}
+        and "://" not in text
+    ):
         return text
     netloc = parsed.netloc.rsplit("@", 1)[-1]
     query = "REDACTED" if parsed.query else ""
     return urlunsplit((parsed.scheme, netloc, parsed.path, query, ""))
 
 
-_HTTPS_URL_IN_TEXT = re.compile(r"https://[^\s\"'<>]+", re.IGNORECASE)
+_HTTPS_URL_IN_TEXT = re.compile(r"https://[^\s\"<>]+", re.IGNORECASE)
 
 
 def redact_sensitive_urls(text: str) -> str:
     """Redact query strings from HTTPS URLs embedded in arbitrary text."""
-
     return _HTTPS_URL_IN_TEXT.sub(
         lambda match: redact_input_reference(match.group(0)),
         text,
     )
 
 
-def _validated_https_url(value: str, *, option: str) -> str:
+def _validated_https_url(value: str, *, option: str) -> str | None:
+    """Return an HTTPS URL unchanged, or ``None`` for a local path."""
     if _WINDOWS_DRIVE_PATH.match(value):
-        raise ValidationError(f"{option} must be an absolute HTTPS URL.")
+        return None
+    lowered = value.lower()
+    url_like = "://" in value or lowered.startswith(("http:", "https:"))
+    if not url_like:
+        return None
+    if "://" not in value and Path(value).exists():
+        return None
     if any(character.isspace() for character in value):
         raise ValidationError(
             f"{option} is not a valid URL.",
@@ -92,8 +104,9 @@ def _validated_https_url(value: str, *, option: str) -> str:
             hint="provide an absolute HTTPS URL such as https://host/path/file.pdf.",
         ) from exc
     if parsed.scheme.lower() != "https":
+        scheme = parsed.scheme or "(missing)"
         raise ValidationError(
-            f"{option} uses unsupported URL scheme '{parsed.scheme or '(missing)'}'.",
+            f"{option} uses unsupported URL scheme '{scheme}'.",
             hint="Content Understanding remote inputs require an HTTPS URL.",
         )
     if not parsed.netloc or not hostname:
@@ -127,7 +140,7 @@ def _reject_direct_duplicates(values: Sequence[str | Path], option: str) -> None
     rendered = [os.fspath(value) for value in values]
     duplicates = sorted(value for value, count in Counter(rendered).items() if count > 1)
     if duplicates:
-        joined = ", ".join(duplicates)
+        joined = ", ".join(redact_input_reference(value) for value in duplicates)
         raise UsageError(f"{option} was provided more than once for: {joined}")
 
 
@@ -195,7 +208,7 @@ def plan_inputs(
     pattern: str | None = None,
     recursive: bool = False,
 ) -> InputPlan:
-    """Validate and expand one invocation's local input selection."""
+    """Validate and expand one invocation's local or remote input selection."""
     if positional and (files or sources or urls):
         conflicts = []
         if files:
@@ -209,6 +222,8 @@ def plan_inputs(
         )
     if files and sources:
         raise UsageError("--file and --source cannot be combined.")
+    if urls and (files or sources):
+        raise UsageError("--url cannot be combined with --file or --source.")
     if pattern is not None and not sources:
         raise UsageError("--pattern is valid only with --source.")
     if not positional and not files and not sources and not urls:
@@ -218,10 +233,14 @@ def plan_inputs(
         mode = SelectionMode.POSITIONAL
         direct = positional
         option = "positional input"
-    elif files or urls:
+    elif files:
         mode = SelectionMode.NAMED_FILES
-        direct = (*files, *urls)
-        option = "input"
+        direct = files
+        option = "--file"
+    elif urls:
+        mode = SelectionMode.NAMED_URLS
+        direct = urls
+        option = "--url"
     else:
         mode = SelectionMode.NAMED_SOURCES
         direct = sources
@@ -255,9 +274,8 @@ def plan_inputs(
             )
         )
 
-    def add_url(url: str) -> None:
-        validated = _validated_https_url(url, option="--url")
-        identity = ("url", validated)
+    def add_url(url: str, *, origin: InputOrigin) -> None:
+        identity = ("url", url)
         if identity in seen:
             return
         seen.add(identity)
@@ -265,16 +283,20 @@ def plan_inputs(
             PlannedInput(
                 path=None,
                 source_root=None,
-                relative_path=_remote_relative_path(validated),
-                origin=InputOrigin.NAMED_URL,
+                relative_path=_remote_relative_path(url),
+                origin=origin,
                 size_bytes=None,
-                url=validated,
+                url=url,
             )
         )
 
     if positional:
         for value in positional:
             text = os.fspath(value)
+            url = _validated_https_url(text, option=option)
+            if url is not None:
+                add_url(url, origin=InputOrigin.POSITIONAL_URL)
+                continue
             if any(char in text for char in _WILDCARD_CHARS):
                 raise UsageError(
                     f"wildcard patterns aren't accepted as positional inputs: {text}",
@@ -306,22 +328,39 @@ def plan_inputs(
                     relative_path=Path(resolved.name),
                     origin=InputOrigin.POSITIONAL_FILE,
                 )
-    elif files or urls:
+    elif urls:
+        for value in urls:
+            url = _validated_https_url(value, option=option)
+            if url is None:
+                raise ValidationError(
+                    "--url must identify an absolute HTTPS URL.",
+                    hint="use --file for local files or --source for local directories.",
+                )
+            add_url(url, origin=InputOrigin.NAMED_URL)
+    elif files:
         for value in files:
-            path, _ = _validated_file(Path(value), option="--file")
+            if _validated_https_url(os.fspath(value), option=option) is not None:
+                raise UsageError(
+                    "--file accepts local files only.",
+                    hint="pass an HTTPS URL with --url instead.",
+                )
+            path, _ = _validated_file(Path(value), option=option)
             add_file(
                 path,
                 source_root=path.parent,
                 relative_path=Path(path.name),
                 origin=InputOrigin.NAMED_FILE,
             )
-        for value in urls:
-            add_url(value)
     else:
         effective_pattern = pattern if pattern is not None else "*"
         if not effective_pattern:
             raise UsageError("--pattern cannot be empty.")
         for value in sources:
+            if _validated_https_url(os.fspath(value), option=option) is not None:
+                raise UsageError(
+                    "--source accepts local directories only.",
+                    hint="pass an HTTPS URL with --url instead.",
+                )
             source = _validated_source(Path(value), option=option)
             for child in _directory_files(
                 source,
@@ -371,6 +410,13 @@ def _result_path(path: Path, view: ResultView) -> Path:
     return Path(f"{path}{_RESULT_SUFFIX[view]}")
 
 
+def _hashed_result_path(path: Path, view: ResultView, digest: str) -> Path:
+    suffix = f".{digest}{_RESULT_SUFFIX[view]}"
+    name_budget = _MAX_GENERATED_RESULT_NAME_BYTES - len(suffix)
+    name = path.name.encode("utf-8")[:name_budget].decode("utf-8", errors="ignore")
+    return path.with_name(f"{name}{suffix}")
+
+
 def plan_outputs(
     input_plan: InputPlan,
     *,
@@ -408,6 +454,15 @@ def plan_outputs(
                     f"source-relative output path is invalid: {relative}"
                 )
             destination = _result_path(Path(output_dir) / relative, view)
+            if (
+                item.is_remote
+                and len(destination.name.encode("utf-8")) > _MAX_GENERATED_RESULT_NAME_BYTES
+            ):
+                raise ValidationError(
+                    "generated remote result filename exceeds the "
+                    f"{_MAX_GENERATED_RESULT_NAME_BYTES}-byte UTF-8 limit.",
+                    hint="use --output-file with a shorter name for this input.",
+                )
         elif stream_single and len(input_plan.inputs) == 1:
             destination = None
         else:
@@ -420,20 +475,49 @@ def plan_outputs(
 
     counts = Counter(path for path in destinations if path is not None)
     collided = {path for path, count in counts.items() if count > 1}
-    for index, destination in enumerate(destinations):
-        if destination not in collided:
-            continue
+    conflicting_sources: dict[Path, list[PlannedInput]] = {}
+    for item, destination in zip(input_plan.inputs, destinations, strict=True):
+        if destination is not None and destination in collided:
+            conflicting_sources.setdefault(destination, []).append(item)
+    for destination, sources in conflicting_sources.items():
+        if any(item.is_remote for item in sources):
+            references = ", ".join(redact_input_reference(item.reference) for item in sources)
+            raise ValidationError(
+                f"multiple inputs resolve to the same result output path: {destination} "
+                f"({references}).",
+                hint="analyze these inputs separately with distinct --output-file paths.",
+            )
+
+    reserved = set(counts)
+    for index, destination in sorted(
+        ((index, path) for index, path in enumerate(destinations) if path in collided),
+        key=lambda entry: input_plan.inputs[entry[0]].reference,
+    ):
         item = input_plan.inputs[index]
-        collision_identity = (
-            f"{redact_input_reference(item.reference)}\0{index}"
-            if item.is_remote
-            else item.reference
-        )
-        digest = hashlib.sha1(collision_identity.encode("utf-8")).hexdigest()[:8]
+        if item.is_remote:
+            continue
+        digest = hashlib.sha1(item.reference.encode("utf-8")).hexdigest()
         suffix = _RESULT_SUFFIX[view]
         assert destination is not None
-        base = destination.name[: -len(suffix)]
-        destinations[index] = destination.with_name(f"{base}.{digest}{suffix}")
+        base = destination.with_name(destination.name[: -len(suffix)])
+        for digest_length in range(8, len(digest) + 1, 8):
+            candidate = _hashed_result_path(base, view, digest[:digest_length])
+            if candidate not in reserved:
+                destinations[index] = candidate
+                reserved.add(candidate)
+                break
+        else:
+            raise ValidationError(
+                "cannot resolve result output path collision.",
+                hint="analyze these inputs separately with distinct --output-file paths.",
+            )
+
+    resolved = [path for path in destinations if path is not None]
+    if len(set(resolved)) != len(resolved):
+        raise ValidationError(
+            "multiple inputs resolve to the same result output path.",
+            hint="analyze these inputs separately with distinct --output-file paths.",
+        )
 
     outputs: list[PlannedOutput] = []
     for item, destination in zip(input_plan.inputs, destinations, strict=True):

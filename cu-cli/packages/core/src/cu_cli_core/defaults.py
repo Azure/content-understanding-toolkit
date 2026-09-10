@@ -16,28 +16,6 @@ PREBUILT_COMPLETION_MINI_KEY = "prebuilt-analyzer-completion-mini"
 PREBUILT_EMBEDDING_KEY = "prebuilt-analyzer-embedding"
 
 
-def missing_model_requirements(mapped: Mapping[str, str]) -> list[str]:
-    """Return model requirements not satisfied by a defaults mapping."""
-
-    missing: list[str] = []
-    has_embedding = bool(mapped.get(PREBUILT_EMBEDDING_KEY)) or any(
-        name.startswith("text-embedding-") for name in mapped
-    )
-    if not has_embedding:
-        missing.append("an embeddings model (for example text-embedding-3-large)")
-    has_completion = bool(mapped.get(PREBUILT_COMPLETION_KEY)) or any(
-        not name.startswith(("prebuilt-analyzer-", "text-embedding-"))
-        for name in mapped
-    )
-    if not has_completion:
-        missing.append("a supported large language model (LLM) deployment")
-    if not mapped.get(PREBUILT_COMPLETION_MINI_KEY):
-        missing.append(
-            "Content Understanding's prebuilt analyzer mapping for the selected LLM"
-        )
-    return missing
-
-
 def with_prebuilt_default_mappings(
     model_deployments: Mapping[str, str],
 ) -> dict[str, str]:

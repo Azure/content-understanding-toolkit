@@ -31,10 +31,16 @@ from cu_cli_core.analysis import (
     analyze_many,
     analyze_one,
     analyze_one_inline,
+    analyze_url,
+    analyze_url_inline,
+    analyze_url_inline_with_usage,
+    analyze_url_with_usage,
     dedupe_same_file,
     disambiguate_collisions,
     plan_jobs,
 )
+from cu_cli_core.contracts import AnalyzeRequest
+from cu_cli_core.operations.analysis import execute_analyze
 
 pytestmark = pytest.mark.unit
 
@@ -66,6 +72,7 @@ class _FakeClient:
 
     def __init__(self):
         self.calls: list[tuple[str, int]] = []
+        self.url_calls: list[tuple[str, str]] = []
 
     def begin_analyze_binary(self, *, analyzer_id, binary_input, cls=None):
         self.calls.append((analyzer_id, len(binary_input)))
@@ -107,6 +114,39 @@ class _FakeClient:
             else response
         )
 
+    def begin_analyze(self, *, analyzer_id, inputs, cls=None):
+        url = inputs[0].url
+        self.url_calls.append((analyzer_id, url))
+        deserialized = {"analyzer_id": analyzer_id, "url": url}
+        raw = {
+            "id": "operation-id",
+            "status": "Succeeded",
+            "result": {"analyzerId": analyzer_id, "url": url, "serviceOnly": True},
+        }
+        result = (
+            cls(_FakePipelineResponse(raw), deserialized, {})
+            if cls is not None
+            else deserialized
+        )
+        return _FakePoller(result)
+
+    def analyze_inline(self, *, analyzer_id, inputs, cls=None):
+        url = inputs[0].url
+        self.url_calls.append((analyzer_id, url))
+        response = type("InlineResponse", (), {
+            "result": {"analyzer_id": analyzer_id, "url": url},
+            "usage": {"documentPagesMinimalInline": 1},
+        })()
+        raw = {
+            "status": "Succeeded",
+            "result": {"analyzerId": analyzer_id, "url": url, "serviceOnly": True},
+        }
+        return (
+            cls(_FakePipelineResponse(raw), response, {})
+            if cls is not None
+            else response
+        )
+
 
 def test_analyze_bytes_and_one_use_the_client(tmp_path):
     client = _FakeClient()
@@ -120,31 +160,6 @@ def test_analyze_bytes_and_one_use_the_client(tmp_path):
     assert analyze_one(client, job)["analyzer_id"] == "prebuilt-invoice"
 
 
-def test_analyze_url_job_preserves_sas_for_service(monkeypatch):
-    from cu_cli_core import analysis
-
-    url = "https://storage.example.test/c/input.pdf?sv=1&sig=secret"
-    seen = {}
-    monkeypatch.setattr(analysis, "_analysis_url_input", lambda value: value)
-
-    class Client:
-        def begin_analyze(self, *, analyzer_id, inputs):
-            seen.update(analyzer_id=analyzer_id, url=inputs[0])
-            return type("Poller", (), {"result": lambda self: {"ok": True}})()
-
-    result = analysis.analyze_one(
-        Client(),
-        analysis.AnalyzeJob(
-            input_ref="https://storage.example.test/c/input.pdf?REDACTED",
-            input_url=url,
-            analyzer_id="prebuilt-layout",
-        ),
-    )
-
-    assert result == {"ok": True}
-    assert seen == {"analyzer_id": "prebuilt-layout", "url": url}
-
-
 def test_analyze_bytes_and_one_inline_use_the_synchronous_client_method(tmp_path):
     client = _FakeClient()
     assert analyze_bytes_inline(client, "prebuilt-layout", b"abc") == {
@@ -155,6 +170,74 @@ def test_analyze_bytes_and_one_inline_use_the_synchronous_client_method(tmp_path
     path.write_bytes(b"%PDF-1.4 hello")
     job = AnalyzeJob(input_ref=str(path), analyzer_id="prebuilt-invoice")
     assert analyze_one_inline(client, job)["analyzer_id"] == "prebuilt-invoice"
+
+
+def test_analyze_url_and_job_preserve_sas_query_for_the_service():
+    client = _FakeClient()
+    url = "https://storage.example.test/c/video.mp4?sv=1&sp=r&sig=a%2Bb%3D"
+
+    result = analyze_url(client, "prebuilt-video", url)
+    job_result = analyze_one(
+        client,
+        AnalyzeJob(
+            input_ref="https://storage.example.test/c/video.mp4?REDACTED",
+            input_url=url,
+            analyzer_id="prebuilt-video",
+        ),
+    )
+
+    assert result["url"] == url
+    assert job_result["url"] == url
+    assert client.url_calls == [("prebuilt-video", url), ("prebuilt-video", url)]
+    assert client.calls == []
+
+
+def test_execute_analyze_plans_named_urls_without_a_frontend():
+    client = _FakeClient()
+    url = "https://example.test/input.pdf?sv=1&sp=r&sig=a%2Bb%3D"
+    request = AnalyzeRequest(urls=(url,), analyzer="prebuilt-layout")
+
+    result = execute_analyze(client, request)
+
+    assert result.failures == []
+    assert len(result.successes) == 1
+    assert result.successes[0].job.input_url == url
+    assert result.successes[0].job.input_ref == "https://example.test/input.pdf?REDACTED"
+    assert client.url_calls == [("prebuilt-layout", url)]
+    assert client.calls == []
+
+
+def test_analyze_url_inline_uses_synchronous_url_method():
+    client = _FakeClient()
+    url = "https://storage.example.test/c/document.pdf"
+
+    result = analyze_url_inline(client, "prebuilt-layout", url)
+    job_result = analyze_one_inline(
+        client,
+        AnalyzeJob(input_ref=url, input_url=url, analyzer_id="prebuilt-layout"),
+    )
+
+    assert result["url"] == url
+    assert job_result["url"] == url
+    assert client.url_calls == [("prebuilt-layout", url), ("prebuilt-layout", url)]
+
+
+def test_url_helpers_retain_raw_json_and_usage():
+    client = _FakeClient()
+    url = "https://storage.example.test/c/document.pdf"
+
+    lro = analyze_url_with_usage(client, "prebuilt-layout", url, raw_json=True)
+    inline = analyze_url_inline_with_usage(
+        client,
+        "prebuilt-layout",
+        url,
+        raw_json=True,
+    )
+
+    assert lro.result["result"]["serviceOnly"] is True
+    assert lro.usage == {"documentPagesStandard": 1}
+    assert inline.result["result"]["serviceOnly"] is True
+    assert inline.usage == {"documentPagesMinimalInline": 1}
 
 
 def test_json_jobs_return_raw_lro_and_inline_service_payloads(tmp_path):

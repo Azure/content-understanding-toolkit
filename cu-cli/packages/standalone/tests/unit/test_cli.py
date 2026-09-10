@@ -1301,7 +1301,7 @@ def test_upgrade_on_windows_reports_helper_failure_exit_code(monkeypatch, tmp_pa
 
 
 def test_analyze_rejects_missing_literal_path():
-    res = _run("analyze", "https://example.com/a.pdf")
+    res = _run("analyze", "does-not-exist.pdf")
     assert res.exit_code != 0
     assert "does not exist" in _plain(res.output)
 

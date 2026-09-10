@@ -223,21 +223,33 @@ _INPUT_ARGUMENTS = (
     ),
 )
 
+_ANALYZE_INPUT_ARGUMENTS = (
+    ArgumentSpec(
+        "INPUTS",
+        field="positional_inputs",
+        parser_name="inputs",
+        help="Standalone local file, directory, or HTTPS URL shortcuts.",
+        repeatable=True,
+        classification=SurfaceClassification.STANDALONE_SHORTCUT,
+    ),
+    *_INPUT_ARGUMENTS[1:],
+    ArgumentSpec(
+        "--url",
+        field="urls",
+        parser_name="urls",
+        help="HTTPS or Azure Blob SAS URL. Repeat for multiple URLs.",
+        repeatable=True,
+    ),
+)
+
 
 ANALYZE = CommandSpec(
     path=("analyze",),
-    help="Process local files, directories, or HTTPS URLs and return analyzer results.",
+    help="Process local files or HTTPS URLs and return analyzer results.",
     operation="cu_cli_core.operations.analysis#execute_analyze",
     request_type="cu_cli_core.contracts#AnalyzeRequest",
     arguments=(
-        *_INPUT_ARGUMENTS,
-        ArgumentSpec(
-            "--url",
-            field="urls",
-            parser_name="urls",
-            help="HTTPS input URL, including an Azure Blob SAS URL. Repeat for multiple URLs.",
-            repeatable=True,
-        ),
+        *_ANALYZE_INPUT_ARGUMENTS,
         ArgumentSpec(
             "--analyzer",
             aliases=("-a",),
@@ -590,7 +602,8 @@ ANALYZER_COPY = CommandSpec(
             "--source-profile",
             field="source_profile",
             parser_name="source_profile",
-            help="Named CU profile for the source.",
+            help="Standalone named CU CLI profile for the source.",
+            classification=SurfaceClassification.STANDALONE_SHORTCUT,
         ),
         ArgumentSpec(
             "--destination-resource",
@@ -617,7 +630,8 @@ ANALYZER_COPY = CommandSpec(
             "--destination-profile",
             field="destination_profile",
             parser_name="destination_profile",
-            help="Named CU profile for the destination.",
+            help="Standalone named CU CLI profile for the destination.",
+            classification=SurfaceClassification.STANDALONE_SHORTCUT,
         ),
     ),
     service_options=_SERVICE_OPTIONS,

@@ -22,7 +22,7 @@ def _input_plan(request: AnalyzeRequest | AnalyzerTestRequest) -> InputPlan:
         positional=request.positional_inputs,
         files=request.files,
         sources=request.sources,
-        urls=getattr(request, "urls", ()),
+        urls=request.urls if isinstance(request, AnalyzeRequest) else (),
         pattern=request.pattern,
         recursive=request.recursive,
     )
