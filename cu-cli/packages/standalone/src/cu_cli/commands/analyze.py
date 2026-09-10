@@ -260,13 +260,39 @@ def _preflight_output_writes(
 
     directories = {path.parent.resolve(strict=False) for path in output_paths}
     for directory in sorted(directories, key=str):
-        directory.mkdir(parents=True, exist_ok=True)
+        invalid_ancestor = _find_non_directory_ancestor(directory)
+        if invalid_ancestor is not None:
+            raise CuCliError(
+                f"Output parent path is a file: {invalid_ancestor}",
+                hint="choose an output path whose existing parents are directories.",
+                exit_code=VALIDATION_FAILURE,
+            )
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            invalid_ancestor = _find_non_directory_ancestor(directory)
+            if invalid_ancestor is not None:
+                raise CuCliError(
+                    f"Output parent path is a file: {invalid_ancestor}",
+                    hint="choose an output path whose existing parents are directories.",
+                    exit_code=VALIDATION_FAILURE,
+                ) from exc
+            raise
         with tempfile.NamedTemporaryFile(
             dir=directory,
             prefix=".cu-write-check-",
         ) as handle:
             handle.write(b"\0")
             handle.flush()
+
+
+def _find_non_directory_ancestor(path: Path) -> Path | None:
+    candidate = path
+    while not candidate.exists() and candidate != candidate.parent:
+        candidate = candidate.parent
+    if candidate.exists() and not candidate.is_dir():
+        return candidate
+    return None
 
 
 def _write_analyze_report(path: Path, *, analyzer_id, fmt: str, results: list[dict]) -> None:

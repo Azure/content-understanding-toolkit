@@ -1008,6 +1008,35 @@ def test_output_write_preflight_prevents_service_call(
     assert checked_directories == [Path(directory).resolve()]
 
 
+@pytest.mark.parametrize(
+    "output_args",
+    [
+        ("--output-dir", "parent-file/results"),
+        ("--report-file", "parent-file/reports/report.json"),
+    ],
+)
+def test_output_write_preflight_rejects_file_ancestor_before_service_call(
+    analyze_runtime,
+    monkeypatch,
+    output_args,
+):
+    Path("input.pdf").write_text("input")
+    Path("parent-file").write_text("not a directory")
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze.build_client",
+        lambda *_args, **_kwargs: pytest.fail("client must not build"),
+    )
+
+    result = _run("analyze", "input.pdf", "--json", *output_args)
+    output = result.output.lower()
+
+    assert result.exit_code == 2
+    assert "output parent path is a file" in output
+    assert "parent-file" in output
+    assert "unexpected error" not in output
+    assert "winerror" not in output
+
+
 def test_single_stdout_analysis_uses_registered_core_operation(
     analyze_runtime,
     monkeypatch,
