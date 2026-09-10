@@ -38,14 +38,12 @@ API_VERSION = ServiceOptionSpec(
     name="--api-version",
     parser_name="api_version",
     help="Content Understanding service API version.",
-    default=DEFAULT_API_VERSION,
 )
 AUTH_MODE = ServiceOptionSpec(
     key="auth-mode",
     name="--auth-mode",
     parser_name="auth_mode",
     help="Authentication mode.",
-    default="login",
     choices=("login", "key"),
 )
 API_KEY = ServiceOptionSpec(

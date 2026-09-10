@@ -8,10 +8,13 @@ from time import perf_counter
 from typing import Any, Iterator
 
 import pytest
+from knack.parser import CLICommandParser
 
-from azext_content_understanding._params import load_arguments
+from azext_content_understanding import _commands
+from azext_content_understanding._params import _argument_kwargs, load_arguments
 from azext_content_understanding._help import load_command_help
 from azext_content_understanding.commands import azure_command_specs, load_command_table
+from cu_cli_core.command_spec import ANALYZE
 
 
 class FakeContext:
@@ -50,6 +53,18 @@ class FakeLoader:
         yield FakeGroup(self, path)
 
 
+def _parser_for(*arguments: Any) -> CLICommandParser:
+    parser = CLICommandParser()
+    for argument in arguments:
+        kwargs = _argument_kwargs(argument)
+        options = kwargs.pop("options_list")
+        arg_type = kwargs.pop("arg_type", None)
+        if arg_type is not None:
+            kwargs.update(arg_type.settings)
+        parser.add_argument(*options, dest=argument.parser_name, **kwargs)
+    return parser
+
+
 @pytest.mark.unit
 @pytest.mark.parametrize("spec", azure_command_specs())
 def test_every_shared_command_loads_named_parameters(spec) -> None:
@@ -72,6 +87,24 @@ def test_analyze_uses_named_non_conflicting_options() -> None:
     assert analyze["sources"]["options_list"] == ["--source"]
     assert analyze["urls"]["options_list"] == ["--url"]
     assert analyze["analyzer_id"]["options_list"] == ["--analyzer", "-a"]
+
+
+@pytest.mark.unit
+def test_real_azure_parser_passes_analyze_report_file_to_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report_file = next(argument for argument in ANALYZE.arguments if argument.name == "--report-file")
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(
+        _commands._analysis,
+        "analyze",
+        lambda cmd, **values: captured.update(values) or {},
+    )
+
+    parsed = _parser_for(report_file).parse_args(["--report-file", "report.json"])
+    _commands.analyze(object(), **vars(parsed))
+
+    assert captured["report_path"] == "report.json"
 
 
 @pytest.mark.unit

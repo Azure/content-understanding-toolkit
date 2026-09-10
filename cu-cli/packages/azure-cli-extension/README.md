@@ -65,10 +65,11 @@ custom analyzers also need supported LLM and embeddings deployments plus Content
 Understanding defaults. If any of these are missing, follow the complete
 [Microsoft Foundry provisioning guide](../../docs/provisioning.md).
 
-An Azure CLI login supplies authentication, cloud, and subscription context.
-A shared CU profile supplies the Microsoft Foundry endpoint, API version, and
-optional model-deployment mappings. Configure the automatically available
-`default` profile for a ready resource:
+Use either an Azure CLI login or a Microsoft Foundry resource API key for data-plane
+authentication. Azure login also supplies cloud and subscription context for
+resource-management operations. A shared CU profile supplies authentication,
+the Microsoft Foundry endpoint, API version, and optional model-deployment mappings.
+Configure the automatically available `default` profile for a ready resource:
 
 ```bash
 # Sign in and select the Azure subscription used by az cu commands.
@@ -83,7 +84,25 @@ az cu profile set \
 az cu doctor --output table
 ```
 
-`az cu doctor` checks the API version, endpoint, Azure CLI authentication,
+To use key authentication without the Cognitive Services User role, save it in
+the shared profile or pass it explicitly:
+
+```bash
+# Preferred: both `cu` and `az cu` reuse the saved key.
+az cu profile set --key auth_mode --value key
+az cu profile set --key api_key --value <resource-key>
+az cu analyzer list
+
+# One-command override. Avoid this form when shell history or process listings
+# could expose the key.
+az cu analyzer list --auth-mode key --api-key <resource-key> \
+	--endpoint https://<resource-name>.services.ai.azure.com/
+```
+
+`CU_AUTH_MODE=key` with `CU_API_KEY` is also supported. Explicit
+`--auth-mode login` selects Azure CLI authentication even when the profile has a key.
+
+`az cu doctor` checks the API version, endpoint, selected authentication mode,
 service connectivity, and Content Understanding defaults. It exits nonzero
 when a required check fails, so it can serve as a readiness gate.
 

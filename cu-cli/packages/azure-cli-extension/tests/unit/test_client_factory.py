@@ -9,8 +9,23 @@ from typing import Any
 
 import pytest
 from azure.cli.core.azclierror import ArgumentUsageError, AzureConnectionError
+from knack.parser import CLICommandParser
 
 from azext_content_understanding import _client_factory
+from azext_content_understanding._params import _argument_kwargs
+from cu_cli_core.service_options import API_KEY, API_VERSION, AUTH_MODE, ENDPOINT, PROFILE
+
+
+def _service_parser() -> CLICommandParser:
+    parser = CLICommandParser()
+    for option in (ENDPOINT, API_VERSION, AUTH_MODE, API_KEY, PROFILE):
+        kwargs = _argument_kwargs(option)
+        options = kwargs.pop("options_list")
+        arg_type = kwargs.pop("arg_type", None)
+        if arg_type is not None:
+            kwargs.update(arg_type.settings)
+        parser.add_argument(*options, dest=option.parser_name, **kwargs)
+    return parser
 
 
 @pytest.mark.unit
@@ -87,4 +102,143 @@ def test_create_client_rejects_unsupported_cloud(monkeypatch: pytest.MonkeyPatch
             endpoint=None,
             api_version=None,
             profile_name=None,
+        )
+
+
+@pytest.mark.unit
+def test_create_client_uses_explicit_api_key_without_azure_login(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(
+        _client_factory.CuProfile,
+        "load",
+        lambda **kwargs: SimpleNamespace(auth_mode="login", api_key=None),
+    )
+    monkeypatch.setattr(
+        _client_factory,
+        "get_cli_credential",
+        lambda *_args: pytest.fail("Azure login must not be requested for key auth"),
+    )
+    monkeypatch.setattr(
+        _client_factory,
+        "build_content_understanding_client",
+        lambda **kwargs: captured.update(kwargs) or object(),
+    )
+
+    _client_factory.create_content_understanding_client(
+        SimpleNamespace(cli_ctx=SimpleNamespace()),
+        endpoint="https://example",
+        api_version="2025-11-01",
+        auth_mode="key",
+        api_key="secret",
+    )
+
+    assert captured["credential"].key == "secret"
+
+
+@pytest.mark.unit
+def test_real_azure_parser_preserves_profile_api_version_and_passes_key_to_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+    profile = SimpleNamespace(
+        endpoint="https://profile.example",
+        api_version="2026-06-01-preview",
+        auth_mode="login",
+        api_key=None,
+    )
+    monkeypatch.setattr(_client_factory.CuProfile, "load", lambda **kwargs: profile)
+    monkeypatch.setattr(
+        _client_factory,
+        "get_cli_credential",
+        lambda *_args: pytest.fail("Azure login must not be requested for parsed key auth"),
+    )
+    monkeypatch.setattr(
+        _client_factory,
+        "build_content_understanding_client",
+        lambda **kwargs: captured.update(kwargs) or object(),
+    )
+    parsed = _service_parser().parse_args(
+        ["--profile", "preview", "--auth-mode", "key", "--api-key", "secret"]
+    )
+
+    assert parsed.api_version is None
+    _client_factory.create_content_understanding_client(
+        SimpleNamespace(cli_ctx=SimpleNamespace()), **vars(parsed)
+    )
+
+    assert captured["api_version"] == "2026-06-01-preview"
+    assert captured["credential"].key == "secret"
+
+
+@pytest.mark.unit
+def test_create_client_uses_key_from_selected_profile(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(
+        _client_factory.CuProfile,
+        "load",
+        lambda **kwargs: SimpleNamespace(auth_mode="key", api_key="profile-secret"),
+    )
+    monkeypatch.setattr(
+        _client_factory,
+        "get_cli_credential",
+        lambda *_args: pytest.fail("Azure login must not be requested for profile key auth"),
+    )
+    monkeypatch.setattr(
+        _client_factory,
+        "build_content_understanding_client",
+        lambda **kwargs: captured.update(kwargs) or object(),
+    )
+
+    _client_factory.create_content_understanding_client(
+        SimpleNamespace(cli_ctx=SimpleNamespace()),
+        endpoint="https://example",
+        api_version="2025-11-01",
+        profile_name="key-profile",
+    )
+
+    assert captured["credential"].key == "profile-secret"
+
+
+@pytest.mark.unit
+def test_explicit_login_overrides_profile_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_credential = object()
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(
+        _client_factory.CuProfile,
+        "load",
+        lambda **kwargs: SimpleNamespace(auth_mode="key", api_key="profile-secret"),
+    )
+    monkeypatch.setattr(_client_factory, "get_cli_credential", lambda *_args: cli_credential)
+    monkeypatch.setattr(
+        _client_factory,
+        "build_content_understanding_client",
+        lambda **kwargs: captured.update(kwargs) or object(),
+    )
+
+    _client_factory.create_content_understanding_client(
+        SimpleNamespace(cli_ctx=SimpleNamespace()),
+        endpoint="https://example",
+        api_version="2025-11-01",
+        auth_mode="login",
+    )
+
+    assert captured["credential"] is cli_credential
+
+
+@pytest.mark.unit
+def test_key_auth_requires_a_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        _client_factory.CuProfile,
+        "load",
+        lambda **kwargs: SimpleNamespace(auth_mode="login", api_key=None),
+    )
+
+    with pytest.raises(ArgumentUsageError, match="requires an API key"):
+        _client_factory.create_content_understanding_client(
+            SimpleNamespace(cli_ctx=SimpleNamespace()),
+            endpoint="https://example",
+            api_version="2025-11-01",
+            auth_mode="key",
         )

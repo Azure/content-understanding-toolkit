@@ -235,6 +235,8 @@ def setup_models(cmd: Any, **values: Any) -> dict[str, Any]:
             endpoint=values.get("endpoint"),
             api_version=values.get("api_version"),
             profile_name=None,
+            auth_mode=values.get("auth_mode"),
+            api_key=values.get("api_key"),
             subscription_id=subscription,
         )
     supported = _supported_models(cu_client.get_analyzer("prebuilt-document"))

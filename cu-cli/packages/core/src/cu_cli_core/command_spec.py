@@ -346,7 +346,6 @@ ANALYZE = CommandSpec(
             value_type=ArgumentValueType.PATH,
             file_okay=True,
             dir_okay=False,
-            classification=SurfaceClassification.FRONTEND_PRESENTATION,
         ),
         ArgumentSpec(
             "--concurrency",

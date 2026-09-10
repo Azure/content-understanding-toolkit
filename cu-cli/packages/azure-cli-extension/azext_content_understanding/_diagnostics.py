@@ -41,6 +41,9 @@ def _missing_model_requirements(mapped: dict[str, str]) -> list[str]:
 
 def doctor(cmd: Any, **values: Any) -> dict[str, Any]:
     profile = Profile.load(profile_name=values.get("profile_name"))
+    auth_mode = values.get("auth_mode") or (
+        "key" if values.get("api_key") else profile.auth_mode
+    )
     endpoint, api_version = resolve_service_settings(
         endpoint=values.get("endpoint"),
         api_version=values.get("api_version"),
@@ -51,6 +54,8 @@ def doctor(cmd: Any, **values: Any) -> dict[str, Any]:
         endpoint=endpoint,
         api_version=api_version,
         profile_name=values.get("profile_name"),
+        auth_mode=values.get("auth_mode"),
+        api_key=values.get("api_key"),
     )
     from azure.core.exceptions import HttpResponseError
 
@@ -65,7 +70,9 @@ def doctor(cmd: Any, **values: Any) -> dict[str, Any]:
         "ready": not missing,
         "endpoint": endpoint,
         "apiVersion": api_version,
-        "authentication": "Microsoft Entra ID (Azure CLI)",
+        "authentication": (
+            "resource key" if auth_mode == "key" else "Microsoft Entra ID (Azure CLI)"
+        ),
         "profile": profile.profile_name,
         "defaultAnalyzer": profile.default_analyzer,
         "modelDeployments": mappings,

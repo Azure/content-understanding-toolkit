@@ -45,6 +45,8 @@ def _client(cmd: Any, values: dict[str, Any], *, profile_name: str | None = None
         endpoint=values.get("endpoint"),
         api_version=values.get("api_version"),
         profile_name=profile_name if profile_name is not None else values.get("profile_name"),
+        auth_mode=values.get("auth_mode"),
+        api_key=values.get("api_key"),
     )
 
 
@@ -89,6 +91,8 @@ def create_analyzer(cmd: Any, **values: Any) -> Any:
         endpoint=values.get("endpoint"),
         api_version=version,
         profile_name=values.get("profile_name"),
+        auth_mode=values.get("auth_mode"),
+        api_key=values.get("api_key"),
     )
     return resolve_identifier(ANALYZER_CREATE.operation)(client, request.name, body)
 
@@ -197,6 +201,8 @@ def _copy_side(
             endpoint=resource.endpoint,
             api_version=values.get("api_version"),
             profile_name=None,
+            auth_mode=values.get("auth_mode"),
+            api_key=values.get("api_key"),
             subscription_id=resource.subscription_id,
         )
         return _CopySide(client, resource, None)
@@ -213,6 +219,8 @@ def _copy_side(
         endpoint=resolved_endpoint,
         api_version=values.get("api_version"),
         profile_name=selected_profile,
+        auth_mode=values.get("auth_mode"),
+        api_key=values.get("api_key"),
         subscription_id=resource.subscription_id,
     )
     return _CopySide(client, resource, selected_profile)

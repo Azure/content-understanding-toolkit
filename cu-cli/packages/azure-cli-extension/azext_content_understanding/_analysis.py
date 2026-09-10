@@ -209,6 +209,8 @@ def analyze(cmd: Any, **values: Any) -> Any:
             endpoint=values.get("endpoint"),
             api_version=values.get("api_version"),
             profile_name=values.get("profile_name"),
+            auth_mode=values.get("auth_mode"),
+            api_key=values.get("api_key"),
         ),
         request,
         input_plan=inputs,
