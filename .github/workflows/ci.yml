@@ -5,20 +5,68 @@ on:
     branches: ["**"]
     paths:
       - "cu-cli/**"
+      - "dynamic_hitl/**"
       - ".github/workflows/ci.yml"
   pull_request:
     branches: [main]
     paths:
       - "cu-cli/**"
+      - "dynamic_hitl/**"
       - ".github/workflows/ci.yml"
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    name: detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      cu-cli: ${{ steps.filter.outputs.cu-cli }}
+      dynamic-hitl: ${{ steps.filter.outputs.dynamic-hitl }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compare changed paths against the base commit
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            base="${PR_BASE_SHA}"
+          else
+            base="${PUSH_BEFORE_SHA}"
+          fi
+          # A new branch, a force push, or a workflow-file edit gives no usable
+          # base; run every suite rather than silently skipping one.
+          if [[ -z "${base}" ]] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            changed=""
+            run_all=true
+          else
+            changed="$(git diff --name-only "${base}" "${GITHUB_SHA}")"
+            run_all=false
+            if grep -qx '\.github/workflows/ci\.yml' <<<"${changed}"; then
+              run_all=true
+            fi
+          fi
+          for area in cu-cli dynamic_hitl; do
+            if [[ "${run_all}" == true ]] || grep -q "^${area}/" <<<"${changed}"; then
+              matched=true
+            else
+              matched=false
+            fi
+            echo "${area//_/-}=${matched}" >> "${GITHUB_OUTPUT}"
+          done
+
   quick-test:
     name: quick test (ubuntu-latest, py3.12)
-    if: github.event_name == 'push' && github.ref != 'refs/heads/main'
+    needs: changes
+    if: needs.changes.outputs.cu-cli == 'true' && github.event_name == 'push' && github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,9 +81,33 @@ jobs:
       - name: Run CI
         run: bash cu-cli/scripts/ci.sh
 
+  dynamic-hitl-test:
+    name: dynamic HITL calibration tests (ubuntu-latest, py3.14)
+    needs: changes
+    if: needs.changes.outputs.dynamic-hitl == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dynamic_hitl/calibration_lab
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: dynamic_hitl/calibration_lab/requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Run calibration tests
+        run: python -m pytest test_calibration.py -q
+
   full-test:
     name: full test (${{ matrix.os }}, py${{ matrix.python-version }})
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    needs: changes
+    if: needs.changes.outputs.cu-cli == 'true' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
