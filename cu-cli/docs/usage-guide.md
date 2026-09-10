@@ -304,6 +304,8 @@ the authoritative [Microsoft Foundry provisioning guide](provisioning.md).
 
 ## Analyze
 
+### Analyze a local file
+
 An analyzer defines how Content Understanding processes a file. Analyze one file
 with the `prebuilt-layout` content extraction analyzer:
 
