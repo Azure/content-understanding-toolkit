@@ -20,13 +20,16 @@ class SelectionMode(str, Enum):
     POSITIONAL = "positional"
     NAMED_FILES = "named-files"
     NAMED_SOURCES = "named-sources"
+    NAMED_URLS = "named-urls"
 
 
 class InputOrigin(str, Enum):
     POSITIONAL_FILE = "positional-file"
     POSITIONAL_SOURCE = "positional-source"
+    POSITIONAL_URL = "positional-url"
     NAMED_FILE = "named-file"
     NAMED_SOURCE = "named-source"
+    NAMED_URL = "named-url"
 
 
 class ExistingResultPolicy(str, Enum):
@@ -159,7 +162,7 @@ class AnalyzerDeleteRequest:
 
 @dataclass(frozen=True)
 class AnalyzeRequest:
-    positional_inputs: tuple[Path, ...] = ()
+    positional_inputs: tuple[str, ...] = ()
     files: tuple[Path, ...] = ()
     sources: tuple[Path, ...] = ()
     pattern: str | None = None
@@ -175,15 +178,17 @@ class AnalyzeRequest:
     yes: bool = False
     report_file: Path | None = None
     concurrency: int = 4
+    urls: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
             "positional_inputs",
-            tuple(Path(path) for path in self.positional_inputs),
+            tuple(str(value) for value in self.positional_inputs),
         )
         object.__setattr__(self, "files", tuple(Path(path) for path in self.files))
         object.__setattr__(self, "sources", tuple(Path(path) for path in self.sources))
+        object.__setattr__(self, "urls", tuple(str(value) for value in self.urls))
         if self.output_file is not None:
             object.__setattr__(self, "output_file", Path(self.output_file))
         if self.output_dir is not None:
@@ -329,11 +334,24 @@ class EnvironmentVariableListRequest:
 
 @dataclass(frozen=True)
 class PlannedInput:
-    path: Path
-    source_root: Path
+    path: Path | None
+    source_root: Path | None
     relative_path: Path
     origin: InputOrigin
-    size_bytes: int
+    size_bytes: int | None
+    url: str | None = None
+
+    @property
+    def reference(self) -> str:
+        if self.url is not None:
+            return self.url
+        if self.path is None:
+            raise ValueError("planned input must have either a local path or URL.")
+        return str(self.path)
+
+    @property
+    def is_remote(self) -> bool:
+        return self.url is not None
 
 
 @dataclass(frozen=True)

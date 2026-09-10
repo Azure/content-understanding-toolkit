@@ -304,6 +304,8 @@ the authoritative [Microsoft Foundry provisioning guide](provisioning.md).
 
 ## Analyze
 
+### Analyze a local file
+
 An analyzer defines how Content Understanding processes a file. Analyze one file
 with the `prebuilt-layout` content extraction analyzer:
 
@@ -326,6 +328,81 @@ cu profile set default_analyzer prebuilt-layout
 # Analyze one file using the saved default analyzer.
 cu analyze ./document.pdf
 ```
+
+### Analyze an HTTPS or SAS URL
+
+Pass an HTTPS URL with the named `--url` option. CU CLI sends
+the reference to Content Understanding and does not download or upload the file
+itself. This enables URL-based service limits, including large video workflows:
+
+```bash
+cu analyze --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/videos/sdk_samples/FlightSimulator.mp4" \
+  --analyzer prebuilt-videoSearch
+```
+
+Repeat `--url` for multiple URLs. It cannot be combined with positional inputs,
+`--file`, or `--source`. Positional URLs remain available as a standalone
+shortcut, including when mixing local and remote inputs. `--pattern` requires
+`--source`, and `--recursive` requires a directory input.
+
+Azure Blob SAS query parameters are preserved exactly for the service request.
+Replace the placeholders below with your storage account, container, blob, and
+SAS token. Quote the complete URL so the shell does not interpret `&` characters:
+
+```bash
+cu analyze --url "https://<storage-account>.blob.core.windows.net/<container>/<blob>?<sas-token>" \
+  --analyzer prebuilt-videoSearch \
+  --json
+```
+
+Only absolute HTTPS URLs are accepted, and the service URL limit is 8,192
+characters. Use a short-lived SAS with read permission (`sp=r`). CU CLI removes
+the query string from console output and `--report-file`; the original URL is
+still sent to Content Understanding. If the service cannot read the input,
+verify the SAS start and expiry times, read permission, and Azure Storage network
+rules.
+
+With `--output-dir`, each remote result uses
+`<filename>.result.json` (or `.result.md`), preserving the filename and extension
+from the URL path. For example, `invoice.pdf` produces `invoice.pdf.result.json`.
+No URL hash is added, and query strings do not participate in naming, so renewing
+a SAS does not change the result path. Filenames are sanitized for the local
+filesystem; an empty URL path uses `remote-input`.
+
+Generated remote result names, including the result suffix, must fit within 240
+UTF-8 bytes, leaving room for atomic-write temporary names. Longer names fail
+before analysis instead of being truncated. Analyze that input separately with
+a shorter `--output-file` name, or omit file-output options to stream one result
+to stdout. Explicit `--output-file` names are unchanged.
+
+If two inputs in the same batch map to one result path and either input is
+remote, CU CLI rejects the entire batch before calling the service or writing
+files, including during `--dry-run`. `--on-existing skip` and `reanalyze` do not
+bypass this check. Analyze the conflicting inputs separately with distinct
+`--output-file` paths or output directories. Collisions between local inputs
+retain their existing disambiguation behavior.
+
+Across separate invocations, existing results follow `--on-existing`: `error`
+(the default), `skip`, or `reanalyze`. This check uses the output path, not source
+identity: `skip` can reuse a same-named result from a different URL. Use separate
+output paths when the sources differ. Old hash-named results are not
+automatically migrated or reused, so a new analysis may incur additional
+charges even when `--on-existing skip` is selected.
+
+For multiple inputs that include a URL, specify `--output-dir` because a remote
+result cannot be written next to its source. A dry run reports remote sizes as
+unavailable and does not probe or download remote content:
+
+```bash
+cu analyze \
+  --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/invoice.pdf" \
+  --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/receipt.png" \
+  --analyzer prebuilt-layout \
+  --output-dir ./results \
+  --dry-run
+```
+
+### Analyze files in local directories
 
 Analyze immediate files in a directory:
 
