@@ -39,8 +39,10 @@ def test_registry_uses_lazy_identifiers_and_unique_paths():
 
 def test_registry_lazy_identifiers_resolve():
     for spec in COMMAND_SPECS:
-        assert callable(resolve_identifier(spec.operation))
-        assert isinstance(resolve_identifier(spec.request_type), type)
+        if spec.operation is not None:
+            assert callable(resolve_identifier(spec.operation))
+        if spec.request_type is not None:
+            assert isinstance(resolve_identifier(spec.request_type), type)
 
 
 def test_analyzer_show_positional_and_named_forms_bind_identically():

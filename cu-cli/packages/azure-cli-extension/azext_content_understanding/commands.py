@@ -1,106 +1,65 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Command registration for the Content Understanding extension."""
+"""Generate Azure CLI command registration from the shared CU command surface."""
 
-from cu_cli_core.command_spec import COMMAND_SPECS
+from cu_cli_core.command_spec import COMMAND_SPECS, SurfaceClassification
 
 
-APPROVED_COMMAND_PATHS: tuple[tuple[str, ...], ...] = (
-    ("analyze",),
-    ("analyzer", "list"),
-    ("analyzer", "show"),
-    ("analyzer", "create"),
-    ("analyzer", "delete"),
-    ("analyzer", "validate"),
-    ("analyzer", "schema", "create"),
-    ("analyzer", "test"),
-    ("analyzer", "copy"),
-    ("defaults", "show"),
-    ("defaults", "set"),
-    ("profile", "show"),
-    ("profile", "list"),
-    ("profile", "get"),
-    ("profile", "set"),
-    ("profile", "unset"),
-    ("profile", "create"),
-    ("profile", "delete"),
-    ("profile", "copy"),
-    ("profile", "rename"),
-    ("profile", "set-active"),
-    ("profile", "sync-defaults"),
-    ("doctor",),
-    ("env-var", "list"),
-    ("infra", "generate"),
-)
+_OPERATIONS = {
+    ("analyze",): "analyze",
+    ("analyzer", "list"): "list_analyzers",
+    ("analyzer", "show"): "show_analyzer",
+    ("analyzer", "create"): "create_analyzer",
+    ("analyzer", "delete"): "delete_analyzer",
+    ("analyzer", "validate"): "validate_analyzer",
+    ("analyzer", "schema", "create"): "create_analyzer_schema",
+    ("analyzer", "test"): "test_analyzer",
+    ("analyzer", "copy"): "copy_analyzer",
+    ("defaults", "show"): "show_defaults",
+    ("defaults", "set"): "set_defaults",
+    ("profile", "show"): "show_profile",
+    ("profile", "list"): "list_profiles",
+    ("profile", "get"): "get_profile",
+    ("profile", "set"): "set_profile",
+    ("profile", "unset"): "unset_profile",
+    ("profile", "create"): "create_profile",
+    ("profile", "delete"): "delete_profile",
+    ("profile", "copy"): "copy_profile",
+    ("profile", "rename"): "rename_profile",
+    ("profile", "set-active"): "set_active_profile",
+    ("profile", "sync-defaults"): "sync_profile_defaults",
+    ("doctor",): "doctor",
+    ("env-var", "list"): "list_environment_variables",
+    ("infra", "generate"): "generate_infrastructure",
+    ("_infra-models",): "setup_infrastructure_models",
+}
 
-INTERNAL_COMMAND_PATHS: tuple[tuple[str, ...], ...] = (("_infra-models",),)
+_TABLE_TRANSFORMERS = {
+    ("analyzer", "list"): "azext_content_understanding._format#analyzer_list_table",
+    ("defaults", "show"): "azext_content_understanding._format#defaults_table",
+    ("defaults", "set"): "azext_content_understanding._format#defaults_table",
+    ("profile", "list"): "azext_content_understanding._format#profile_list_table",
+    ("env-var", "list"): "azext_content_understanding._format#environment_table",
+}
 
-# COMMAND_SPECS is used for drift checks only. Registration remains explicit so
-# adding a shared command never makes it public in the extension by accident.
-SHARED_COMMAND_PATHS = frozenset(spec.path for spec in COMMAND_SPECS)
+
+def azure_command_specs():
+    """Return shared commands applicable to the Azure CLI frontend."""
+
+    return tuple(
+        spec
+        for spec in COMMAND_SPECS
+        if spec.classification is not SurfaceClassification.STANDALONE_ONLY
+    )
 
 
 def load_command_table(loader, _):
-    with loader.command_group("cu analyzer", is_preview=True) as group:
-        group.custom_command("show", "show_analyzer")
-        group.custom_command(
-            "list",
-            "list_analyzers",
-            table_transformer="azext_content_understanding._format#analyzer_list_table",
-        )
-        group.custom_command("create", "create_analyzer")
-        group.custom_command("delete", "delete_analyzer")
-        group.custom_command("validate", "validate_analyzer")
-        group.custom_command("test", "test_analyzer")
-        group.custom_command("copy", "copy_analyzer")
-
-    with loader.command_group("cu analyzer schema", is_preview=True) as group:
-        group.custom_command("create", "create_analyzer_schema")
-
-    with loader.command_group("cu", is_preview=True) as group:
-        group.custom_command("analyze", "analyze")
-        group.custom_command("doctor", "doctor")
-
-    with loader.command_group("cu defaults", is_preview=True) as group:
-        group.custom_command(
-            "show",
-            "show_defaults",
-            table_transformer="azext_content_understanding._format#defaults_table",
-        )
-        group.custom_command(
-            "set",
-            "set_defaults",
-            table_transformer="azext_content_understanding._format#defaults_table",
-        )
-
-    with loader.command_group("cu profile", is_preview=True) as group:
-        group.custom_command("show", "show_profile")
-        group.custom_command(
-            "list",
-            "list_profiles",
-            table_transformer="azext_content_understanding._format#profile_list_table",
-        )
-        group.custom_command("get", "get_profile")
-        group.custom_command("set", "set_profile")
-        group.custom_command("unset", "unset_profile")
-        group.custom_command("create", "create_profile")
-        group.custom_command("delete", "delete_profile")
-        group.custom_command("copy", "copy_profile")
-        group.custom_command("rename", "rename_profile")
-        group.custom_command("set-active", "set_active_profile")
-        group.custom_command("sync-defaults", "sync_profile_defaults")
-
-    with loader.command_group("cu env-var", is_preview=True) as group:
-        group.custom_command(
-            "list",
-            "list_environment_variables",
-            table_transformer="azext_content_understanding._format#environment_table",
-        )
-
-    with loader.command_group("cu infra", is_preview=True) as group:
-        group.custom_command("generate", "generate_infrastructure")
-
-    with loader.command_group("cu", is_preview=True) as group:
-        group.custom_command("_infra-models", "setup_infrastructure_models")
+    for spec in azure_command_specs():
+        group_path = "cu" + (" " + " ".join(spec.path[:-1]) if len(spec.path) > 1 else "")
+        kwargs = {}
+        if spec.path in _TABLE_TRANSFORMERS:
+            kwargs["table_transformer"] = _TABLE_TRANSFORMERS[spec.path]
+        with loader.command_group(group_path, is_preview=True) as group:
+            group.custom_command(spec.path[-1], _OPERATIONS[spec.path], **kwargs)
     return loader.command_table

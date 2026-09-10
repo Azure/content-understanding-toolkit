@@ -11,7 +11,12 @@ from typing import Any
 
 import rich_click as click
 
-from cu_cli_core.command_spec import ArgumentSpec, ArgumentValueType, CommandSpec
+from cu_cli_core.command_spec import (
+    ArgumentSpec,
+    ArgumentValueType,
+    CommandSpec,
+    SurfaceClassification,
+)
 
 
 _SIMPLE_CLICK_TYPES: dict[ArgumentValueType, Any] = {
@@ -74,12 +79,17 @@ def with_command_arguments(spec: CommandSpec):
     """Attach the command-specific arguments declared by ``spec``."""
 
     def decorate(fn: Callable[..., Any]) -> Callable[..., Any]:
+        arguments = tuple(
+            argument
+            for argument in spec.arguments
+            if argument.classification is not SurfaceClassification.AZURE_ONLY
+        )
         fields_with_alternates = {
             argument.field
-            for argument in spec.arguments
-            if sum(item.field == argument.field for item in spec.arguments) > 1
+            for argument in arguments
+            if sum(item.field == argument.field for item in arguments) > 1
         }
-        for argument in reversed(spec.arguments):
+        for argument in reversed(arguments):
             option = (
                 _click_argument(argument)
                 if argument.positional

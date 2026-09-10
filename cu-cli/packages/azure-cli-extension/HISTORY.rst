@@ -14,4 +14,5 @@ Release History
 * Add host-context analyzer copy, structured doctor checks, and safe environment-variable listing.
 * Add ``az cu infra generate`` with Azure CLI-native subscription and wizard behavior.
 * Bundle the canonical azd/Bicep project and use an internal ``az cu`` post-provision model helper.
-* Keep an explicit allowlist and omit direct provisioning and self-upgrade.
+* Generate command and argument registration from the shared ``cu-cli-core``
+	command specifications while omitting direct provisioning and self-upgrade.

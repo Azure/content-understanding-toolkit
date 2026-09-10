@@ -10,8 +10,9 @@ on setup readiness.
 from __future__ import annotations
 
 import rich_click as click
+from cu_cli_core.command_spec import DOCTOR
 
-from ..apiversion import API_VERSION_HELP, SUPPORTED_API_VERSIONS, is_supported
+from ..apiversion import SUPPORTED_API_VERSIONS, is_supported
 from ..client import build_client, resolve
 from cu_cli_core.defaults import with_prebuilt_default_mappings
 from ..profile import Profile
@@ -23,6 +24,7 @@ from ..output import console
 from ._options import CALLING_TIME_OPTION, calling_time
 from ._help import common_commands
 from ._model_setup import print_model_free_analyzers, print_model_setup_steps
+from ._command_spec import with_command_arguments
 
 
 @click.command(
@@ -34,16 +36,7 @@ from ._model_setup import print_model_free_analyzers, print_model_setup_steps
         ("cu doctor --fix-defaults", "Check readiness and apply profile mappings as defaults."),
     ),
 )
-@click.option("-p", "--profile", "profile_name", default=None,
-              help="Named CU CLI profile to use (from cu profile).")
-@click.option("--fix-defaults", is_flag=True,
-              help="Configure Content Understanding defaults from profile model mappings.")
-@click.option("--endpoint", default=None, help="Override configured endpoint.")
-@click.option("--auth-mode", type=click.Choice(["login", "key"]), default=None,
-              help="Authentication mode; defaults to the selected CU CLI profile.")
-@click.option("--api-key", default=None, help="Override configured API key.")
-@click.option("--api-version", "api_version", default=None,
-              help=API_VERSION_HELP)
+@with_command_arguments(DOCTOR)
 @CALLING_TIME_OPTION
 @friendly_errors
 def cmd_doctor(endpoint: str | None, api_key: str | None, api_version: str | None,

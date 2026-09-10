@@ -10,6 +10,7 @@ from cu_cli_core.service_options import (
     AUTH_MODE,
     DEFAULT_API_VERSION,
     ENDPOINT,
+    PROFILE,
     SERVICE_OPTIONS,
     get_service_option,
     service_options_for,
@@ -30,6 +31,7 @@ def test_analyzer_show_composes_expected_service_options_in_order():
         API_VERSION,
         AUTH_MODE,
         API_KEY,
+        PROFILE,
     )
 
 

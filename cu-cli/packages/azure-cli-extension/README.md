@@ -148,7 +148,7 @@ long-running-operation polling flow.
 # Run synchronous analysis with the preview API for this request.
 az cu analyze \
 	--file document.pdf \
-	--analyzer-name prebuilt-layout \
+	--analyzer prebuilt-layout \
 	--inline \
 	--api-version 2026-06-01-preview
 
@@ -188,7 +188,7 @@ az cu analyzer list --output table
 # Analyze a document and format the result for generative AI model input.
 az cu analyze \
 	--file invoice.pdf \
-	--analyzer-name prebuilt-layout \
+	--analyzer prebuilt-layout \
 	--llm-input
 ```
 
@@ -208,7 +208,7 @@ az cu analyzer show --name prebuilt-invoice
 # Analyze the downloaded invoice and return its complete structured result.
 az cu analyze \
 	--file invoice.pdf \
-	--analyzer-name prebuilt-invoice \
+	--analyzer prebuilt-invoice \
 	--output json
 ```
 
@@ -229,7 +229,7 @@ Analyze remote input without downloading it first:
 # Analyze the public sample invoice directly from its HTTPS URL.
 az cu analyze \
 	--url https://raw.githubusercontent.com/Azure-Samples/azure-ai-content-understanding-assets/main/document/invoice.pdf \
-	--analyzer-name prebuilt-invoice
+	--analyzer prebuilt-invoice
 ```
 
 Azure Blob SAS parameters are sent to the service but redacted from reports and
@@ -243,7 +243,7 @@ az cu analyze \
 	--source ./documents \
 	--pattern "*.pdf" \
 	--output-dir ./results \
-	--analyzer-name prebuilt-layout \
+	--analyzer prebuilt-layout \
 	--yes
 ```
 

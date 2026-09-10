@@ -60,15 +60,15 @@ helps["cu analyze"] = """
     short-summary: Analyze local files, directories, or HTTPS URLs with Content Understanding.
     examples:
       - name: Analyze an invoice with an explicit analyzer and endpoint.
-        text: az cu analyze --file invoice.pdf --analyzer-name prebuilt-invoice --endpoint https://contoso.services.ai.azure.com/
+        text: az cu analyze --file invoice.pdf --analyzer prebuilt-invoice --endpoint https://contoso.services.ai.azure.com/
       - name: Analyze a file using defaults from the active CU profile.
         text: az cu analyze --file invoice.pdf
       - name: Select extracted fields using JMESPath.
         text: az cu analyze --file invoice.pdf --query "contents[0].fields"
       - name: Analyze an HTTPS or Azure Blob SAS URL.
-        text: az cu analyze --url "https://storage.example/container/invoice.pdf?<sas>" --analyzer-name prebuilt-invoice
+        text: az cu analyze --url "https://storage.example/container/invoice.pdf?<sas>" --analyzer prebuilt-invoice
       - name: Analyze a directory recursively and write results under one directory.
-        text: az cu analyze --source documents --recursive --output-dir results --analyzer-name prebuilt-document --yes
+        text: az cu analyze --source documents --recursive --output-dir results --analyzer prebuilt-document --yes
 """
 
 helps["cu defaults"] = """

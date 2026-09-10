@@ -18,8 +18,11 @@ class SurfaceClassification(str, Enum):
     COMMON = "common"
     SHARED_ALIAS = "shared-alias"
     STANDALONE_SHORTCUT = "standalone-shortcut"
+    STANDALONE_ONLY = "standalone-only"
+    AZURE_ONLY = "azure-only"
     AZURE_HOST_GLOBAL = "azure-host-global"
     FRONTEND_PRESENTATION = "frontend-presentation"
+    INTERNAL = "internal"
 
 
 class ArgumentValueType(str, Enum):
@@ -64,8 +67,8 @@ class CommandSpec:
 
     path: tuple[str, ...]
     help: str
-    operation: str
-    request_type: str
+    operation: str | None = None
+    request_type: str | None = None
     arguments: tuple[ArgumentSpec, ...] = ()
     service_options: tuple[str, ...] = ()
     classification: SurfaceClassification = SurfaceClassification.COMMON
@@ -127,6 +130,8 @@ def bind_command_arguments(
 def build_request(spec: CommandSpec, parsed: Mapping[str, Any]) -> Any:
     """Bind frontend values and instantiate the spec's lazy request type."""
 
+    if spec.request_type is None:
+        raise CommandBindingError(f"{' '.join(spec.path)} does not define a shared request type")
     request_type = resolve_identifier(spec.request_type)
     try:
         return request_type(**bind_command_arguments(spec, parsed))
@@ -136,7 +141,11 @@ def build_request(spec: CommandSpec, parsed: Mapping[str, Any]) -> Any:
         raise CommandBindingError(str(exc)) from exc
 
 
-_SERVICE_OPTIONS = ("endpoint", "api-version", "auth-mode", "api-key")
+_SERVICE_OPTIONS = ("endpoint", "api-version", "auth-mode", "api-key", "profile")
+_API_VERSION_HELP = (
+    "Content Understanding API version. Known versions: 2025-11-01 (GA) and "
+    "2026-06-01-preview (preview); any YYYY-MM-DD-preview version is also accepted."
+)
 
 
 def _profile_name_arguments(option_help: str) -> tuple[ArgumentSpec, ...]:
@@ -1080,6 +1089,92 @@ ENV_VAR_LIST = CommandSpec(
     ),
 )
 
+DOCTOR = CommandSpec(
+    path=("doctor",),
+    help="Verify a Microsoft Foundry resource connection and Content Understanding defaults.",
+    arguments=(
+        ArgumentSpec(
+            "--profile",
+            aliases=("-p",),
+            field="profile_name",
+            parser_name="profile_name",
+            help="Named CU CLI profile to use.",
+        ),
+        ArgumentSpec(
+            "--endpoint",
+            field="endpoint",
+            parser_name="endpoint",
+            help="Override the configured Microsoft Foundry resource endpoint.",
+        ),
+        ArgumentSpec(
+            "--api-version",
+            field="api_version",
+            parser_name="api_version",
+            help=_API_VERSION_HELP,
+        ),
+        ArgumentSpec(
+            "--fix-defaults",
+            field="fix_defaults",
+            parser_name="fix_defaults",
+            help="Configure Content Understanding defaults from profile model mappings.",
+            value_type=ArgumentValueType.BOOLEAN,
+            classification=SurfaceClassification.STANDALONE_ONLY,
+        ),
+        ArgumentSpec(
+            "--auth-mode",
+            field="auth_mode",
+            parser_name="auth_mode",
+            help="Authentication mode; defaults to the selected CU CLI profile.",
+            choices=("login", "key"),
+            classification=SurfaceClassification.STANDALONE_ONLY,
+        ),
+        ArgumentSpec(
+            "--api-key",
+            field="api_key",
+            parser_name="api_key",
+            help="Override the configured API key.",
+            classification=SurfaceClassification.STANDALONE_ONLY,
+        ),
+    ),
+)
+
+INFRA_GENERATE = CommandSpec(
+    path=("infra", "generate"),
+    help="Generate an azd/Bicep project for Content Understanding.",
+    arguments=(
+        ArgumentSpec("--output-dir", aliases=("-d",), field="output_dir", parser_name="output_dir", help="Directory where the azd template is generated.", value_type=ArgumentValueType.PATH, default="provision", file_okay=False),
+        ArgumentSpec("--environment", aliases=("-e",), field="environment", parser_name="environment", help="azd environment name."),
+        ArgumentSpec("--location", aliases=("-l",), field="location", parser_name="location", help="Azure region."),
+        ArgumentSpec("--subscription", field="subscription", parser_name="subscription", help="Azure subscription name or ID.", classification=SurfaceClassification.STANDALONE_ONLY),
+        ArgumentSpec("--api-version", field="api_version", parser_name="api_version", help=_API_VERSION_HELP),
+        ArgumentSpec("--models", field="models", parser_name="models", help="Comma-separated model names, 'recommended', or 'none'."),
+        ArgumentSpec("--foundry-endpoint", field="foundry_endpoint", parser_name="foundry_endpoint", help="Existing Microsoft Foundry resource endpoint."),
+        ArgumentSpec("--foundry-prefix", field="foundry_prefix", parser_name="foundry_prefix", help="Prefix for a new Microsoft Foundry resource name."),
+        ArgumentSpec("--assign-roles", field="assign_roles", parser_name="assign_roles", help="Configure RBAC role assignments in the generated project.", value_type=ArgumentValueType.BOOLEAN, classification=SurfaceClassification.AZURE_ONLY),
+        ArgumentSpec("--no-assign-roles", field="no_assign_roles", parser_name="no_assign_roles", help="Skip generated RBAC role assignments.", value_type=ArgumentValueType.BOOLEAN, classification=SurfaceClassification.AZURE_ONLY),
+        ArgumentSpec("--force", field="force", parser_name="force", help="Overwrite an existing generated template.", value_type=ArgumentValueType.BOOLEAN),
+        ArgumentSpec("--yes", aliases=("-y",), field="yes", parser_name="yes", help="Use deterministic defaults without the interactive wizard.", value_type=ArgumentValueType.BOOLEAN, classification=SurfaceClassification.AZURE_ONLY),
+    ),
+)
+
+INFRA_MODELS = CommandSpec(
+    path=("_infra-models",),
+    help="Configure model deployments for a generated infrastructure project.",
+    classification=SurfaceClassification.INTERNAL,
+    arguments=(
+        ArgumentSpec("--resource-group", field="resource_group", parser_name="resource_group", help="Resource group containing the Foundry account.", required=True),
+        ArgumentSpec("--account", field="account_name", parser_name="account_name", help="Foundry account name.", required=True),
+        ArgumentSpec("--subscription", field="subscription_id", parser_name="subscription_id", help="Azure subscription ID.", required=True, classification=SurfaceClassification.STANDALONE_ONLY),
+        ArgumentSpec("--selection", field="selection", parser_name="selection", help="prompt, recommended, none, or comma-separated model selectors.", required=True),
+        ArgumentSpec("--out", field="out_path", parser_name="out_path", help="Output Bicep model file.", value_type=ArgumentValueType.PATH, required=True),
+        ArgumentSpec("--deploy/--no-deploy", field="deploy", parser_name="deploy", help="Deploy selected models before writing the model file.", value_type=ArgumentValueType.BOOLEAN, default=True, classification=SurfaceClassification.STANDALONE_ONLY),
+        ArgumentSpec("--deploy", field="deploy", parser_name="deploy", help="Deploy selected models before writing the model file.", value_type=ArgumentValueType.BOOLEAN, default=True, classification=SurfaceClassification.AZURE_ONLY),
+        ArgumentSpec("--endpoint", field="endpoint", parser_name="endpoint", help="Microsoft Foundry resource endpoint.", required=True, classification=SurfaceClassification.AZURE_ONLY),
+        ArgumentSpec("--api-version", field="api_version", parser_name="api_version", help=_API_VERSION_HELP, classification=SurfaceClassification.AZURE_ONLY),
+        ArgumentSpec("--use-key", field="use_key", parser_name="use_key", help="Use an account key for the data-plane request.", value_type=ArgumentValueType.BOOLEAN, classification=SurfaceClassification.AZURE_ONLY),
+    ),
+)
+
 
 COMMAND_SPECS: tuple[CommandSpec, ...] = (
     ANALYZE,
@@ -1105,6 +1200,9 @@ COMMAND_SPECS: tuple[CommandSpec, ...] = (
     PROFILE_SET_ACTIVE,
     PROFILE_SYNC_DEFAULTS,
     ENV_VAR_LIST,
+    DOCTOR,
+    INFRA_GENERATE,
+    INFRA_MODELS,
 )
 _COMMAND_SPECS_BY_PATH = {spec.path: spec for spec in COMMAND_SPECS}
 

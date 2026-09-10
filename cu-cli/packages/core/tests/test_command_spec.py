@@ -35,20 +35,30 @@ def test_registry_paths_are_unique_and_resolvable():
     assert get_command_spec("analyzer", "show") is ANALYZER_SHOW
     assert len({spec.path for spec in COMMAND_SPECS}) == len(COMMAND_SPECS)
     for spec in COMMAND_SPECS:
-        assert callable(resolve_identifier(spec.operation)), spec.path
-        assert isinstance(resolve_identifier(spec.request_type), type), spec.path
+        if spec.operation is not None:
+            assert callable(resolve_identifier(spec.operation)), spec.path
+        if spec.request_type is not None:
+            assert isinstance(resolve_identifier(spec.request_type), type), spec.path
 
 
 def test_registry_metadata_is_unambiguous_for_frontend_adapters():
-    supported_service_options = {"endpoint", "api-version", "auth-mode", "api-key"}
+    supported_service_options = {"endpoint", "api-version", "auth-mode", "api-key", "profile"}
 
     for spec in COMMAND_SPECS:
         assert spec.path and all(part and " " not in part for part in spec.path)
         assert len(spec.service_options) == len(set(spec.service_options))
         assert set(spec.service_options) <= supported_service_options
 
-        parser_names = [argument.parser_name for argument in spec.arguments]
-        assert len(parser_names) == len(set(parser_names)), spec.path
+        for excluded in (
+            SurfaceClassification.AZURE_ONLY,
+            SurfaceClassification.STANDALONE_ONLY,
+        ):
+            parser_names = [
+                argument.parser_name
+                for argument in spec.arguments
+                if argument.classification is not excluded
+            ]
+            assert len(parser_names) == len(set(parser_names)), spec.path
 
         surface_tokens = [
             token

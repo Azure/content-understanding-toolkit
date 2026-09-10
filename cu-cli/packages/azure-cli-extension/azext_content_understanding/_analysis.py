@@ -73,7 +73,7 @@ def analyze(cmd: Any, **values: Any) -> Any:
     if not analyzer:
         raise UsageError(
             "no analyzer was specified and no default_analyzer is configured.",
-            hint="Pass --analyzer-name or configure default_analyzer in a CU profile.",
+            hint="Pass --analyzer or configure default_analyzer in a CU profile.",
         )
     policy = request.on_existing
     if policy is None:

@@ -11,9 +11,7 @@ import yaml
 
 from azext_content_understanding import _help  # noqa: F401
 from azext_content_understanding.commands import (
-    APPROVED_COMMAND_PATHS,
-    INTERNAL_COMMAND_PATHS,
-    SHARED_COMMAND_PATHS,
+    azure_command_specs,
     load_command_table,
 )
 
@@ -38,15 +36,15 @@ class FakeLoader:
 
 
 @pytest.mark.unit
-def test_approved_preview_commands_are_registered_from_explicit_allowlist() -> None:
+def test_preview_commands_are_generated_from_shared_specs() -> None:
     loader = FakeLoader()
 
     command_table = load_command_table(loader, [])
 
     assert set(command_table) == {
-        "cu " + " ".join(path) for path in (*APPROVED_COMMAND_PATHS, *INTERNAL_COMMAND_PATHS)
+        "cu " + " ".join(spec.path) for spec in azure_command_specs()
     }
-    assert set(APPROVED_COMMAND_PATHS) - {("doctor",), ("infra", "generate")} <= SHARED_COMMAND_PATHS
+    assert len(command_table) == len(azure_command_specs())
     assert command_table["cu analyzer list"]["table_transformer"].endswith(
         "#analyzer_list_table"
     )
@@ -70,7 +68,7 @@ def test_infrastructure_generation_is_registered_but_obsolete_commands_are_not()
 def test_all_help_entries_are_valid_yaml() -> None:
     from knack.help_files import helps
 
-    for command_name in ("cu", *("cu " + " ".join(path) for path in APPROVED_COMMAND_PATHS)):
+    for command_name in ("cu", *("cu " + " ".join(spec.path) for spec in azure_command_specs() if not spec.path[0].startswith("_"))):
         parsed = yaml.safe_load(helps[command_name])
         assert isinstance(parsed, dict), command_name
         assert parsed["type"] in {"group", "command"}, command_name

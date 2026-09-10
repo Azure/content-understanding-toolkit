@@ -55,8 +55,14 @@ API_KEY = ServiceOptionSpec(
     help="Microsoft Foundry resource API key.",
     sensitive=True,
 )
+PROFILE = ServiceOptionSpec(
+    key="profile",
+    name="--profile",
+    parser_name="profile_name",
+    help="CU CLI profile used to resolve endpoint and API-version defaults.",
+)
 
-SERVICE_OPTIONS = (ENDPOINT, API_VERSION, AUTH_MODE, API_KEY)
+SERVICE_OPTIONS = (ENDPOINT, API_VERSION, AUTH_MODE, API_KEY, PROFILE)
 _SERVICE_OPTIONS_BY_KEY = {option.key: option for option in SERVICE_OPTIONS}
 
 if len(_SERVICE_OPTIONS_BY_KEY) != len(SERVICE_OPTIONS):

@@ -6,9 +6,9 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 import rich_click as click
+from cu_cli_core.command_spec import INFRA_MODELS
 
 from ..client import build_client, resolve
 from ..profile import Profile
@@ -26,6 +26,7 @@ from ..errors import CuCliError, friendly_errors
 from ..output import console
 from ._help import common_commands
 from ._options import print_runtime_context, with_auth_options
+from ._command_spec import with_command_arguments
 
 NO_MODEL_ANALYZERS = (
     "prebuilt-digitalParse",
@@ -119,13 +120,7 @@ def _client(endpoint, api_key, api_version, entra, profile_name, show_runtime_co
         ),
     ),
 )
-@click.option("--resource-group", required=True)
-@click.option("--account", "account_name", required=True)
-@click.option("--subscription", "subscription_id", required=True)
-@click.option("--selection", required=True,
-              help="prompt, recommended, none, or comma-separated model selectors.")
-@click.option("--out", "out_path", required=True, type=click.Path(path_type=Path))
-@click.option("--deploy/--no-deploy", default=True)
+@with_command_arguments(INFRA_MODELS)
 @with_auth_options
 @friendly_errors
 def cmd_infra_models(

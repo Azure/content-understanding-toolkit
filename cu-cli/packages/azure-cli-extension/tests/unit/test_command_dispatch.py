@@ -4,6 +4,8 @@
 """Tests for the thin Azure CLI dispatch boundary."""
 
 import inspect
+from pathlib import Path
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -51,3 +53,12 @@ def test_entry_points_use_azure_cli_kwargs_convention() -> None:
             if parameter.kind is inspect.Parameter.VAR_KEYWORD
         )
         assert variadic.name == "kwargs", name
+
+
+@pytest.mark.unit
+def test_active_extension_does_not_import_standalone_frontend() -> None:
+    package = Path(_commands.__file__).parent
+    source = "\n".join(path.read_text(encoding="utf-8") for path in package.glob("*.py"))
+
+    assert re.search(r"\bfrom cu_cli(?:\.|\s+import)", source) is None
+    assert re.search(r"\bimport cu_cli(?:\s|$)", source) is None
