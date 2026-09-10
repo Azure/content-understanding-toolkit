@@ -89,16 +89,6 @@ def _template_root() -> Path:
     packaged = Path(__file__).with_name("_infra_template")
     if packaged.is_dir():
         return packaged
-    source = (
-        Path(__file__).resolve().parents[2]
-        / "standalone"
-        / "src"
-        / "cu_cli"
-        / "resources"
-        / "azd_template"
-    )
-    if source.is_dir():
-        return source
     raise LocalIOError("the infrastructure template is missing from the extension package.")
 
 
@@ -108,43 +98,6 @@ def _iter_template_files(root: Path) -> Iterable[tuple[Path, Path]]:
 
 
 def _copy_template_file(source: Path, relative: Path, destination: Path) -> None:
-    if relative.parts[:1] == ("hooks",):
-        override = Path(__file__).with_name("_infra_overrides") / relative.name
-        if not override.is_file():
-            raise LocalIOError(f"the Azure CLI infrastructure hook is missing: {relative.name}")
-        copyfile(override, destination)
-        return
-    if relative.as_posix() == "README.md":
-        content = source.read_text(encoding="utf-8")
-        content = content.replace(
-            "[`cu` CLI](https://github.com/Azure/content-understanding-toolkit/tree/main/cu-cli)",
-            "`az cu` Azure CLI extension",
-        )
-        content = re.sub(
-            r"The generated hook runs `cu _infra-models`.*?embeddings models\.\n",
-            "The generated hook runs the internal `az cu _infra-models` helper, so keep "
-            "Azure CLI and the `content-understanding` extension on `PATH` when running "
-            "`azd up`. Model setup failures stop the hook and can be retried with `azd up`; "
-            "layout, read, and digital parsing remain available without optional models.\n",
-            content,
-            flags=re.DOTALL,
-        )
-        content = re.sub(r"(?m)^cu (?=(?:profile|doctor|analyze|analyzer))", "az cu ", content)
-        content = re.sub(
-            r"(?m)^az cu profile set (\S+) (.*)$",
-            r"az cu profile set --key \1 --value \2",
-            content,
-        )
-        content = content.replace("`cu infra generate --force`", "`az cu infra generate --force`")
-        content = content.replace("`AZURE_ASSIGN_ROLES`", "`AZD_ASSIGN_ROLES`")
-        content = content.replace(
-            "the post-provision hook uses resource-key\nauthentication instead.",
-            "the post-provision helper can use a resource key for setup, but later `az cu` "
-            "commands still require existing data-plane access.",
-        )
-        content = re.sub(r"\nOn macOS, use `cu-cli`.*?command\)\.\n", "\n", content, flags=re.DOTALL)
-        destination.write_text(content, encoding="utf-8")
-        return
     copyfile(source, destination)
 
 

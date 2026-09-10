@@ -36,6 +36,18 @@ dev = [
 [project.urls]
 Repository = "https://github.com/Azure/content-understanding-toolkit/tree/main/cu-cli"
 
+[tool.setuptools.packages.find]
+include = ["azext_content_understanding*"]
+
+[tool.setuptools.package-data]
+azext_content_understanding = [
+    "azext_metadata.json",
+    "_infra_template/*",
+    "_infra_template/hooks/*",
+    "_infra_template/infra/*",
+    "_infra_template/infra/modules/*",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = [".", "../core/src"]

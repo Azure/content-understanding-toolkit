@@ -41,7 +41,6 @@ if ($LASTEXITCODE -ne 0) {
   throw 'Install the content-understanding Azure CLI extension, then rerun azd up.'
 }
 
-$modelNames = @()
 $modelArgs = @(
   'cu', '_infra-models',
   '--resource-group', $rg, '--account', $account, '--subscription', $subscriptionId,

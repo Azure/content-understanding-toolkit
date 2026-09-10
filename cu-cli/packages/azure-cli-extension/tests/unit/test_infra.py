@@ -59,6 +59,22 @@ def test_write_project_materializes_canonical_template(tmp_path: Path) -> None:
     assert 'CU_MODEL_SELECTION="recommended"' in environment
 
 
+def test_template_is_packaged_with_the_extension() -> None:
+    template = _infra._template_root()
+
+    assert template.parent == Path(_infra.__file__).parent
+    assert {relative.as_posix() for _, relative in _infra._iter_template_files(template)} == {
+        "README.md",
+        "azure.yaml",
+        "hooks/postprovision.ps1",
+        "hooks/postprovision.sh",
+        "infra/main.bicep",
+        "infra/main.parameters.json",
+        "infra/models.json",
+        "infra/modules/foundry.bicep",
+    }
+
+
 def test_write_project_reuses_template_and_preserves_unknown_state(tmp_path: Path) -> None:
     target = tmp_path / "provision"
     _infra._write_project(target, _choices(), force=False)
