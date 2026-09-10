@@ -219,6 +219,7 @@ def cmd_infra_generate(
     models: str | None,
     foundry_endpoint: str | None,
     foundry_prefix: str | None,
+    assign_roles: bool | None,
     force: bool,
 ) -> None:
     selected_models = _parse_models(models)
@@ -269,6 +270,6 @@ def cmd_infra_generate(
         foundry_endpoint=normalized_endpoint,
         foundry_resource_group=existing_resource_group,
         models=selected_models,
-        assign_roles=None,
+        assign_roles=assign_roles,
         force=force,
     )

@@ -6,7 +6,7 @@
 import logging
 from typing import Any
 
-from azure.cli.core.commands.parameters import get_enum_type
+from azure.cli.core.commands.parameters import get_enum_type, get_three_state_flag
 
 from cu_cli_core.command_spec import ArgumentValueType, SurfaceClassification
 from cu_cli_core.service_options import get_service_option
@@ -44,6 +44,8 @@ def _argument_kwargs(argument: Any) -> dict[str, Any]:
         kwargs["default"] = argument.default
     if argument.choices:
         kwargs["arg_type"] = get_enum_type(argument.choices)
+    elif argument.value_type is ArgumentValueType.TRISTATE_BOOLEAN:
+        kwargs["arg_type"] = get_three_state_flag()
     elif argument.value_type is ArgumentValueType.INTEGER:
         kwargs["type"] = int
     if argument.value_type is ArgumentValueType.BOOLEAN:

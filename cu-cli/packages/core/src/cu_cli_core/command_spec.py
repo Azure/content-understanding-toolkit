@@ -30,6 +30,7 @@ class ArgumentValueType(str, Enum):
 
     STRING = "string"
     BOOLEAN = "boolean"
+    TRISTATE_BOOLEAN = "tristate-boolean"
     INTEGER = "integer"
     PATH = "path"
 
@@ -1150,10 +1151,8 @@ INFRA_GENERATE = CommandSpec(
         ArgumentSpec("--models", field="models", parser_name="models", help="Comma-separated model names, 'recommended', or 'none'."),
         ArgumentSpec("--foundry-endpoint", field="foundry_endpoint", parser_name="foundry_endpoint", help="Existing Microsoft Foundry resource endpoint."),
         ArgumentSpec("--foundry-prefix", field="foundry_prefix", parser_name="foundry_prefix", help="Prefix for a new Microsoft Foundry resource name."),
-        ArgumentSpec("--assign-roles", field="assign_roles", parser_name="assign_roles", help="Configure RBAC role assignments in the generated project.", value_type=ArgumentValueType.BOOLEAN, classification=SurfaceClassification.AZURE_ONLY),
-        ArgumentSpec("--no-assign-roles", field="no_assign_roles", parser_name="no_assign_roles", help="Skip generated RBAC role assignments.", value_type=ArgumentValueType.BOOLEAN, classification=SurfaceClassification.AZURE_ONLY),
+        ArgumentSpec("--assign-roles", field="assign_roles", parser_name="assign_roles", help="Whether to configure RBAC role assignments; omit to use interactive or default behavior.", value_type=ArgumentValueType.TRISTATE_BOOLEAN),
         ArgumentSpec("--force", field="force", parser_name="force", help="Overwrite an existing generated template.", value_type=ArgumentValueType.BOOLEAN),
-        ArgumentSpec("--yes", aliases=("-y",), field="yes", parser_name="yes", help="Use deterministic defaults without the interactive wizard.", value_type=ArgumentValueType.BOOLEAN, classification=SurfaceClassification.AZURE_ONLY),
     ),
 )
 

@@ -82,6 +82,8 @@ def test_infra_generate_passes_custom_output_and_new_resource_options(
         "gpt-5.2, text-embedding-3-large",
         "--foundry-prefix",
         "contoso-cu",
+        "--assign-roles",
+        "false",
         "--force",
     )
 
@@ -93,6 +95,7 @@ def test_infra_generate_passes_custom_output_and_new_resource_options(
     assert captured["api_version"] == "2026-06-01-preview"
     assert captured["models"] == ["gpt-5.2", "text-embedding-3-large"]
     assert captured["foundry_account_prefix"] == "contoso-cu"
+    assert captured["assign_roles"] is False
     assert captured["force"] is True
 
 

@@ -191,8 +191,6 @@ def _choose_account(cli_ctx: Any, *, interactive: bool) -> AzureAccount:
 
 def _interactive_choices(values: dict[str, Any], account: AzureAccount) -> dict[str, Any]:
     resolved = dict(values)
-    if resolved.get("no_assign_roles"):
-        resolved["assign_roles"] = False
     resolved["environment"] = resolved.get("environment") or prompt(
         "azd environment name", default=DEFAULT_ENVIRONMENT
     )
@@ -330,7 +328,7 @@ def generate_infrastructure(cmd: Any, **values: Any) -> dict[str, Any]:
     """Generate a self-contained azd project; this command never runs azd."""
 
     ensure_supported_cloud(cmd.cli_ctx)
-    interactive = bool(sys.stdin.isatty() and not values.get("yes"))
+    interactive = bool(sys.stdin.isatty())
     account = _choose_account(cmd.cli_ctx, interactive=interactive)
     if interactive:
         values = _interactive_choices(values, account)
@@ -355,9 +353,9 @@ def generate_infrastructure(cmd: Any, **values: Any) -> dict[str, Any]:
         foundry_resource_group=resource_group,
         model_selection=_parse_models(values.get("models")),
         assign_roles=(
-            bool(values.get("assign_roles"))
+            values["assign_roles"]
             if values.get("assign_roles") is not None
-            else not bool(values.get("no_assign_roles"))
+            else True
         ),
         force_profile_setup=bool(values.get("force")),
     )

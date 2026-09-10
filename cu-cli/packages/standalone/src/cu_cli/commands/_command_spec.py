@@ -22,6 +22,7 @@ from cu_cli_core.command_spec import (
 _SIMPLE_CLICK_TYPES: dict[ArgumentValueType, Any] = {
     ArgumentValueType.STRING: str,
     ArgumentValueType.BOOLEAN: bool,
+    ArgumentValueType.TRISTATE_BOOLEAN: click.BOOL,
 }
 
 

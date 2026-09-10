@@ -10,6 +10,7 @@ from typing import Any, Iterator
 import pytest
 
 from azext_content_understanding._params import load_arguments
+from azext_content_understanding._help import load_command_help
 from azext_content_understanding.commands import azure_command_specs, load_command_table
 
 
@@ -84,6 +85,10 @@ def test_generic_adapter_converts_portable_argument_types() -> None:
     assert analyze["dry_run"]["action"] == "store_true"
     assert analyze["concurrency"]["type"] is int
     assert analyze["on_existing"]["arg_type"] is not None
+    infra = loader.arguments["cu infra generate"]
+    assert infra["assign_roles"]["arg_type"] is not None
+    assert "yes" not in infra
+    assert "no_assign_roles" not in infra
 
 
 @pytest.mark.unit
@@ -104,6 +109,7 @@ def test_complete_shared_registry_conversion_finishes_within_budget() -> None:
     started = perf_counter()
     load_command_table(loader, None)
     load_arguments(loader, None)
+    load_command_help()
     elapsed = perf_counter() - started
 
     assert elapsed <= 0.300

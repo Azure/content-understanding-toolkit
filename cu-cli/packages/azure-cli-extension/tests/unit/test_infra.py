@@ -142,7 +142,7 @@ def test_generate_can_explicitly_skip_role_assignment(
         output_dir=str(tmp_path / "provision"),
         location="eastus2",
         models="none",
-        no_assign_roles=True,
+        assign_roles=False,
     )
 
     assert result["assign_roles"] is False

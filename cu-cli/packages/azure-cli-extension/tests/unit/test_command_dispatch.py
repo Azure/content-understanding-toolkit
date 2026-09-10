@@ -20,7 +20,7 @@ def test_dispatch_returns_plain_values(monkeypatch: pytest.MonkeyPatch) -> None:
     value = SimpleNamespace(as_dict=lambda: {"analyzerId": "prebuilt-layout"})
     monkeypatch.setattr(_commands._analyzers, "show_analyzer", lambda cmd, **values: value)
 
-    result = _commands.show_analyzer(SimpleNamespace(), analyzer_name="prebuilt-layout")
+    result = _commands.analyzer__show(SimpleNamespace(), analyzer_name="prebuilt-layout")
 
     assert result == {"analyzerId": "prebuilt-layout"}
 
@@ -33,7 +33,7 @@ def test_dispatch_translates_core_errors_with_fallback(monkeypatch: pytest.Monke
     monkeypatch.setattr(_commands._profiles, "set_profile", fail)
 
     with pytest.raises(InvalidArgumentValueError, match="choose another value"):
-        _commands.set_profile(SimpleNamespace(), profile_key="endpoint", profile_value="bad")
+        _commands.profile__set(SimpleNamespace(), profile_key="endpoint", profile_value="bad")
 
 
 @pytest.mark.unit

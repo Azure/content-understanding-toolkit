@@ -10,8 +10,10 @@ import pytest
 import yaml
 
 from azext_content_understanding import _help  # noqa: F401
+from azext_content_understanding import _commands
 from azext_content_understanding.commands import (
     azure_command_specs,
+    command_adapter_name,
     load_command_table,
 )
 
@@ -52,6 +54,15 @@ def test_preview_commands_are_generated_from_shared_specs() -> None:
 
 
 @pytest.mark.unit
+def test_every_shared_command_derives_a_unique_callable_adapter() -> None:
+    names = [command_adapter_name(spec.path) for spec in azure_command_specs()]
+
+    assert len(names) == len(set(names))
+    for name in names:
+        assert callable(getattr(_commands, name)), name
+
+
+@pytest.mark.unit
 def test_infrastructure_generation_is_registered_but_obsolete_commands_are_not() -> None:
     loader = FakeLoader()
 
@@ -72,3 +83,12 @@ def test_all_help_entries_are_valid_yaml() -> None:
         parsed = yaml.safe_load(helps[command_name])
         assert isinstance(parsed, dict), command_name
         assert parsed["type"] in {"group", "command"}, command_name
+
+
+@pytest.mark.unit
+def test_command_help_keys_and_summaries_come_from_shared_specs() -> None:
+    from knack.help_files import helps
+
+    for spec in azure_command_specs():
+        parsed = yaml.safe_load(helps[_help.command_help_key(spec.path)])
+        assert parsed["short-summary"] == spec.help
