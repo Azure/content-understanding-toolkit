@@ -336,7 +336,7 @@ the reference to Content Understanding and does not download or upload the file
 itself. This enables URL-based service limits, including large video workflows:
 
 ```bash
-cu analyze --url "https://storage.example.net/container/video.mp4" \
+cu analyze --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/videos/sdk_samples/FlightSimulator.mp4" \
   --analyzer prebuilt-videoSearch
 ```
 
@@ -346,10 +346,11 @@ shortcut, including when mixing local and remote inputs. `--pattern` requires
 `--source`, and `--recursive` requires a directory input.
 
 Azure Blob SAS query parameters are preserved exactly for the service request.
-Quote the complete URL so the shell does not interpret `&` characters:
+Replace the placeholders below with your storage account, container, blob, and
+SAS token. Quote the complete URL so the shell does not interpret `&` characters:
 
 ```bash
-cu analyze --url "https://storage.example.net/container/video.mp4?sv=<version>&sp=r&sig=<signature>" \
+cu analyze --url "https://<storage-account>.blob.core.windows.net/<container>/<blob>?<sas-token>" \
   --analyzer prebuilt-videoSearch \
   --json
 ```
@@ -394,8 +395,8 @@ unavailable and does not probe or download remote content:
 
 ```bash
 cu analyze \
-  --url "https://storage.example.net/container/one.pdf" \
-  --url "https://storage.example.net/container/two.pdf" \
+  --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/invoice.pdf" \
+  --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/receipt.png" \
   --analyzer prebuilt-layout \
   --output-dir ./results \
   --dry-run
