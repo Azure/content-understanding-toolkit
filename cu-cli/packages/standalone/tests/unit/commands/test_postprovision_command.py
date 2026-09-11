@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 from cu_cli.cli import main
 from cu_cli.commands import _postprovision
-from cu_cli_core.postprovision import PostprovisionResult
+from cu_cli_core.postprovision import PostprovisionResult, execute_postprovision
 
 pytestmark = pytest.mark.unit
 
@@ -33,6 +33,31 @@ def test_versioned_postprovision_command_is_hidden_and_invocable(monkeypatch):
     assert "_infra-postprovision-v1" not in help_result.output
     assert result.exit_code == 0, result.output
     assert "adapter reached" in result.output
+
+
+def test_completed_model_state_from_azd_skips_standalone_model_setup(monkeypatch):
+    monkeypatch.setattr(
+        _postprovision,
+        "_azd_values",
+        lambda: {
+            "FOUNDRY_ENDPOINT": "https://example.services.ai.azure.com/",
+            "FOUNDRY_RESOURCE_NAME": "account",
+            "AZURE_RESOURCE_GROUP": "rg",
+            "AZURE_SUBSCRIPTION_ID": "sub",
+            "CU_MODEL_SETUP_COMPLETE": "true",
+        },
+    )
+    request = _postprovision._request_from_environment()
+    capabilities = SimpleNamespace(
+        setup_models=lambda _request: pytest.fail("model setup must be skipped"),
+        mark_model_setup_complete=lambda: pytest.fail("state must not be rewritten"),
+        profile_has_values=lambda _name: True,
+    )
+
+    result = execute_postprovision(request, capabilities)
+
+    assert request.model_setup_complete is True
+    assert result.model_setup == "skipped"
 
 
 def test_get_account_key_rejects_missing_azure_cli(monkeypatch):

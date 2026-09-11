@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 from azure.core.exceptions import HttpResponseError
-from cu_cli_core.errors import ServiceError, ValidationError
+from cu_cli_core.errors import ServiceError, UsageError, ValidationError
 
 from azext_content_understanding import _analysis, _analyzers, _diagnostics, _profiles
 
@@ -219,6 +219,44 @@ def test_doctor_explicit_overrides_and_key_result_are_secret_free(monkeypatch):
     assert result["authentication"] == "resource key"
     assert captured["api_key"] == secret
     assert secret not in str(result)
+
+
+@pytest.mark.unit
+def test_doctor_loads_named_profile_without_changing_active_profile(monkeypatch):
+    loaded = []
+    profile = _doctor_profile(profile_name="named")
+    monkeypatch.setattr(
+        _diagnostics.Profile,
+        "load",
+        lambda **kwargs: loaded.append(kwargs) or profile,
+    )
+    monkeypatch.setattr(
+        _diagnostics,
+        "create_content_understanding_client",
+        lambda *args, **kwargs: SimpleNamespace(
+            get_defaults=lambda: SimpleNamespace(model_deployments={})
+        ),
+    )
+
+    result = _diagnostics.doctor(SimpleNamespace(), profile_name="named")
+
+    assert loaded == [{"profile_name": "named"}]
+    assert result["profile"] == "named"
+
+
+@pytest.mark.unit
+def test_doctor_fix_without_service_or_profile_mappings_is_nonzero(monkeypatch):
+    monkeypatch.setattr(_diagnostics.Profile, "load", lambda **kwargs: _doctor_profile())
+    monkeypatch.setattr(
+        _diagnostics,
+        "create_content_understanding_client",
+        lambda *args, **kwargs: SimpleNamespace(
+            get_defaults=lambda: SimpleNamespace(model_deployments={})
+        ),
+    )
+
+    with pytest.raises(UsageError, match="no model deployment mapping"):
+        _diagnostics.doctor(SimpleNamespace(), fix_defaults=True)
 
 
 @pytest.mark.unit

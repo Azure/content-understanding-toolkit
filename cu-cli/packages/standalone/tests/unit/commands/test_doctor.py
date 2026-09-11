@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from click.testing import CliRunner
+from types import SimpleNamespace
 
 from cu_cli.cli import main
 from cu_cli.core.doctor import is_defaults_not_set as _is_defaults_not_set
@@ -257,3 +258,29 @@ def test_doctor_explains_missing_default_analyzer(monkeypatch):
     assert res.exit_code == 0, res.output
     assert "Default analyzer: not configured" in res.output
     assert "`cu analyze` requires --analyzer" in res.output
+
+
+def test_doctor_loads_named_profile_without_changing_active_profile(monkeypatch):
+    loaded = []
+    profile = SimpleNamespace(
+        profile_name="named",
+        endpoint="https://named.services.ai.azure.com/",
+        api_version="2025-11-01",
+        auth_mode="login",
+        api_key=None,
+        default_analyzer="prebuilt-layout",
+        model_deployments={},
+    )
+    monkeypatch.setattr(
+        "cu_cli.commands.doctor.Profile.load",
+        lambda **kwargs: loaded.append(kwargs) or profile,
+    )
+    monkeypatch.setattr(
+        "cu_cli.commands.doctor.build_client",
+        lambda *args, **kwargs: _FakeClient({}),
+    )
+
+    res = _run("doctor", "--profile", "named")
+
+    assert res.exit_code == 0, res.output
+    assert loaded == [{"profile_name": "named"}]
