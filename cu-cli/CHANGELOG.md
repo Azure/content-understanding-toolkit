@@ -7,6 +7,11 @@
 - Added result limits, continuation tokens, and exact or prefix ID filtering to
 	`cu analyzer list`, while preserving complete array output for unlimited JSON
 	queries.
+- Added HTTPS and Azure Blob SAS URL inputs to `cu analyze` through repeatable
+	`--url` options or standalone positional shortcuts, including URL-based analysis
+	for large audio and video files without downloading them through the CLI.
+	Remote results use the URL filename without a hash. Batches with conflicting
+	remote output paths or generated remote names over 240 UTF-8 bytes fail before analysis.
 
 ## 0.1.0b1 (2026-09-04)
 

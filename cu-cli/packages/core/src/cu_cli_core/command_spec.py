@@ -223,14 +223,33 @@ _INPUT_ARGUMENTS = (
     ),
 )
 
+_ANALYZE_INPUT_ARGUMENTS = (
+    ArgumentSpec(
+        "INPUTS",
+        field="positional_inputs",
+        parser_name="inputs",
+        help="Standalone local file, directory, or HTTPS URL shortcuts.",
+        repeatable=True,
+        classification=SurfaceClassification.STANDALONE_SHORTCUT,
+    ),
+    *_INPUT_ARGUMENTS[1:],
+    ArgumentSpec(
+        "--url",
+        field="urls",
+        parser_name="urls",
+        help="HTTPS or Azure Blob SAS URL. Repeat for multiple URLs.",
+        repeatable=True,
+    ),
+)
+
 
 ANALYZE = CommandSpec(
     path=("analyze",),
-    help="Process local files with an analyzer and return analyzer results.",
+    help="Process local files or HTTPS URLs and return analyzer results.",
     operation="cu_cli_core.operations.analysis#execute_analyze",
     request_type="cu_cli_core.contracts#AnalyzeRequest",
     arguments=(
-        *_INPUT_ARGUMENTS,
+        *_ANALYZE_INPUT_ARGUMENTS,
         ArgumentSpec(
             "--analyzer",
             aliases=("-a",),

@@ -25,6 +25,7 @@ secret / real hostname scrubbed, so they are safe to commit and replay anywhere.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from pathlib import Path
@@ -86,7 +87,7 @@ def _scrub_host(text: str) -> str:
     return text
 
 
-_URL_RE = re.compile(r"https?://[^\s\"'\\]+")
+_URL_RE = re.compile(r"https?://[^\s\"\\]+")
 
 
 def _scrub_sensitive_query(text: str) -> str:
@@ -109,6 +110,25 @@ def _scrub_sensitive_query(text: str) -> str:
     return _URL_RE.sub(_replace, text)
 
 
+def _scrub_json_request_body(text: str) -> str:
+    """Redact sensitive URL values nested anywhere in a JSON request body."""
+    try:
+        payload = json.loads(text)
+    except (TypeError, ValueError):
+        return _scrub_sensitive_query(_scrub_host(text))
+
+    def scrub(value):
+        if isinstance(value, str):
+            return _scrub_sensitive_query(_scrub_host(value))
+        if isinstance(value, list):
+            return [scrub(item) for item in value]
+        if isinstance(value, dict):
+            return {key: scrub(item) for key, item in value.items()}
+        return value
+
+    return json.dumps(scrub(payload), separators=(",", ":"))
+
+
 def _before_record_request(request):
     # Rewrite the request URI to the placeholder host and drop secret headers.
     parts = urlsplit(request.uri)
@@ -117,8 +137,10 @@ def _before_record_request(request):
     for h in _SENSITIVE_HEADERS:
         if h in request.headers:
             request.headers[h] = "REDACTED"
-    # Never store the uploaded document bytes.
-    if request.body and not isinstance(request.body, str):
+    if isinstance(request.body, str):
+        request.body = _scrub_json_request_body(request.body)
+    # Never store uploaded document bytes or encoded JSON bodies.
+    elif request.body:
         request.body = b"<binary-scrubbed>"
     return request
 
