@@ -28,6 +28,7 @@ def _command(path: Path, log: Path, label: str) -> None:
     ("frontends", "expected"),
     [
         (("cu-cli", "az"), "standalone _infra-postprovision-v1"),
+        (("cu", "az"), "azure cu infra _postprovision-v1"),
         (("cu",), "standalone _infra-postprovision-v1"),
         (("az",), "azure cu infra _postprovision-v1"),
     ],
@@ -44,11 +45,29 @@ def test_posix_launcher_selects_one_available_frontend(tmp_path, frontends, expe
         check=False,
         capture_output=True,
         text=True,
-        env={**os.environ, "PATH": f"{bin_dir}:/usr/bin:/bin"},
+        env={**os.environ, "PATH": str(bin_dir)},
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert log.read_text(encoding="utf-8").strip() == expected
+
+
+def test_posix_launcher_prefers_azure_cli_over_system_commands(tmp_path):
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    log = tmp_path / "calls"
+    _command(bin_dir / "az", log, "azure")
+
+    result = subprocess.run(
+        ["/bin/sh", str(HOOKS / "postprovision.sh")],
+        check=False,
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PATH": f"{bin_dir}:/usr/bin:/bin"},
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert log.read_text(encoding="utf-8").strip() == "azure cu infra _postprovision-v1"
 
 
 def test_posix_launcher_fails_when_no_frontend_is_installed(tmp_path):
@@ -57,7 +76,7 @@ def test_posix_launcher_fails_when_no_frontend_is_installed(tmp_path):
         check=False,
         capture_output=True,
         text=True,
-        env={**os.environ, "PATH": "/usr/bin:/bin"},
+        env={**os.environ, "PATH": str(tmp_path)},
     )
     assert result.returncode != 0
 
@@ -68,4 +87,5 @@ def test_launchers_are_policy_free_and_reference_both_frontends():
     for content in (posix, powershell):
         assert "_infra-postprovision-v1" in content
         assert "_postprovision-v1" in content
+        assert "/usr/bin/cu" in content
     assert shutil.which("pwsh") is None or "exit $LASTEXITCODE" in powershell

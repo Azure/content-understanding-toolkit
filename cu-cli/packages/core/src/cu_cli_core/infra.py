@@ -10,9 +10,13 @@ import re
 import stat
 from dataclasses import dataclass
 from importlib import resources
-from importlib.resources.abc import Traversable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import TYPE_CHECKING, Any, Iterable
+
+if TYPE_CHECKING:
+    from importlib.resources.abc import Traversable
+else:
+    Traversable = Any
 
 from .errors import LocalIOError, ValidationError
 
