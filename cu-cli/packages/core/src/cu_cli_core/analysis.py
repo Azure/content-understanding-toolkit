@@ -45,6 +45,7 @@ class AnalyzeJob:
     analyzer_id: str
     out_path: Optional[Path] = None  # None => caller streams to stdout
     output_format: str = "markdown"
+    input_url: Optional[str] = None
 
 
 @dataclass
@@ -249,6 +250,51 @@ def analyze_bytes_with_usage(
     return AnalyzeResponse(result=result, usage=getattr(poller, "usage", None))
 
 
+def _analysis_url_input(url: str) -> Any:
+    from azure.ai.contentunderstanding.models import AnalysisInput
+
+    return AnalysisInput(url=url)
+
+
+def analyze_url(
+    client: Any,
+    analyzer_id: str,
+    url: str,
+    *,
+    raw_json: bool = False,
+) -> Any:
+    """Analyze an HTTPS input reference and return the completed result."""
+    return analyze_url_with_usage(
+        client,
+        analyzer_id,
+        url,
+        raw_json=raw_json,
+    ).result
+
+
+def analyze_url_with_usage(
+    client: Any,
+    analyzer_id: str,
+    url: str,
+    *,
+    raw_json: bool = False,
+) -> AnalyzeResponse:
+    """Analyze an HTTPS input reference while retaining usage metadata."""
+    kwargs = {"cls": _capture_raw_response} if raw_json else {}
+    poller = client.begin_analyze(
+        analyzer_id=analyzer_id,
+        inputs=[_analysis_url_input(url)],
+        **kwargs,
+    )
+    completed = poller.result()
+    if raw_json:
+        _, raw_response = completed
+        result = raw_response.json()
+    else:
+        result = completed
+    return AnalyzeResponse(result=result, usage=getattr(poller, "usage", None))
+
+
 def analyze_bytes_inline(
     client: Any,
     analyzer_id: str,
@@ -288,8 +334,54 @@ def analyze_bytes_inline_with_usage(
     return AnalyzeResponse(result=result, usage=getattr(response, "usage", None))
 
 
+def analyze_url_inline(
+    client: Any,
+    analyzer_id: str,
+    url: str,
+    *,
+    raw_json: bool = False,
+) -> Any:
+    """Analyze an HTTPS input reference synchronously."""
+    return analyze_url_inline_with_usage(
+        client,
+        analyzer_id,
+        url,
+        raw_json=raw_json,
+    ).result
+
+
+def analyze_url_inline_with_usage(
+    client: Any,
+    analyzer_id: str,
+    url: str,
+    *,
+    raw_json: bool = False,
+) -> AnalyzeResponse:
+    """Analyze an HTTPS input reference synchronously with usage metadata."""
+    kwargs = {"cls": _capture_raw_response} if raw_json else {}
+    completed = client.analyze_inline(
+        analyzer_id=analyzer_id,
+        inputs=[_analysis_url_input(url)],
+        **kwargs,
+    )
+    if raw_json:
+        response, raw_response = completed
+        result = raw_response.json()
+    else:
+        response = completed
+        result = response.result
+    return AnalyzeResponse(result=result, usage=getattr(response, "usage", None))
+
+
 def analyze_one(client: Any, job: AnalyzeJob) -> Any:
     """Run a single :class:`AnalyzeJob`, returning the completed SDK result."""
+    if job.input_url is not None:
+        return analyze_url(
+            client,
+            job.analyzer_id,
+            job.input_url,
+            raw_json=job.output_format == "json",
+        )
     data = Path(job.input_ref).read_bytes()
     return analyze_bytes(
         client,
@@ -301,6 +393,13 @@ def analyze_one(client: Any, job: AnalyzeJob) -> Any:
 
 def analyze_one_inline(client: Any, job: AnalyzeJob) -> Any:
     """Run a single job synchronously through the inline analyze API."""
+    if job.input_url is not None:
+        return analyze_url_inline(
+            client,
+            job.analyzer_id,
+            job.input_url,
+            raw_json=job.output_format == "json",
+        )
     data = Path(job.input_ref).read_bytes()
     return analyze_bytes_inline(
         client,
@@ -312,6 +411,13 @@ def analyze_one_inline(client: Any, job: AnalyzeJob) -> Any:
 
 def analyze_one_with_usage(client: Any, job: AnalyzeJob) -> AnalyzeResponse:
     """Run one long-running analysis and retain its usage metadata."""
+    if job.input_url is not None:
+        return analyze_url_with_usage(
+            client,
+            job.analyzer_id,
+            job.input_url,
+            raw_json=job.output_format == "json",
+        )
     data = Path(job.input_ref).read_bytes()
     return analyze_bytes_with_usage(
         client,
@@ -323,6 +429,13 @@ def analyze_one_with_usage(client: Any, job: AnalyzeJob) -> AnalyzeResponse:
 
 def analyze_one_inline_with_usage(client: Any, job: AnalyzeJob) -> AnalyzeResponse:
     """Run one inline analysis and retain its usage metadata."""
+    if job.input_url is not None:
+        return analyze_url_inline_with_usage(
+            client,
+            job.analyzer_id,
+            job.input_url,
+            raw_json=job.output_format == "json",
+        )
     data = Path(job.input_ref).read_bytes()
     return analyze_bytes_inline_with_usage(
         client,
