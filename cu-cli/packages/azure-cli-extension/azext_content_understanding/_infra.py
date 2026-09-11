@@ -114,16 +114,7 @@ def _interactive_choices(values: dict[str, Any], account: AzureAccount) -> dict[
         selected = prompt_choice_list("Select a Content Understanding region:", list(CU_SUPPORTED_REGIONS))
         resolved["location"] = CU_SUPPORTED_REGIONS[selected]
     if not resolved.get("models"):
-        model_mode = prompt_choice_list(
-            "Select model deployment behavior:",
-            ["Recommended completion and embedding models", "No models", "Explicit model names"],
-        )
-        if model_mode == 0:
-            resolved["models"] = "recommended"
-        elif model_mode == 1:
-            resolved["models"] = "none"
-        else:
-            resolved["models"] = prompt("Comma-separated model names or name@version selectors")
+        resolved["models"] = "prompt"
     if resolved.get("assign_roles") is None and not resolved.get("foundry_endpoint"):
         resolved["assign_roles"] = prompt_y_n(
             "Assign required RBAC roles to the signed-in user?", default="n"

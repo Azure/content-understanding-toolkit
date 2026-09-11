@@ -126,7 +126,7 @@ def test_choose_account_lists_subscriptions_and_marks_active(monkeypatch) -> Non
 
 def test_interactive_choices_prompt_in_order_with_shared_defaults(monkeypatch) -> None:
     calls = []
-    choices = iter([0, 2, 0])
+    choices = iter([0, 2])
 
     def choose(message, labels):
         calls.append(("choice", message, labels))
@@ -150,7 +150,7 @@ def test_interactive_choices_prompt_in_order_with_shared_defaults(monkeypatch) -
         "environment": "dev",
         "foundry_prefix": "",
         "location": "eastus2",
-        "models": "recommended",
+        "models": "prompt",
         "assign_roles": False,
     }
     assert [(kind, message) for kind, message, _value in calls] == [
@@ -158,7 +158,6 @@ def test_interactive_choices_prompt_in_order_with_shared_defaults(monkeypatch) -
         ("choice", "Choose a Microsoft Foundry resource:"),
         ("prompt", "New resource prefix (blank for generated name)"),
         ("choice", "Select a Content Understanding region:"),
-        ("choice", "Select model deployment behavior:"),
         ("yes-no", "Assign required RBAC roles to the signed-in user?"),
     ]
     assert calls[0][2] == "dev"
@@ -167,7 +166,7 @@ def test_interactive_choices_prompt_in_order_with_shared_defaults(monkeypatch) -
 
 
 def test_interactive_existing_resource_skips_role_and_region_prompts(monkeypatch) -> None:
-    choices = iter([1, 1])
+    choices = iter([1])
     calls = []
 
     def choose(message, labels):
@@ -191,9 +190,25 @@ def test_interactive_existing_resource_skips_role_and_region_prompts(monkeypatch
     resolved = _infra._interactive_choices({}, AzureAccount("sub", "Dev", "tenant"))
 
     assert resolved["foundry_endpoint"] == "https://existing.services.ai.azure.com/"
-    assert resolved["models"] == "none"
+    assert resolved["models"] == "prompt"
     assert "Select a Content Understanding region:" not in calls
     assert resolved.get("assign_roles") is None
+
+
+def test_interactive_unspecified_models_match_standalone_deferred_selection() -> None:
+    from cu_cli.commands._infra_wizard import _resolve_model_selection
+
+    resolved = _infra._interactive_choices(
+        {
+            "environment": "dev",
+            "foundry_prefix": "contoso-cu",
+            "location": "eastus2",
+            "assign_roles": False,
+        },
+        AzureAccount("sub", "Dev", "tenant"),
+    )
+
+    assert resolved["models"] == _resolve_model_selection(None, interactive=True) == "prompt"
 
 
 def test_generate_noninteractive_uses_active_azure_cli_account(
