@@ -71,7 +71,9 @@ def test_infrastructure_generation_is_registered_but_obsolete_commands_are_not()
 
     assert "cu infra generate" in command_table
     assert "cu infra _models" in command_table
+    assert "cu infra _postprovision-v1" in command_table
     assert "cu _infra-models" not in command_table
+    assert "cu _infra-postprovision-v1" not in command_table
     assert "cu provision" not in command_table
     assert "cu _has-values" not in command_table
     assert "cu upgrade" not in command_table
@@ -89,8 +91,14 @@ def test_internal_hook_helper_is_not_in_top_level_azure_help_surface() -> None:
     }
 
     assert "_infra-models" not in top_level_commands
+    assert "_infra-postprovision-v1" not in top_level_commands
     assert any(
         spec.path == ("_infra-models",) and azure_path == ("infra", "_models")
+        for spec, azure_path in azure_command_bindings()
+    )
+    assert any(
+        spec.path == ("_infra-postprovision-v1",)
+        and azure_path == ("infra", "_postprovision-v1")
         for spec, azure_path in azure_command_bindings()
     )
 

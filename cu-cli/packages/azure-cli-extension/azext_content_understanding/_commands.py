@@ -9,7 +9,16 @@ from typing import Any, Callable
 
 from cu_cli_core.serialization import to_plain_value
 
-from . import _analysis, _analyzers, _defaults, _diagnostics, _infra, _infra_models as _infra_models_feature, _profiles
+from . import (
+    _analysis,
+    _analyzers,
+    _defaults,
+    _diagnostics,
+    _infra,
+    _infra_models as _infra_models_feature,
+    _postprovision,
+    _profiles,
+)
 from ._errors import azure_cli_error
 
 
@@ -118,6 +127,10 @@ def infra__generate(cmd: Any, **kwargs: Any) -> Any:
 
 def _infra_models(cmd: Any, **kwargs: Any) -> Any:
     return _invoke(_infra_models_feature.setup_models, cmd, kwargs)
+
+
+def _infra_postprovision_v1(cmd: Any, **kwargs: Any) -> Any:
+    return _invoke(_postprovision.postprovision_v1, cmd, kwargs)
 
 
 def env_var__list(cmd: Any, **kwargs: Any) -> Any:

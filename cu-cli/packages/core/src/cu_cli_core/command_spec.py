@@ -1179,6 +1179,12 @@ INFRA_MODELS = CommandSpec(
     ),
 )
 
+INFRA_POSTPROVISION_V1 = CommandSpec(
+    path=("_infra-postprovision-v1",),
+    help="Complete generated-project setup after azd provisioning.",
+    classification=SurfaceClassification.INTERNAL,
+)
+
 
 COMMAND_SPECS: tuple[CommandSpec, ...] = (
     ANALYZE,
@@ -1207,6 +1213,7 @@ COMMAND_SPECS: tuple[CommandSpec, ...] = (
     DOCTOR,
     INFRA_GENERATE,
     INFRA_MODELS,
+    INFRA_POSTPROVISION_V1,
 )
 _COMMAND_SPECS_BY_PATH = {spec.path: spec for spec in COMMAND_SPECS}
 

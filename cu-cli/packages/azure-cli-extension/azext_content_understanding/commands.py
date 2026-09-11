@@ -24,6 +24,7 @@ _TABLE_TRANSFORMERS = {
 
 _INTERNAL_COMMAND_PATHS = {
     ("_infra-models",): ("infra", "_models"),
+    ("_infra-postprovision-v1",): ("infra", "_postprovision-v1"),
 }
 
 

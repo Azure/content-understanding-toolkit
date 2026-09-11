@@ -25,6 +25,7 @@ from .commands.infra import infra_group
 from .commands.upgrade import cmd_upgrade
 from .commands._help import common_commands
 from .commands._infra_models import cmd_infra_models
+from .commands._postprovision import cmd_postprovision_v1
 
 
 def _force_utf8_io() -> None:
@@ -132,6 +133,7 @@ main.add_command(analyzer_group)
 main.add_command(defaults_group)
 main.add_command(cmd_upgrade)
 main.add_command(cmd_infra_models)
+main.add_command(cmd_postprovision_v1)
 
 
 if __name__ == "__main__":

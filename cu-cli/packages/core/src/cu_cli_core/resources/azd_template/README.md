@@ -95,7 +95,8 @@ embeddings model deployments.
 Set `CU_MODEL_SELECTION=recommended` for noninteractive selection or
 `CU_MODEL_SELECTION=none` for deterministic setup without model deployments.
 
-The generated hook runs `cu _infra-models`, so keep the `cu` CLI installed and
+The generated hook runs a versioned internal postprovision contract through
+either the standalone `cu` CLI or the `az cu` extension, so keep one frontend installed and
 on `PATH` when running `azd up` (`cu-cli` on macOS). A saved `prompt` selection
 requires an interactive terminal; set `CU_MODEL_SELECTION=recommended`, `none`,
 or explicit `model@version` selectors for unattended runs. Model setup failures

@@ -145,11 +145,14 @@ def setup_models(cmd: Any, **values: Any) -> dict[str, Any]:
         selected = _select(candidates, selection.split(","))
     if values.get("deploy", True):
         _deploy(management, values["resource_group"], values["account_name"], selected)
-        apply_defaults(cu_client, {item.name: item.name for item in selected}, replace=False)
+        if values.get("configure_defaults", True):
+            apply_defaults(cu_client, {item.name: item.name for item in selected}, replace=False)
     _write(output, selected)
     return {
         "models": [item.template_entry() for item in selected],
         "outputFile": str(output),
         "deployed": bool(values.get("deploy", True)),
-        "defaultsConfigured": bool(values.get("deploy", True) and selected),
+        "defaultsConfigured": bool(
+            values.get("deploy", True) and values.get("configure_defaults", True) and selected
+        ),
     }

@@ -43,11 +43,11 @@ def test_write_project_materializes_canonical_template(tmp_path: Path) -> None:
     posix_hook = (target / "hooks/postprovision.sh").read_text(encoding="utf-8")
     powershell_hook = (target / "hooks/postprovision.ps1").read_text(encoding="utf-8")
     readme = (target / "README.md").read_text(encoding="utf-8")
-    assert '"$CU_CMD" _infra-models' in posix_hook
-    assert "& $cuCmd _infra-models" in powershell_hook
-    assert "profile set endpoint" in posix_hook
-    assert "profile set endpoint" in powershell_hook
-    assert "keep the `cu` CLI installed" in readme
+    assert "cu-cli _infra-postprovision-v1" in posix_hook
+    assert "az cu infra _postprovision-v1" in posix_hook
+    assert "cu-cli _infra-postprovision-v1" in powershell_hook
+    assert "az cu infra _postprovision-v1" in powershell_hook
+    assert "either the standalone `cu` CLI or the `az cu` extension" in readme
     assert "cu profile set endpoint" in readme
     assert "`AZURE_ASSIGN_ROLES`" in readme
     environment = (target / ".azure/dev/.env").read_text(encoding="utf-8")

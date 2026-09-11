@@ -287,10 +287,12 @@ def test_write_template_starts_bare_and_defers_live_model_setup(tmp_path):
     posix_hook = (target / "hooks" / "postprovision.sh").read_text(encoding="utf-8")
     windows_hook = (target / "hooks" / "postprovision.ps1").read_text(encoding="utf-8")
     assert "prebuilt-document" not in posix_hook
-    assert "_infra-models" in posix_hook
-    assert "_infra-models" in windows_hook
-    assert '--subscription "$subscription_id"' in posix_hook
-    assert "--subscription $subscriptionId" in windows_hook
+    assert "_infra-postprovision-v1" in posix_hook
+    assert "_postprovision-v1" in posix_hook
+    assert "_infra-postprovision-v1" in windows_hook
+    assert "_postprovision-v1" in windows_hook
+    assert "subscription_id" not in posix_hook
+    assert "subscriptionId" not in windows_hook
     assert "az account set" not in posix_hook
     assert "az account set" not in windows_hook
     azure_yaml = (target / "azure.yaml").read_text(encoding="utf-8")
