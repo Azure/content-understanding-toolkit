@@ -31,17 +31,24 @@ from cu_cli_core.errors import NotFoundError, ValidationError
 from cu_cli_core.profiles import Profile, ProfileStore
 
 from ._client_factory import create_content_understanding_client
+from ._resources import list_model_deployments
 
 
 def _request(spec: Any, values: dict[str, Any]) -> Any:
     return build_request(spec, values)
 
 
-def show_profile(_cmd: Any, **values: Any) -> dict[str, Any]:
+def show_profile(cmd: Any, **values: Any) -> dict[str, Any]:
     request = _request(PROFILE_SHOW, values)
     profile = resolve_identifier(PROFILE_SHOW.operation)(request)
     result = profile.to_public_dict()
     result["isActive"] = profile.profile_name == ProfileStore.load().get_active_name()
+    if request.deployments:
+        if not profile.endpoint:
+            raise ValidationError(
+                f"no endpoint is configured in CU profile '{profile.profile_name}'."
+            )
+        result["deployments"] = list_model_deployments(cmd, profile.endpoint)
     return result
 
 
@@ -94,8 +101,8 @@ def create_profile(_cmd: Any, **values: Any) -> dict[str, Any]:
 
 
 def delete_profile(_cmd: Any, yes: bool = False, **values: Any) -> dict[str, Any]:
-    request = _request(PROFILE_DELETE, values)
-    user_confirmation(f"Delete CU profile '{request.name}'?", yes=yes)
+    request = _request(PROFILE_DELETE, {**values, "yes": yes})
+    user_confirmation(f"Delete CU profile '{request.name}'?", yes=request.yes)
     path = resolve_identifier(PROFILE_DELETE.operation)(request)
     return {"deleted": True, "name": request.name, "path": str(path)}
 

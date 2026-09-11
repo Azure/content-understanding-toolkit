@@ -52,6 +52,7 @@ class OutcomeStatus(str, Enum):
 @dataclass(frozen=True)
 class ProfileShowRequest:
     name: str | None = None
+    deployments: bool = False
 
 
 @dataclass(frozen=True)
@@ -86,6 +87,7 @@ class ProfileCreateRequest:
 @dataclass(frozen=True)
 class ProfileDeleteRequest:
     name: str
+    yes: bool = False
 
 
 @dataclass(frozen=True)

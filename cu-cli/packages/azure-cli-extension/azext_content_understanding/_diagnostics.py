@@ -12,10 +12,12 @@ from cu_cli_core.defaults import (
     PREBUILT_COMPLETION_KEY,
     PREBUILT_COMPLETION_MINI_KEY,
     PREBUILT_EMBEDDING_KEY,
+    apply_defaults,
     extract_model_deployments,
     is_defaults_not_set,
 )
 from cu_cli_core.profiles import Profile
+from cu_cli_core.errors import UsageError
 
 from ._client_factory import create_content_understanding_client, resolve_service_settings
 
@@ -66,6 +68,18 @@ def doctor(cmd: Any, **values: Any) -> dict[str, Any]:
             raise
         mappings = {}
     missing = _missing_model_requirements(mappings)
+    if values.get("fix_defaults"):
+        if not mappings and not profile.model_deployments:
+            raise UsageError(
+                "cannot set defaults: no model deployment mapping is configured",
+                hint=(
+                    "Set model mappings first, for example with "
+                    "'az cu profile set --key model_deployments.gpt-5.2 "
+                    "--value <deployment-name>', then rerun 'az cu doctor --fix-defaults'."
+                ),
+            )
+        _, mappings = apply_defaults(client, profile.model_deployments, replace=False)
+        missing = _missing_model_requirements(mappings)
     return {
         "ready": not missing,
         "endpoint": endpoint,

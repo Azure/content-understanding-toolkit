@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from azext_content_understanding import _analyzers, _diagnostics, _profiles
+from azext_content_understanding import _analysis, _analyzers, _diagnostics, _profiles
 
 
 @pytest.mark.unit
@@ -44,6 +44,91 @@ def test_profile_delete_uses_native_confirmation(
 
     assert result["deleted"] is True
     assert confirmations == [("Delete CU profile 'test'?", True)]
+
+
+@pytest.mark.unit
+def test_profile_show_lists_live_deployments(monkeypatch: pytest.MonkeyPatch) -> None:
+    profile = SimpleNamespace(
+        profile_name="dev",
+        endpoint="https://dev.services.ai.azure.com/",
+        to_public_dict=lambda: {"profile": "dev"},
+    )
+    monkeypatch.setattr(_profiles, "resolve_identifier", lambda _operation: lambda _request: profile)
+    monkeypatch.setattr(
+        _profiles.ProfileStore,
+        "load",
+        lambda: SimpleNamespace(get_active_name=lambda: "default"),
+    )
+    monkeypatch.setattr(
+        _profiles,
+        "list_model_deployments",
+        lambda cmd, endpoint: [{"name": "gpt", "model": "gpt-5.2"}],
+    )
+
+    result = _profiles.show_profile(
+        SimpleNamespace(), profile_name="dev", deployments=True
+    )
+
+    assert result["deployments"] == [{"name": "gpt", "model": "gpt-5.2"}]
+
+
+@pytest.mark.unit
+def test_doctor_fix_defaults_applies_profile_mappings(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = SimpleNamespace(get_defaults=lambda: SimpleNamespace(model_deployments={}))
+    profile = SimpleNamespace(
+        profile_name="dev",
+        auth_mode="login",
+        api_key=None,
+        default_analyzer=None,
+        model_deployments={"gpt-5.2": "gpt-prod", "text-embedding-3-large": "emb-prod"},
+    )
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(_diagnostics.Profile, "load", lambda **kwargs: profile)
+    monkeypatch.setattr(
+        _diagnostics,
+        "resolve_service_settings",
+        lambda **kwargs: ("https://dev.example", "2026-06-01-preview"),
+    )
+    monkeypatch.setattr(
+        _diagnostics, "create_content_understanding_client", lambda *args, **kwargs: client
+    )
+    monkeypatch.setattr(
+        _diagnostics,
+        "apply_defaults",
+        lambda actual, desired, replace: (
+            object(),
+            captured.update(desired) or {
+                **desired,
+                "prebuilt-analyzer-completion": "gpt-prod",
+                "prebuilt-analyzer-completion-mini": "gpt-prod",
+                "prebuilt-analyzer-embedding": "emb-prod",
+            },
+        ),
+    )
+
+    result = _diagnostics.doctor(SimpleNamespace(), fix_defaults=True)
+
+    assert captured["gpt-5.2"] == "gpt-prod"
+    assert result["ready"] is True
+
+
+@pytest.mark.unit
+def test_frontends_emit_identical_analysis_report_contract(tmp_path: Path) -> None:
+    from cu_cli.commands.analyze import _write_analyze_report
+
+    records = [
+        {"input": "a.pdf", "status": "succeeded", "analyzerId": "layout"},
+        {"input": "b.pdf", "status": "skipped", "reason": "exists"},
+    ]
+    standalone_path = tmp_path / "standalone.json"
+    azure_path = tmp_path / "azure.json"
+
+    _write_analyze_report(standalone_path, analyzer_id="layout", fmt="json", results=records)
+    _analysis._report(azure_path, "layout", "full", records)
+
+    import json
+
+    assert json.loads(standalone_path.read_text()) == json.loads(azure_path.read_text())
 
 
 @pytest.mark.unit

@@ -4,6 +4,12 @@
 """Tests for Azure CLI parameter generation from shared metadata."""
 
 from contextlib import contextmanager
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import textwrap
 from time import perf_counter
 from typing import Any, Iterator
 
@@ -126,6 +132,12 @@ def test_generic_adapter_converts_portable_argument_types() -> None:
     assert infra["assign_roles"]["arg_type"] is not None
     assert "yes" not in infra
     assert "no_assign_roles" not in infra
+    profile_delete = loader.arguments["cu profile delete"]
+    assert profile_delete["yes"]["options_list"] == ["--yes", "-y"]
+    profile_show = loader.arguments["cu profile show"]
+    assert profile_show["deployments"]["action"] == "store_true"
+    doctor = loader.arguments["cu doctor"]
+    assert doctor["fix_defaults"]["action"] == "store_true"
 
 
 @pytest.mark.unit
@@ -150,3 +162,66 @@ def test_complete_shared_registry_conversion_finishes_within_budget() -> None:
     elapsed = perf_counter() - started
 
     assert elapsed <= 0.300
+
+
+@pytest.mark.unit
+def test_clean_real_azure_registration_and_parsing_finishes_within_budget() -> None:
+    script = textwrap.dedent(
+        """
+        import json
+        from time import perf_counter
+        from types import SimpleNamespace
+
+        import yaml
+        from azure.cli.core import get_default_cli
+        from knack.parser import CLICommandParser
+
+        cli = get_default_cli()
+        cli.invocation = SimpleNamespace(data={})
+        started = perf_counter()
+
+        from azext_content_understanding import ContentUnderstandingCommandsLoader
+        from azext_content_understanding.commands import azure_command_bindings
+        from knack.help_files import helps
+
+        loader = ContentUnderstandingCommandsLoader(cli_ctx=cli)
+        cli.invocation.commands_loader = loader
+        loader.load_command_table([])
+        for _, path in azure_command_bindings():
+            command = "cu " + " ".join(path)
+            cli.invocation.data["command_string"] = command
+            loader.load_arguments(command)
+        loader._update_command_definitions()
+
+        help_system = cli.help_cls(cli)
+        parser = CLICommandParser(cli_ctx=cli, cli_help=help_system)
+        parser.load_command_table(loader)
+        parsed = parser.parse_args(
+            ["cu", "profile", "delete", "--name", "dev", "--yes"]
+        )
+        for _, path in azure_command_bindings():
+            yaml.safe_load(helps["cu " + " ".join(path)])
+
+        print(json.dumps({"elapsed": perf_counter() - started, "yes": parsed.yes}))
+        """
+    )
+    environment = os.environ.copy()
+    extension_root = Path(__file__).resolve().parents[2]
+    core_root = extension_root.parent / "core" / "src"
+    environment["PYTHONPATH"] = os.pathsep.join(
+        (str(core_root), str(extension_root), environment.get("PYTHONPATH", ""))
+    )
+
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=environment,
+    )
+    measured = json.loads(completed.stdout)
+
+    assert measured["yes"] is True
+    assert measured["elapsed"] <= 0.300, (
+        f"real Azure CLI registration took {measured['elapsed'] * 1000:.3f} ms"
+    )

@@ -31,6 +31,7 @@ from cu_cli_core.input_planning import (
     redact_sensitive_urls,
 )
 from cu_cli_core.profiles import Profile
+from cu_cli_core.reporting import build_analysis_report
 from cu_cli_core.serialization import to_plain_value
 
 from ._client_factory import create_content_understanding_client
@@ -47,19 +48,20 @@ def _runner(request: Any) -> Callable[[Any, AnalyzeJob], Any]:
     return analyze_one
 
 
-def _report(path: Path, analyzer: str, records: list[dict[str, Any]]) -> None:
-    counts = {
-        status: sum(record.get("status") == status for record in records)
-        for status in ("succeeded", "failed", "skipped")
-    }
+def _report(
+    path: Path,
+    analyzer: str,
+    result_view: str,
+    records: list[dict[str, Any]],
+) -> None:
+    report = build_analysis_report(
+        analyzer=analyzer,
+        result_view=result_view,
+        results=records,
+    )
     write_json(
         path,
-        {
-            "schema": "az-cu/analyze-report/v1",
-            "analyzerId": analyzer,
-            "counts": {**counts, "total": len(records)},
-            "results": records,
-        },
+        report.to_dict(),
         overwrite=False,
     )
 
@@ -219,7 +221,12 @@ def analyze(cmd: Any, **values: Any) -> Any:
         run=_runner(request),
     )
     if report_path is not None:
-        _report(report_path, analyzer, records)
+        _report(
+            report_path,
+            analyzer,
+            "llm-input" if request.llm_input else "full",
+            records,
+        )
     if batch.failures:
         raise ServiceError(
             f"{len(batch.failures)} analysis job(s) failed.",

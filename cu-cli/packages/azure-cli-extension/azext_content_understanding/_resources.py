@@ -180,3 +180,28 @@ def resolve_resource(
 
 def resources_equal(left: ResolvedResource, right: ResolvedResource) -> bool:
     return left.arm_id.casefold() == right.arm_id.casefold()
+
+
+def list_model_deployments(cmd: Any, endpoint: str) -> list[dict[str, Any]]:
+    """List live model deployments for the Foundry resource at ``endpoint``."""
+
+    resource = resolve_resource(cmd, endpoint)
+    deployments = _management_client(cmd, resource.subscription_id).deployments.list(
+        resource.resource_group,
+        resource.account_name,
+    )
+    result: list[dict[str, Any]] = []
+    for deployment in deployments:
+        properties = getattr(deployment, "properties", None)
+        model = getattr(properties, "model", None)
+        sku = getattr(deployment, "sku", None)
+        result.append(
+            {
+                "name": str(getattr(deployment, "name", "") or ""),
+                "model": str(getattr(model, "name", "") or ""),
+                "version": str(getattr(model, "version", "") or ""),
+                "sku": str(getattr(sku, "name", "") or ""),
+                "capacity": getattr(sku, "capacity", None),
+            }
+        )
+    return sorted(result, key=lambda item: item["name"].casefold())

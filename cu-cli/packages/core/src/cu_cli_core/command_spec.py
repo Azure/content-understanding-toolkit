@@ -852,7 +852,6 @@ PROFILE_SHOW = CommandSpec(
             parser_name="deployments",
             help="Also list live Foundry model deployments.",
             value_type=ArgumentValueType.BOOLEAN,
-            classification=SurfaceClassification.FRONTEND_PRESENTATION,
         ),
     ),
 )
@@ -963,7 +962,17 @@ PROFILE_DELETE = CommandSpec(
     help="Delete an inactive named CU CLI profile.",
     operation="cu_cli_core.operations.profiles#delete_profile",
     request_type="cu_cli_core.contracts#ProfileDeleteRequest",
-    arguments=_profile_name_arguments("Existing inactive profile to delete."),
+    arguments=(
+        *_profile_name_arguments("Existing inactive profile to delete."),
+        ArgumentSpec(
+            "--yes",
+            aliases=("-y",),
+            field="yes",
+            parser_name="yes",
+            help="Delete without prompting for confirmation.",
+            value_type=ArgumentValueType.BOOLEAN,
+        ),
+    ),
 )
 
 PROFILE_COPY = CommandSpec(
@@ -1118,7 +1127,6 @@ DOCTOR = CommandSpec(
             parser_name="fix_defaults",
             help="Configure Content Understanding defaults from profile model mappings.",
             value_type=ArgumentValueType.BOOLEAN,
-            classification=SurfaceClassification.STANDALONE_ONLY,
         ),
         ArgumentSpec(
             "--auth-mode",
@@ -1126,14 +1134,12 @@ DOCTOR = CommandSpec(
             parser_name="auth_mode",
             help="Authentication mode; defaults to the selected CU CLI profile.",
             choices=("login", "key"),
-            classification=SurfaceClassification.STANDALONE_ONLY,
         ),
         ArgumentSpec(
             "--api-key",
             field="api_key",
             parser_name="api_key",
             help="Override the configured API key.",
-            classification=SurfaceClassification.STANDALONE_ONLY,
         ),
     ),
 )
