@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.0b2 (2026-09-11)
+
 ### Features Added
 
 - Added HTTPS and Azure Blob SAS URL inputs to `cu analyze` through repeatable
@@ -9,6 +11,14 @@
 	for large audio and video files without downloading them through the CLI.
 	Remote results use the URL filename without a hash. Batches with conflicting
 	remote output paths or generated remote names over 240 UTF-8 bytes fail before analysis.
+- Added shared command and argument specifications across official CU CLI
+	frontends, and aligned standalone command behavior with the shared
+	`cu-cli-core` operations.
+- Added shared generated-project postprovision orchestration through
+	`cu _infra-postprovision-v1` for model setup, defaults configuration, and
+	profile bootstrapping after provisioning.
+- Improved redaction of sensitive URL query values in analysis reports,
+	service errors, and diagnostic output.
 
 ## 0.1.0b1 (2026-09-04)
 
