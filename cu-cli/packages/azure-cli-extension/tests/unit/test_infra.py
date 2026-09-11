@@ -49,7 +49,7 @@ def test_write_project_materializes_canonical_template(tmp_path: Path) -> None:
     assert "az cu infra _postprovision-v1" in powershell_hook
     assert "either the standalone `cu` CLI or the `az cu` extension" in readme
     assert "cu profile set endpoint" in readme
-    assert "`AZURE_ASSIGN_ROLES`" in readme
+    assert "`AZD_ASSIGN_ROLES`" in readme
     environment = (target / ".azure/dev/.env").read_text(encoding="utf-8")
     assert 'AZURE_SUBSCRIPTION_ID="sub-id"' in environment
     assert 'CU_MODEL_SELECTION="recommended"' in environment

@@ -138,7 +138,7 @@ The command names and capabilities overlap, but frontend conventions differ:
 | --- | --- |
 | Starts commands with `az cu`. | Starts commands with `cu` (`cu-cli` on macOS). |
 | Uses explicit options plus global Azure CLI `--output`, `--query`, and `--subscription`. | Supports standalone positional shortcuts and Rich/JSON output options. |
-| Always uses the active `az login` identity; shared API keys and `auth_mode` do not override Azure CLI host authentication. | Uses the profile's `auth_mode` and can use a saved API key. |
+| Uses the profile's `auth_mode`; Azure CLI login provides cloud and subscription context for resource-management operations. | Uses the profile's `auth_mode` and can use a saved API key. |
 
 Run `az cu <command> --help` or `cu <command> --help` when translating a command
 between frontends. Profile values are shared; authentication sessions are not,
@@ -327,8 +327,8 @@ Further reading:
 
 `az cu infra generate` writes a self-contained azd/Bicep project. It does not
 provision resources or run `azd up`. On a terminal it offers subscription,
-resource, region, model, and RBAC choices; use `--yes` for deterministic
-automation.
+resource, region, model, and RBAC choices. For deterministic automation,
+supply the required options explicitly.
 
 ```bash
 # Generate the project interactively using Azure CLI subscription context.
@@ -346,6 +346,13 @@ azd up
 
 Generated hooks use the internal `az cu infra _models` helper and do not require
 the standalone `cu-cli` package.
+
+For a new resource, role assignment is disabled by default in noninteractive
+generation. Pass `--assign-roles true` only when the signed-in identity can
+create role assignments; interactive generation asks before enabling it. The
+existing-resource path never creates role assignments. See the
+[provisioning guide](../../docs/provisioning.md#azure-permissions) for required
+Azure permissions and the resource-key fallback.
 
 ## Command overview
 

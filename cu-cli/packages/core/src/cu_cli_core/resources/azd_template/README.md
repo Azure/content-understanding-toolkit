@@ -31,8 +31,10 @@ Contributor cannot create Azure role assignments. If the deployment should
 also assign the generated data-plane role, the identity additionally needs
 **Role Based Access Control Administrator**, **User Access Administrator**, or
 **Owner** on the subscription. If you have Contributor only, set
-`AZURE_ASSIGN_ROLES` to `false`; the post-provision hook uses resource-key
-authentication instead.
+`AZD_ASSIGN_ROLES` to `false`; the post-provision hook uses resource-key
+authentication instead. Role assignment defaults to `false`; opt in during
+interactive generation or pass `--assign-roles true` when generating the
+project.
 
 With Entra authentication, CU CLI also requires **Cognitive Services User** on
 the Microsoft Foundry resource to configure defaults and create, manage, and run

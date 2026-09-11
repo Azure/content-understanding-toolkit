@@ -83,7 +83,7 @@ def test_canonical_template_matches_golden_hashes() -> None:
         relative: hashlib.sha256(content.replace(b"\r\n", b"\n")).hexdigest()
         for relative, content in iter_template_files(template_root())
     } == {
-        "README.md": "a984e5f174e67cfc254b7c3b4a08672e7b7dd71c8a959d35dd5391643e870c70",
+        "README.md": "5d938cba77d7747e01874b5ae47c2182d4f592dd30f685b8635ae0931bad235d",
         "azure.yaml": "7bdbc6f8cf42fc1485ba52c04d7ed0c3ab78cd517d4892b1275a7b806ac31667",
         "hooks/postprovision.ps1": "37cc8f390b0201c7396046889d5e7c3fb7a61c27ca1f2486cf9ddc5344ccdd62",
         "hooks/postprovision.sh": "43ca49582fbde6c571b5fd67fdd16e0a0c3c5c5c1fc1c2da13c6c81f919d3157",
