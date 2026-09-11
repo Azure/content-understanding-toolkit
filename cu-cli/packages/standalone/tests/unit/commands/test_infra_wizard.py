@@ -79,6 +79,83 @@ def test_invalid_location_error_includes_region_support_link():
     assert CU_REGION_SUPPORT_URL in (exc_info.value.hint or "")
 
 
+def test_interactive_wizard_prompts_in_order_with_shared_defaults(monkeypatch):
+    prompts = []
+
+    def fake_confirm(message, *, default):
+        prompts.append(("confirm", message, default))
+        return default
+
+    def fake_prompt(message, *, default, **_kwargs):
+        prompts.append(("prompt", message, default))
+        return default
+
+    monkeypatch.setattr("cu_cli.commands._infra_wizard.click.confirm", fake_confirm)
+    monkeypatch.setattr("cu_cli.commands._infra_wizard.click.prompt", fake_prompt)
+
+    choices = _resolve_choices(
+        interactive=True,
+        env=None,
+        location=None,
+        api_version="2025-11-01",
+        subscription_id="sub-id",
+        subscription_name="Development",
+        tenant_id="tenant-id",
+        foundry_account_prefix=None,
+        foundry_endpoint=None,
+        foundry_resource_group=None,
+        models=None,
+        assign_roles=None,
+        force_profile_setup=False,
+    )
+
+    assert choices is not None
+    assert choices.env == "dev"
+    assert choices.location == "eastus2"
+    assert choices.foundry_account_prefix is None
+    assert choices.model_selection == "prompt"
+    assert choices.assign_roles is False
+    assert [(kind, default) for kind, _message, default in prompts] == [
+        ("confirm", True),
+        ("prompt", "dev"),
+        ("prompt", "eastus2"),
+        ("prompt", ""),
+        ("confirm", False),
+    ]
+    assert "Provision a Microsoft Foundry resource" in prompts[0][1]
+    assert "environment name" in prompts[1][1]
+    assert "Azure region" in prompts[2][1]
+    assert "resource name prefix" in prompts[3][1]
+    assert "Assign RBAC roles" in prompts[4][1]
+
+
+def test_existing_resource_never_assigns_roles_or_prompts_for_them(monkeypatch):
+    monkeypatch.setattr(
+        "cu_cli.commands._infra_wizard._prompt_assign_roles",
+        lambda: pytest.fail("existing resources must not prompt for role assignment"),
+    )
+
+    choices = _resolve_choices(
+        interactive=True,
+        already_opted_in=True,
+        env="dev",
+        location="eastus2",
+        api_version="2025-11-01",
+        subscription_id="sub-id",
+        subscription_name="Development",
+        tenant_id="tenant-id",
+        foundry_account_prefix=None,
+        foundry_endpoint="https://existing.services.ai.azure.com/",
+        foundry_resource_group="rg-existing",
+        models=["none"],
+        assign_roles=True,
+        force_profile_setup=False,
+    )
+
+    assert choices is not None
+    assert choices.assign_roles is False
+
+
 def test_write_template_reuses_existing_template_for_new_env(tmp_path):
     target = tmp_path / "provision"
     (target / "infra").mkdir(parents=True)

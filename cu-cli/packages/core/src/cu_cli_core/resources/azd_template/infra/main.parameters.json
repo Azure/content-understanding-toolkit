@@ -24,7 +24,7 @@
       "value": "${AZURE_PRINCIPAL_TYPE=User}"
     },
     "assignRolesToPrincipal": {
-      "value": "${AZD_ASSIGN_ROLES=true}"
+      "value": "${AZD_ASSIGN_ROLES=false}"
     }
   }
 }

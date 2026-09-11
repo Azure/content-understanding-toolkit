@@ -109,3 +109,23 @@ def test_model_setup_deploys_and_configures_service_defaults(
     assert deployed
     assert configured == [(cu_client, {"gpt-5": "gpt-5"}, False)]
     assert result["defaultsConfigured"] is True
+
+
+def test_deploy_reuses_matching_name_and_version() -> None:
+    created = []
+    current = SimpleNamespace(
+        name="GPT-5",
+        properties=SimpleNamespace(
+            model=SimpleNamespace(name="gpt-5", version="1")
+        ),
+    )
+    management = SimpleNamespace(
+        deployments=SimpleNamespace(
+            list=lambda _rg, _account: [current],
+            begin_create_or_update=lambda *_args: created.append(_args),
+        )
+    )
+
+    _infra_models._deploy(management, "rg", "account", [_model("gpt-5", "1", "completion")])
+
+    assert created == []

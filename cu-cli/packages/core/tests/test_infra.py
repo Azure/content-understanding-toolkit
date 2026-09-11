@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
+import hashlib
 import json
 import zipfile
 from pathlib import Path
@@ -74,6 +75,22 @@ def test_canonical_template_has_expected_assets() -> None:
         "infra/main.parameters.json",
         "infra/models.json",
         "infra/modules/foundry.bicep",
+    }
+
+
+def test_canonical_template_matches_golden_hashes() -> None:
+    assert {
+        relative: hashlib.sha256(content).hexdigest()
+        for relative, content in iter_template_files(template_root())
+    } == {
+        "README.md": "d75fd48b73f92dbec27795f9dcc981f4b7a4237b5e38175bf2002591d2f8bc0d",
+        "azure.yaml": "7bdbc6f8cf42fc1485ba52c04d7ed0c3ab78cd517d4892b1275a7b806ac31667",
+        "hooks/postprovision.ps1": "37cc8f390b0201c7396046889d5e7c3fb7a61c27ca1f2486cf9ddc5344ccdd62",
+        "hooks/postprovision.sh": "43ca49582fbde6c571b5fd67fdd16e0a0c3c5c5c1fc1c2da13c6c81f919d3157",
+        "infra/main.bicep": "1103b1b3fdb28dba7fa6c2f3423257694eb07aefbea529d68213fb94c9f0998b",
+        "infra/main.parameters.json": "c6a46f4caa1468b7c04a14f4ad15fabeda362dc16043be9f94a4b4e7b91bcf79",
+        "infra/models.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "infra/modules/foundry.bicep": "18fd2b5d1ca12e75946ae317a08857f61fc5cdb05b329337036345521630c212",
     }
 
 

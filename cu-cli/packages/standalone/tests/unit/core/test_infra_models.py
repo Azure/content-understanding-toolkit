@@ -194,6 +194,28 @@ def test_deploy_models_uses_live_version_and_sku(monkeypatch):
     assert args[args.index("--subscription") + 1] == "sub-test"
 
 
+def test_deploy_models_reuses_matching_name_and_version(monkeypatch):
+    calls = []
+    existing = [{
+        "name": "GPT-5.5",
+        "properties": {"model": {"name": "gpt-5.5", "version": "2025-12-11"}},
+    }]
+
+    def fake_run(args, **_kwargs):
+        calls.append(args)
+        return SimpleNamespace(returncode=0, stdout=json.dumps(existing), stderr="")
+
+    monkeypatch.setattr("cu_cli.core.infra_models.subprocess.run", fake_run)
+
+    deploy_models("rg-test", "account-test", "sub-test", [
+        _candidate("gpt-5.5", "2025-12-11", "completion")
+    ])
+
+    assert len(calls) == 1
+    assert "list" in calls[0]
+    assert "create" not in calls[0]
+
+
 def test_deploy_models_surfaces_azure_failure(monkeypatch):
     calls = 0
 

@@ -99,6 +99,103 @@ def test_validation_rejects_unsafe_environment_and_region() -> None:
         _infra._validate_location("westus2")
 
 
+def test_choose_account_lists_subscriptions_and_marks_active(monkeypatch) -> None:
+    accounts = [
+        AzureAccount("sub-b", "Beta", "tenant-b"),
+        AzureAccount("sub-a", "Alpha", "tenant-a"),
+    ]
+    captured = {}
+    monkeypatch.setattr(_infra, "_active_account", lambda _ctx: accounts[0])
+    monkeypatch.setattr(_infra, "_subscriptions", lambda _ctx: accounts)
+
+    def choose(message, labels):
+        captured["message"] = message
+        captured["labels"] = labels
+        return 1
+
+    monkeypatch.setattr(_infra, "prompt_choice_list", choose)
+
+    selected = _infra._choose_account(object(), interactive=True)
+
+    assert selected == accounts[1]
+    assert captured == {
+        "message": "Select an Azure subscription:",
+        "labels": ["Beta (sub-b) [active]", "Alpha (sub-a)"],
+    }
+
+
+def test_interactive_choices_prompt_in_order_with_shared_defaults(monkeypatch) -> None:
+    calls = []
+    choices = iter([0, 2, 0])
+
+    def choose(message, labels):
+        calls.append(("choice", message, labels))
+        return next(choices)
+
+    def enter(message, *, default=None):
+        calls.append(("prompt", message, default))
+        return default
+
+    def yes_no(message, *, default):
+        calls.append(("yes-no", message, default))
+        return False
+
+    monkeypatch.setattr(_infra, "prompt_choice_list", choose)
+    monkeypatch.setattr(_infra, "prompt", enter)
+    monkeypatch.setattr(_infra, "prompt_y_n", yes_no)
+
+    resolved = _infra._interactive_choices({}, AzureAccount("sub", "Dev", "tenant"))
+
+    assert resolved == {
+        "environment": "dev",
+        "foundry_prefix": "",
+        "location": "eastus2",
+        "models": "recommended",
+        "assign_roles": False,
+    }
+    assert [(kind, message) for kind, message, _value in calls] == [
+        ("prompt", "azd environment name"),
+        ("choice", "Choose a Microsoft Foundry resource:"),
+        ("prompt", "New resource prefix (blank for generated name)"),
+        ("choice", "Select a Content Understanding region:"),
+        ("choice", "Select model deployment behavior:"),
+        ("yes-no", "Assign required RBAC roles to the signed-in user?"),
+    ]
+    assert calls[0][2] == "dev"
+    assert calls[2][2] == ""
+    assert calls[-1][2] == "n"
+
+
+def test_interactive_existing_resource_skips_role_and_region_prompts(monkeypatch) -> None:
+    choices = iter([1, 1])
+    calls = []
+
+    def choose(message, labels):
+        calls.append(message)
+        return next(choices)
+
+    def enter(message, *, default=None):
+        calls.append(message)
+        if message == "azd environment name":
+            return default
+        return "https://existing.services.ai.azure.com/"
+
+    monkeypatch.setattr(_infra, "prompt_choice_list", choose)
+    monkeypatch.setattr(_infra, "prompt", enter)
+    monkeypatch.setattr(
+        _infra,
+        "prompt_y_n",
+        lambda *_args, **_kwargs: pytest.fail("existing resources must not prompt for roles"),
+    )
+
+    resolved = _infra._interactive_choices({}, AzureAccount("sub", "Dev", "tenant"))
+
+    assert resolved["foundry_endpoint"] == "https://existing.services.ai.azure.com/"
+    assert resolved["models"] == "none"
+    assert "Select a Content Understanding region:" not in calls
+    assert resolved.get("assign_roles") is None
+
+
 def test_generate_noninteractive_uses_active_azure_cli_account(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
