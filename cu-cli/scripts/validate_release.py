@@ -26,6 +26,17 @@ SHA_PATTERN = re.compile(r"[0-9a-f]{40}")
 PACKAGE_PATHS = {
     "core": Path("packages/core/pyproject.toml"),
     "cli": Path("packages/standalone/pyproject.toml"),
+    "extension": Path("packages/azure-cli-extension/pyproject.toml"),
+}
+CANONICAL_TEMPLATE_FILES = {
+    "README.md",
+    "azure.yaml",
+    "hooks/postprovision.ps1",
+    "hooks/postprovision.sh",
+    "infra/main.bicep",
+    "infra/main.parameters.json",
+    "infra/models.json",
+    "infra/modules/foundry.bicep",
 }
 PACKAGE_INDEX_API_URLS = {
     "pypi": "https://pypi.org/pypi",
@@ -70,7 +81,31 @@ def validate_request_context(
         )
 
 
-def validate_cli_metadata(root: Path, cli_version: str) -> str:
+def validate_core_assets(root: Path) -> None:
+    template_root = root / "packages/core/src/cu_cli_core/resources/azd_template"
+    actual = {
+        path.relative_to(template_root).as_posix()
+        for path in template_root.rglob("*")
+        if path.is_file()
+    }
+    if actual != CANONICAL_TEMPLATE_FILES:
+        raise ValueError(
+            "cu-cli-core must contain exactly the canonical azd template files; "
+            f"expected {sorted(CANONICAL_TEMPLATE_FILES)}, found {sorted(actual)}"
+        )
+    duplicate_roots = (
+        root / "packages/standalone/src/cu_cli/resources/azd_template",
+        root / "packages/azure-cli-extension/azext_content_understanding/_infra_template",
+    )
+    duplicates = [path for path in duplicate_roots if path.exists()]
+    if duplicates:
+        raise ValueError(
+            "frontend packages must not contain duplicate azd templates: "
+            + ", ".join(str(path.relative_to(root)) for path in duplicates)
+        )
+
+
+def validate_frontend_metadata(root: Path, frontend: str) -> str:
     core_path = root / PACKAGE_PATHS["core"]
     core_version = project_version(load_project(core_path), core_path)
     core_version_match = re.fullmatch(
@@ -84,19 +119,24 @@ def validate_cli_metadata(root: Path, cli_version: str) -> str:
         )
     core_major, core_minor, _ = (int(part) for part in core_version_match.groups())
     core_upper_bound = f"{core_major}.{core_minor + 1}.0"
-    cli_path = root / PACKAGE_PATHS["cli"]
-    dependencies = load_project(cli_path).get("dependencies")
+    frontend_path = root / PACKAGE_PATHS[frontend]
+    dependencies = load_project(frontend_path).get("dependencies")
     if not isinstance(dependencies, list) or not all(
         isinstance(dependency, str) for dependency in dependencies
     ):
-        raise ValueError(f"{cli_path} does not define string dependencies")
+        raise ValueError(f"{frontend_path} does not define string dependencies")
 
     expected_requirement = f"cu-cli-core>={core_version},<{core_upper_bound}"
     if expected_requirement not in dependencies:
         raise ValueError(
-            "cu-cli must require the selected core release exactly as "
+            f"{frontend} must require the selected core release exactly as "
             f"{expected_requirement}"
         )
+
+    return core_version
+
+
+def validate_cli_changelog(root: Path, cli_version: str) -> None:
 
     changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
     heading = re.search(
@@ -114,7 +154,6 @@ def validate_cli_metadata(root: Path, cli_version: str) -> str:
         raise ValueError(
             f"CHANGELOG.md release date is invalid: {heading.group(1)}"
         ) from error
-    return core_version
 
 
 def verify_package_release(
@@ -157,8 +196,11 @@ def validate_release(
             f"requested version {expected_version} does not match "
             f"{project_path}: {actual_version}"
         )
-    if package == "cli":
-        core_version = validate_cli_metadata(root, actual_version)
+    validate_core_assets(root)
+    if package in {"cli", "extension"}:
+        core_version = validate_frontend_metadata(root, package)
+        if package == "cli":
+            validate_cli_changelog(root, actual_version)
         if verify_core_on_index:
             verify_package_release("cu-cli-core", core_version, index)
 

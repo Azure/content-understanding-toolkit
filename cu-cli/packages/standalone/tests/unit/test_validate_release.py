@@ -61,6 +61,17 @@ def _write_release_tree(
         version="0.1.0b1",
         dependencies=[f"cu-cli-core>={core_version},<{core_upper_bound}"],
     )
+    _write_project(
+        root / "packages/azure-cli-extension/pyproject.toml",
+        name="content-understanding",
+        version="0.1.0b1",
+        dependencies=[f"cu-cli-core>={core_version},<{core_upper_bound}"],
+    )
+    template_root = root / "packages/core/src/cu_cli_core/resources/azd_template"
+    for relative_path in validate_release.CANONICAL_TEMPLATE_FILES:
+        path = template_root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("canonical\n", encoding="utf-8")
     status = "2026-09-04" if dated_changelog else "Unreleased"
     (root / "CHANGELOG.md").write_text(
         f"# Release History\n\n## 0.1.0b1 ({status})\n",
@@ -88,6 +99,29 @@ def test_validates_core_release(tmp_path: Path) -> None:
     _write_release_tree(tmp_path)
 
     _validate(tmp_path)
+
+
+def test_validates_extension_release_metadata(tmp_path: Path) -> None:
+    _write_release_tree(tmp_path)
+
+    _validate(tmp_path, package="extension", expected_version="0.1.0b1")
+
+
+def test_rejects_duplicate_frontend_template(tmp_path: Path) -> None:
+    _write_release_tree(tmp_path)
+    duplicate = tmp_path / "packages/standalone/src/cu_cli/resources/azd_template"
+    duplicate.mkdir(parents=True)
+
+    with pytest.raises(ValueError, match="duplicate azd templates"):
+        _validate(tmp_path)
+
+
+def test_rejects_incomplete_canonical_template(tmp_path: Path) -> None:
+    _write_release_tree(tmp_path)
+    (tmp_path / "packages/core/src/cu_cli_core/resources/azd_template/azure.yaml").unlink()
+
+    with pytest.raises(ValueError, match="canonical azd template files"):
+        _validate(tmp_path)
 
 
 @pytest.mark.parametrize(
@@ -132,7 +166,7 @@ def test_cli_requires_stable_core_dependency(tmp_path: Path) -> None:
         dependencies=["cu-cli-core>=0.1.0.dev0,<0.2.0"],
     )
 
-    with pytest.raises(ValueError, match="stable or preview PEP 440 release"):
+    with pytest.raises(ValueError, match="selected core release exactly"):
         _validate(
             tmp_path,
             package="cli",
