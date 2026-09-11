@@ -10,14 +10,6 @@
 	Remote results use the URL filename without a hash. Batches with conflicting
 	remote output paths or generated remote names over 240 UTF-8 bytes fail before analysis.
 
-### Bugs Fixed
-
-- Fixed `az cu` resource-key authentication through command options, profiles,
-	and environment variables.
-- Fixed `az cu` profile API versions being overridden when `--api-version` was omitted.
-- Fixed `az cu analyze --report-file` being rejected by the Azure CLI parser.
-- Fixed `az cu --help` exposing an internal infrastructure hook command.
-
 ## 0.1.0b1 (2026-09-04)
 
 ### Features Added

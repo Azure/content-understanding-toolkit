@@ -5,8 +5,8 @@ It uses the identity, cloud, and active subscription selected by Azure CLI and
 supports standard Azure CLI output formats and JMESPath queries.
 
 > [!IMPORTANT]
-> This package is an implementation preview. The `az cu` command name and public
-> Azure CLI extension registration remain subject to Azure CLI maintainer review.
+> This package is a preview. Commands and package contracts may change before
+> general availability.
 
 ## Content Understanding concepts
 
@@ -46,13 +46,10 @@ Requirements:
 - [Azure Developer CLI](https://aka.ms/azd) only when using
   `az cu infra generate`
 
-Install the extension wheel produced by this repository. After extension-index
-publication, installation by name will use
-`az extension add --name content-understanding`.
+Install the extension by name from the Azure CLI extension index:
 
 ```bash
-# Install a locally built preview extension wheel.
-az extension add --source ./content_understanding-0.1.0b1-py3-none-any.whl
+az extension add --name content-understanding
 
 # Show the installed extension commands.
 az cu --help
