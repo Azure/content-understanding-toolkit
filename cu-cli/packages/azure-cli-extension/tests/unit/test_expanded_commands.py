@@ -8,6 +8,8 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from azure.core.exceptions import HttpResponseError
+from cu_cli_core.errors import ServiceError, ValidationError
 
 from azext_content_understanding import _analysis, _analyzers, _diagnostics, _profiles
 
@@ -74,42 +76,149 @@ def test_profile_show_lists_live_deployments(monkeypatch: pytest.MonkeyPatch) ->
 
 @pytest.mark.unit
 def test_doctor_fix_defaults_applies_profile_mappings(monkeypatch: pytest.MonkeyPatch) -> None:
-    client = SimpleNamespace(get_defaults=lambda: SimpleNamespace(model_deployments={}))
+    reads = 0
+    captured: dict[str, Any] = {}
+
+    def get_defaults():
+        nonlocal reads
+        reads += 1
+        return SimpleNamespace(model_deployments={"unrelated": "preserved"})
+
+    client = SimpleNamespace(
+        get_defaults=get_defaults,
+        update_defaults=lambda *, model_deployments: captured.update(model_deployments),
+    )
     profile = SimpleNamespace(
         profile_name="dev",
+        endpoint="https://dev.example",
+        api_version="2026-06-01-preview",
         auth_mode="login",
         api_key=None,
         default_analyzer=None,
         model_deployments={"gpt-5.2": "gpt-prod", "text-embedding-3-large": "emb-prod"},
     )
-    captured: dict[str, Any] = {}
     monkeypatch.setattr(_diagnostics.Profile, "load", lambda **kwargs: profile)
     monkeypatch.setattr(
-        _diagnostics,
-        "resolve_service_settings",
-        lambda **kwargs: ("https://dev.example", "2026-06-01-preview"),
-    )
-    monkeypatch.setattr(
         _diagnostics, "create_content_understanding_client", lambda *args, **kwargs: client
-    )
-    monkeypatch.setattr(
-        _diagnostics,
-        "apply_defaults",
-        lambda actual, desired, replace: (
-            object(),
-            captured.update(desired) or {
-                **desired,
-                "prebuilt-analyzer-completion": "gpt-prod",
-                "prebuilt-analyzer-completion-mini": "gpt-prod",
-                "prebuilt-analyzer-embedding": "emb-prod",
-            },
-        ),
     )
 
     result = _diagnostics.doctor(SimpleNamespace(), fix_defaults=True)
 
+    assert reads == 1
+    assert captured["unrelated"] == "preserved"
     assert captured["gpt-5.2"] == "gpt-prod"
+    assert captured["prebuilt-analyzer-completion-mini"] == "gpt-prod"
     assert result["ready"] is True
+
+
+def _doctor_profile(**overrides: Any) -> SimpleNamespace:
+    values = {
+        "profile_name": "dev",
+        "endpoint": "https://saved.example",
+        "api_version": "2025-11-01",
+        "auth_mode": "login",
+        "api_key": None,
+        "default_analyzer": None,
+        "model_deployments": {},
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+@pytest.mark.unit
+def test_doctor_unsupported_version_fails_before_client_creation(monkeypatch):
+    monkeypatch.setattr(_diagnostics.Profile, "load", lambda **kwargs: _doctor_profile())
+    called = False
+
+    def client_factory(*args, **kwargs):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(_diagnostics, "create_content_understanding_client", client_factory)
+
+    with pytest.raises(ValidationError):
+        _diagnostics.doctor(SimpleNamespace(), api_version="1999-01-01")
+    assert called is False
+
+
+@pytest.mark.unit
+def test_doctor_defaults_not_set_is_successful_partial_readiness(monkeypatch):
+    monkeypatch.setattr(_diagnostics.Profile, "load", lambda **kwargs: _doctor_profile())
+
+    def get_defaults():
+        raise HttpResponseError(message="DefaultsNotSet")
+
+    monkeypatch.setattr(
+        _diagnostics,
+        "create_content_understanding_client",
+        lambda *args, **kwargs: SimpleNamespace(get_defaults=get_defaults),
+    )
+
+    result = _diagnostics.doctor(SimpleNamespace())
+
+    assert result["ready"] is False
+    assert result["failures"] == []
+    assert result["modelDeployments"] == {}
+
+
+@pytest.mark.unit
+def test_doctor_connectivity_failure_is_nonzero_and_redacts_key(monkeypatch):
+    secret = "top-secret"
+    monkeypatch.setattr(
+        _diagnostics.Profile,
+        "load",
+        lambda **kwargs: _doctor_profile(auth_mode="key", api_key=secret),
+    )
+
+    def get_defaults():
+        raise RuntimeError(f"login failed using {secret}")
+
+    monkeypatch.setattr(
+        _diagnostics,
+        "create_content_understanding_client",
+        lambda *args, **kwargs: SimpleNamespace(get_defaults=get_defaults),
+    )
+
+    with pytest.raises(ServiceError) as exc_info:
+        _diagnostics.doctor(SimpleNamespace())
+    assert secret not in str(exc_info.value)
+    assert "***redacted***" in str(exc_info.value)
+
+
+@pytest.mark.unit
+def test_doctor_explicit_overrides_and_key_result_are_secret_free(monkeypatch):
+    secret = "top-secret"
+    monkeypatch.setattr(_diagnostics.Profile, "load", lambda **kwargs: _doctor_profile())
+    captured = {}
+    client = SimpleNamespace(
+        get_defaults=lambda: SimpleNamespace(
+            model_deployments={
+                "text-embedding-3-large": "emb",
+                "gpt-5.2": "gpt",
+                "prebuilt-analyzer-completion-mini": "gpt",
+            }
+        )
+    )
+
+    def client_factory(*args, **kwargs):
+        captured.update(kwargs)
+        return client
+
+    monkeypatch.setattr(_diagnostics, "create_content_understanding_client", client_factory)
+    result = _diagnostics.doctor(
+        SimpleNamespace(),
+        endpoint="https://override.example",
+        api_version="2026-06-01-preview",
+        auth_mode="key",
+        api_key=secret,
+        profile_name="dev",
+    )
+
+    assert result["endpoint"] == "https://override.example"
+    assert result["apiVersion"] == "2026-06-01-preview"
+    assert result["authentication"] == "resource key"
+    assert captured["api_key"] == secret
+    assert secret not in str(result)
 
 
 @pytest.mark.unit

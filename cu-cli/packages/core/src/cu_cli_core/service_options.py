@@ -6,10 +6,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 from .command_spec import ArgumentValueType, SurfaceClassification
 
 DEFAULT_API_VERSION = "2025-11-01"
+SUPPORTED_API_VERSIONS = (DEFAULT_API_VERSION, "2026-06-01-preview")
+_PREVIEW_VERSION_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}-preview$")
+
+
+def is_supported_api_version(version: str | None) -> bool:
+    """Return whether an API version follows the CLI's shared support policy."""
+
+    return bool(
+        version in SUPPORTED_API_VERSIONS
+        or (version and _PREVIEW_VERSION_PATTERN.fullmatch(version))
+    )
 
 
 @dataclass(frozen=True)
