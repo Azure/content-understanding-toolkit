@@ -4,16 +4,15 @@ Release History
 0.1.0b1 (2026-09-11)
 +++++++++++++++++++++
 
-* Add the preview ``az cu analyzer list`` vertical slice.
-* Add analyzer show, create, and delete commands.
-* Add single-file analysis and defaults show/set commands.
-* Use the active Azure CLI login and subscription for Microsoft Entra authentication.
-* Reuse CU CLI core profiles, analyzer operations, structured errors, and serialization.
-* Add schema validation and creation, analyzer tests, URL/SAS and directory/batch analysis.
-* Add profile management with atomic updates and secret redaction.
-* Add host-context analyzer copy, structured doctor checks, and safe environment-variable listing.
-* Add ``az cu infra generate`` with Azure CLI-native subscription and wizard behavior.
-* Generate the canonical azd/Bicep project supplied by ``cu-cli-core`` and use
-  an internal ``az cu`` post-provision model helper.
-* Generate command and argument registration from the shared ``cu-cli-core``
-	command specifications while omitting direct provisioning and self-upgrade.
+* Introduce the preview ``az cu`` command group for Azure Content Understanding.
+* Analyze local files, directories, and HTTPS or SAS URLs, with support for
+	batch output, reports, dry runs, usage details, and LLM-ready output.
+* List, inspect, create, delete, validate, test, and copy analyzers, and create
+	analyzer schemas.
+* Manage defaults and reusable profiles, with secret redaction in command output.
+* Diagnose configuration and connectivity issues with ``az cu doctor`` and
+	safely inspect relevant environment variables.
+* Generate azd and Bicep projects for new or existing Foundry resources with
+	guided subscription, region, model, and RBAC configuration.
+* Use the active Azure CLI login, cloud, and subscription, and support standard
+	Azure CLI output formats, JMESPath queries, and confirmation behavior.

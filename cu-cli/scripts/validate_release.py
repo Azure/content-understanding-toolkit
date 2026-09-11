@@ -136,24 +136,19 @@ def validate_frontend_metadata(root: Path, frontend: str) -> str:
     return core_version
 
 
-def validate_cli_changelog(root: Path, cli_version: str) -> None:
-
-    changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
+def validate_changelog(path: Path, version: str) -> None:
+    changelog = path.read_text(encoding="utf-8")
     heading = re.search(
-        rf"^## {re.escape(cli_version)} \(([^)]+)\)$",
+        rf"^## {re.escape(version)} \(([^)]+)\)$",
         changelog,
         flags=re.MULTILINE,
     )
     if heading is None or heading.group(1).casefold() == "unreleased":
-        raise ValueError(
-            f"CHANGELOG.md must date the {cli_version} release as YYYY-MM-DD"
-        )
+        raise ValueError(f"{path} must date the {version} release as YYYY-MM-DD")
     try:
         date.fromisoformat(heading.group(1))
     except ValueError as error:
-        raise ValueError(
-            f"CHANGELOG.md release date is invalid: {heading.group(1)}"
-        ) from error
+        raise ValueError(f"{path} release date is invalid: {heading.group(1)}") from error
 
 
 def verify_package_release(
@@ -197,10 +192,12 @@ def validate_release(
             f"{project_path}: {actual_version}"
         )
     validate_core_assets(root)
+    if package == "core":
+        validate_changelog(root / "packages/core/CHANGELOG.md", actual_version)
     if package in {"cli", "extension"}:
         core_version = validate_frontend_metadata(root, package)
         if package == "cli":
-            validate_cli_changelog(root, actual_version)
+            validate_changelog(root / "CHANGELOG.md", actual_version)
         if verify_core_on_index:
             verify_package_release("cu-cli-core", core_version, index)
 

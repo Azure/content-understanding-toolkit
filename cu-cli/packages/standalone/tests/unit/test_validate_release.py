@@ -46,6 +46,7 @@ def _write_release_tree(
     *,
     core_version: str = "0.1.0b1",
     dated_changelog: bool = True,
+    dated_core_changelog: bool = True,
 ) -> None:
     core_major, core_minor, _ = core_version.split(".")
     core_upper_bound = f"{core_major}.{int(core_minor) + 1}.0"
@@ -77,6 +78,11 @@ def _write_release_tree(
         f"# Release History\n\n## 0.1.0b1 ({status})\n",
         encoding="utf-8",
     )
+    core_status = "2026-09-04" if dated_core_changelog else "Unreleased"
+    (root / "packages/core/CHANGELOG.md").write_text(
+        f"# Release History\n\n## {core_version} ({core_status})\n",
+        encoding="utf-8",
+    )
 
 
 def _validate(root: Path, **overrides: object) -> None:
@@ -99,6 +105,13 @@ def test_validates_core_release(tmp_path: Path) -> None:
     _write_release_tree(tmp_path)
 
     _validate(tmp_path)
+
+
+def test_core_requires_dated_changelog(tmp_path: Path) -> None:
+    _write_release_tree(tmp_path, dated_core_changelog=False)
+
+    with pytest.raises(ValueError, match="must date"):
+        _validate(tmp_path)
 
 
 def test_validates_extension_release_metadata(tmp_path: Path) -> None:
