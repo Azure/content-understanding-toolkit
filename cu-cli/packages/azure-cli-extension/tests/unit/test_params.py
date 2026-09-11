@@ -13,7 +13,11 @@ from knack.parser import CLICommandParser
 from azext_content_understanding import _commands
 from azext_content_understanding._params import _argument_kwargs, load_arguments
 from azext_content_understanding._help import load_command_help
-from azext_content_understanding.commands import azure_command_specs, load_command_table
+from azext_content_understanding.commands import (
+    azure_command_bindings,
+    azure_command_specs,
+    load_command_table,
+)
 from cu_cli_core.command_spec import ANALYZE
 
 
@@ -131,7 +135,7 @@ def test_loader_initialization_registers_the_complete_approved_surface() -> None
     load_arguments(loader, None)
 
     assert set(loader.seen_commands) == {
-        "cu " + " ".join(spec.path) for spec in azure_command_specs()
+        "cu " + " ".join(azure_path) for _, azure_path in azure_command_bindings()
     }
 
 

@@ -12,6 +12,7 @@ import yaml
 from azext_content_understanding import _help  # noqa: F401
 from azext_content_understanding import _commands
 from azext_content_understanding.commands import (
+    azure_command_bindings,
     azure_command_specs,
     command_adapter_name,
     load_command_table,
@@ -44,9 +45,9 @@ def test_preview_commands_are_generated_from_shared_specs() -> None:
     command_table = load_command_table(loader, [])
 
     assert set(command_table) == {
-        "cu " + " ".join(spec.path) for spec in azure_command_specs()
+        "cu " + " ".join(azure_path) for _, azure_path in azure_command_bindings()
     }
-    assert len(command_table) == len(azure_command_specs())
+    assert len(command_table) == len(azure_command_bindings())
     assert command_table["cu analyzer list"]["table_transformer"].endswith(
         "#analyzer_list_table"
     )
@@ -55,7 +56,7 @@ def test_preview_commands_are_generated_from_shared_specs() -> None:
 
 @pytest.mark.unit
 def test_every_shared_command_derives_a_unique_callable_adapter() -> None:
-    names = [command_adapter_name(spec.path) for spec in azure_command_specs()]
+    names = [command_adapter_name(spec.path) for spec, _ in azure_command_bindings()]
 
     assert len(names) == len(set(names))
     for name in names:
@@ -69,10 +70,29 @@ def test_infrastructure_generation_is_registered_but_obsolete_commands_are_not()
     command_table = load_command_table(loader, [])
 
     assert "cu infra generate" in command_table
-    assert "cu _infra-models" in command_table
+    assert "cu infra _models" in command_table
+    assert "cu _infra-models" not in command_table
     assert "cu provision" not in command_table
     assert "cu _has-values" not in command_table
     assert "cu upgrade" not in command_table
+
+
+@pytest.mark.unit
+def test_internal_hook_helper_is_not_in_top_level_azure_help_surface() -> None:
+    loader = FakeLoader()
+
+    command_table = load_command_table(loader, [])
+    top_level_commands = {
+        command.removeprefix("cu ")
+        for command in command_table
+        if " " not in command.removeprefix("cu ")
+    }
+
+    assert "_infra-models" not in top_level_commands
+    assert any(
+        spec.path == ("_infra-models",) and azure_path == ("infra", "_models")
+        for spec, azure_path in azure_command_bindings()
+    )
 
 
 @pytest.mark.unit

@@ -2,7 +2,7 @@
 
 This infrastructure-only Azure Developer CLI (`azd`) project provisions a Microsoft Foundry resource and project for Azure Content Understanding. It can optionally deploy supported language and embeddings models and configure Content Understanding defaults.
 
-The generated hook runs the internal `az cu _infra-models` helper, so keep Azure CLI and the `content-understanding` extension on `PATH` when running `azd up`. Model setup failures stop the hook and can be retried with `azd up`; layout, read, and digital parsing remain available without optional models.
+The generated hook runs the internal `az cu infra _models` helper, so keep Azure CLI and the `content-understanding` extension on `PATH` when running `azd up`. Model setup failures stop the hook and can be retried with `azd up`; layout, read, and digital parsing remain available without optional models.
 
 ## Run
 

@@ -44,7 +44,7 @@ key_arg=""
 [ "$assign_roles" = "false" ] && key_arg="--use-key"
 # The helper is idempotent and must run on retries so profile setup can recover.
 # shellcheck disable=SC2086
-if model_names=$(az cu _infra-models \
+if model_names=$(az cu infra _models \
     --resource-group "$rg" --account "$account" --subscription "$subscription_id" \
     --selection "${model_selection:-recommended}" --out infra/models.json --deploy \
     --endpoint "$endpoint" --api-version "${api_version:-2025-11-01}" $key_arg \

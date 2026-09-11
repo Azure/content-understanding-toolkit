@@ -16,6 +16,7 @@
 	and environment variables.
 - Fixed `az cu` profile API versions being overridden when `--api-version` was omitted.
 - Fixed `az cu analyze --report-file` being rejected by the Azure CLI parser.
+- Fixed `az cu --help` exposing an internal infrastructure hook command.
 
 ## 0.1.0b1 (2026-09-04)
 

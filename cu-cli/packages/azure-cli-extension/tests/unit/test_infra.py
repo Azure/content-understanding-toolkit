@@ -43,8 +43,8 @@ def test_write_project_materializes_canonical_template(tmp_path: Path) -> None:
     posix_hook = (target / "hooks/postprovision.sh").read_text(encoding="utf-8")
     powershell_hook = (target / "hooks/postprovision.ps1").read_text(encoding="utf-8")
     readme = (target / "README.md").read_text(encoding="utf-8")
-    assert "az cu _infra-models" in posix_hook
-    assert "'cu', '_infra-models'" in powershell_hook
+    assert "az cu infra _models" in posix_hook
+    assert "'cu', 'infra', '_models'" in powershell_hook
     assert "profile set --key endpoint --value" in posix_hook
     assert "profile set --key endpoint --value" in powershell_hook
     assert "defaults set --from-profile" not in posix_hook

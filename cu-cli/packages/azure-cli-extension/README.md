@@ -347,7 +347,7 @@ azd auth login
 azd up
 ```
 
-Generated hooks use the internal `az cu _infra-models` helper and do not require
+Generated hooks use the internal `az cu infra _models` helper and do not require
 the standalone `cu-cli` package.
 
 ## Command overview

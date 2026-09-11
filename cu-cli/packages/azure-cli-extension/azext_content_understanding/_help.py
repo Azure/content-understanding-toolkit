@@ -7,7 +7,7 @@ from textwrap import dedent, indent
 
 from knack.help_files import helps
 
-from cu_cli_core.command_spec import COMMAND_SPECS
+from .commands import azure_command_bindings
 
 
 helps["cu"] = """
@@ -156,12 +156,12 @@ def command_help_key(path: tuple[str, ...]) -> str:
 def load_command_help() -> None:
     """Register shared command summaries and Azure-specific details with Knack."""
 
-    for spec in COMMAND_SPECS:
+    for spec, azure_path in azure_command_bindings():
         details = dedent(_COMMAND_DETAILS.get(spec.path, "")).strip()
         content = f"type: command\nshort-summary: {spec.help}"
         if details:
             content += "\n" + details
-        helps[command_help_key(spec.path)] = "\n" + indent(content, "    ") + "\n"
+        helps[command_help_key(azure_path)] = "\n" + indent(content, "    ") + "\n"
 
 
 load_command_help()

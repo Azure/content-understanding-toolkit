@@ -42,7 +42,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $modelArgs = @(
-  'cu', '_infra-models',
+  'cu', 'infra', '_models',
   '--resource-group', $rg, '--account', $account, '--subscription', $subscriptionId,
   '--selection', $(if ($modelSelection) { $modelSelection } else { 'recommended' }),
   '--out', 'infra/models.json', '--deploy', '--endpoint', $endpoint,

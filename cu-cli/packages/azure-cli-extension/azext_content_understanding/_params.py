@@ -11,7 +11,7 @@ from azure.cli.core.commands.parameters import get_enum_type, get_three_state_fl
 from cu_cli_core.command_spec import ArgumentValueType, SurfaceClassification
 from cu_cli_core.service_options import get_service_option
 
-from .commands import azure_command_specs
+from .commands import azure_command_bindings
 
 
 logger = logging.getLogger(__name__)
@@ -65,8 +65,8 @@ def load_arguments(loader, command) -> None:
     """Register Azure-applicable arguments directly from shared metadata."""
 
     logger.debug("Loading Content Understanding arguments for requested command %r", command)
-    for spec in azure_command_specs():
-        command_name = "cu " + " ".join(spec.path)
+    for spec, azure_path in azure_command_bindings():
+        command_name = "cu " + " ".join(azure_path)
         with loader.argument_context(command_name) as raw_context:
             context = _ExplicitArgumentContext(raw_context)
             registered: set[str] = set()
