@@ -101,17 +101,18 @@ def test_validation_rejects_unsafe_environment_and_region() -> None:
 
 def test_choose_account_lists_subscriptions_and_marks_active(monkeypatch) -> None:
     accounts = [
-        AzureAccount("sub-b", "Beta", "tenant-b"),
         AzureAccount("sub-a", "Alpha", "tenant-a"),
+        AzureAccount("sub-b", "Beta", "tenant-b"),
     ]
     captured = {}
-    monkeypatch.setattr(_infra, "_active_account", lambda _ctx: accounts[0])
+    monkeypatch.setattr(_infra, "_active_account", lambda _ctx: accounts[1])
     monkeypatch.setattr(_infra, "_subscriptions", lambda _ctx: accounts)
 
-    def choose(message, labels):
+    def choose(message, labels, *, default):
         captured["message"] = message
         captured["labels"] = labels
-        return 1
+        captured["default"] = default
+        return default - 1
 
     monkeypatch.setattr(_infra, "prompt_choice_list", choose)
 
@@ -120,8 +121,43 @@ def test_choose_account_lists_subscriptions_and_marks_active(monkeypatch) -> Non
     assert selected == accounts[1]
     assert captured == {
         "message": "Select an Azure subscription:",
-        "labels": ["Beta (sub-b) [active]", "Alpha (sub-a)"],
+        "labels": ["Alpha (sub-a)", "Beta (sub-b) [active]"],
+        "default": 2,
     }
+
+
+def test_choose_account_can_default_to_choice_143(monkeypatch) -> None:
+    accounts = [
+        AzureAccount(f"sub-{index}", f"Subscription {index:03}", f"tenant-{index}")
+        for index in range(1, 144)
+    ]
+    active = accounts[142]
+    captured = {}
+    monkeypatch.setattr(_infra, "_active_account", lambda _ctx: active)
+    monkeypatch.setattr(_infra, "_subscriptions", lambda _ctx: accounts)
+
+    def choose(_message, _labels, *, default):
+        captured["default"] = default
+        return default - 1
+
+    monkeypatch.setattr(_infra, "prompt_choice_list", choose)
+
+    assert _infra._choose_account(object(), interactive=True) == active
+    assert captured["default"] == 143
+
+
+def test_prompt_with_default_uses_blank_response(monkeypatch) -> None:
+    captured = {}
+
+    def enter(message, help_string=None):
+        captured["message"] = message
+        captured["help_string"] = help_string
+        return ""
+
+    monkeypatch.setattr(_infra, "prompt", enter)
+
+    assert _infra._prompt_with_default("azd environment name", "dev") == "dev"
+    assert captured == {"message": "azd environment name [dev]: ", "help_string": None}
 
 
 def test_interactive_choices_prompt_in_order_with_shared_defaults(monkeypatch) -> None:
@@ -132,9 +168,9 @@ def test_interactive_choices_prompt_in_order_with_shared_defaults(monkeypatch) -
         calls.append(("choice", message, labels))
         return next(choices)
 
-    def enter(message, *, default=None):
-        calls.append(("prompt", message, default))
-        return default
+    def enter(message, help_string=None):
+        calls.append(("prompt", message, help_string))
+        return ""
 
     def yes_no(message, *, default):
         calls.append(("yes-no", message, default))
@@ -154,14 +190,14 @@ def test_interactive_choices_prompt_in_order_with_shared_defaults(monkeypatch) -
         "assign_roles": False,
     }
     assert [(kind, message) for kind, message, _value in calls] == [
-        ("prompt", "azd environment name"),
+        ("prompt", "azd environment name [dev]: "),
         ("choice", "Choose a Microsoft Foundry resource:"),
-        ("prompt", "New resource prefix (blank for generated name)"),
+        ("prompt", "New resource prefix (blank for generated name): "),
         ("choice", "Select a Content Understanding region:"),
         ("yes-no", "Assign required RBAC roles to the signed-in user?"),
     ]
-    assert calls[0][2] == "dev"
-    assert calls[2][2] == ""
+    assert calls[0][1] == "azd environment name [dev]: "
+    assert calls[2][1] == "New resource prefix (blank for generated name): "
     assert calls[-1][2] == "n"
 
 
@@ -173,10 +209,10 @@ def test_interactive_existing_resource_skips_role_and_region_prompts(monkeypatch
         calls.append(message)
         return next(choices)
 
-    def enter(message, *, default=None):
+    def enter(message, help_string=None):
         calls.append(message)
-        if message == "azd environment name":
-            return default
+        if message == "azd environment name [dev]: ":
+            return ""
         return "https://existing.services.ai.azure.com/"
 
     monkeypatch.setattr(_infra, "prompt_choice_list", choose)

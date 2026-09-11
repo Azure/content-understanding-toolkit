@@ -78,6 +78,11 @@ def _active_account(cli_ctx: Any) -> AzureAccount:
     )
 
 
+def _prompt_with_default(message: str, default: str) -> str:
+    suffix = f" [{default}]" if default else ""
+    return prompt(f"{message}{suffix}: ") or default
+
+
 def _choose_account(cli_ctx: Any, *, interactive: bool) -> AzureAccount:
     active = _active_account(cli_ctx)
     if not interactive:
@@ -90,14 +95,22 @@ def _choose_account(cli_ctx: Any, *, interactive: bool) -> AzureAccount:
         + (" [active]" if account.subscription_id == active.subscription_id else "")
         for account in accounts
     ]
-    selected = prompt_choice_list("Select an Azure subscription:", labels)
+    active_index = next(
+        (
+            index
+            for index, account in enumerate(accounts, start=1)
+            if account.subscription_id == active.subscription_id
+        ),
+        1,
+    )
+    selected = prompt_choice_list("Select an Azure subscription:", labels, default=active_index)
     return accounts[selected]
 
 
 def _interactive_choices(values: dict[str, Any], account: AzureAccount) -> dict[str, Any]:
     resolved = dict(values)
-    resolved["environment"] = resolved.get("environment") or prompt(
-        "azd environment name", default=DEFAULT_ENVIRONMENT
+    resolved["environment"] = resolved.get("environment") or _prompt_with_default(
+        "azd environment name", DEFAULT_ENVIRONMENT
     )
     if not resolved.get("foundry_endpoint") and not resolved.get("foundry_prefix"):
         target = prompt_choice_list(
@@ -107,8 +120,8 @@ def _interactive_choices(values: dict[str, Any], account: AzureAccount) -> dict[
         if target == 1:
             resolved["foundry_endpoint"] = prompt("Existing Foundry endpoint")
         else:
-            resolved["foundry_prefix"] = prompt(
-                "New resource prefix (blank for generated name)", default=""
+            resolved["foundry_prefix"] = _prompt_with_default(
+                "New resource prefix (blank for generated name)", ""
             )
     if not resolved.get("location") and not resolved.get("foundry_endpoint"):
         selected = prompt_choice_list("Select a Content Understanding region:", list(CU_SUPPORTED_REGIONS))
