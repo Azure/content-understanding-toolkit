@@ -24,8 +24,15 @@ import pytest
 from cu_cli.cli import main
 
 from support.recording import mode, use_cassette
+from tests.support.doc_snippets import load_doc_snippets, parse_cu_commands
 
 pytestmark = pytest.mark.integration
+
+_PRODUCT_ROOT = Path(__file__).resolve().parents[4]
+_DOC_SNIPPETS = load_doc_snippets(
+    _PRODUCT_ROOT / "README.md",
+    _PRODUCT_ROOT / "docs" / "usage-guide.md",
+)
 
 
 def _run(*args):
@@ -133,10 +140,11 @@ def _build_classifier_schema_with_routing(path: str, route_target_id: str) -> Pa
 
 
 def test_scenario_3_analyzer_list_json(cloud_project):
+    [args] = parse_cu_commands(_DOC_SNIPPETS["cu_cli_list_analyzers"])
     with use_cassette("analyzer_list"):
-        res = _run("analyzer", "list", "--json")
+        res = _run(*args)
     assert res.exit_code == 0, res.output
-    json.loads(res.output[res.output.find("["):])  # output includes context lines
+    assert "prebuilt-layout" in res.output
 
 
 def test_scenario_3_analyzer_list_custom_sorted(cloud_project):

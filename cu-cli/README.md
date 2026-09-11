@@ -49,7 +49,7 @@ Requirements:
 - [Azure CLI](https://aka.ms/azcli) for login and resource discovery
 - [Azure Developer CLI](https://aka.ms/azd) only when using `cu infra generate`
 
-```bash
+```bash Snippet:cu_cli_install
 python -m pip install cu-cli
 cu --version
 cu --help
@@ -58,7 +58,7 @@ cu --help
 macOS includes an unrelated system command named `cu`. Use the equivalent
 `cu-cli` executable on macOS:
 
-```bash
+```bash Snippet:cu_cli_mac_os_help
 cu-cli --help
 ```
 
@@ -75,7 +75,7 @@ deployment mappings; it is not an Azure resource. For a ready resource,
 configure the automatically available `default` profile. With Microsoft Entra
 ID authentication:
 
-```bash
+```bash Snippet:cu_cli_configure_login_profile
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
 cu profile set auth_mode login
 az login
@@ -84,7 +84,7 @@ cu doctor
 
 Alternatively, use a resource key:
 
-```bash
+```bash Snippet:cu_cli_configure_key_profile
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
 cu profile set api_key <key>
 cu doctor
@@ -113,7 +113,7 @@ the only preview capability that requires a new CU CLI option:
 result directly instead of using the default long-running-operation (LRO)
 polling flow.
 
-```bash
+```bash Snippet:cu_cli_analyze_inline_preview
 cu analyze --inline --api-version 2026-06-01-preview document.pdf --analyzer prebuilt-layout
 ```
 
@@ -130,7 +130,7 @@ Further reading:
 
 List the prebuilt analyzers available to the configured resource:
 
-```bash
+```bash Snippet:cu_cli_list_analyzers
 cu analyzer list
 ```
 
@@ -138,7 +138,7 @@ Start with the `prebuilt-layout` content extraction analyzer. It extracts text,
 paragraphs, tables, figures, and document structure without requiring a language
 model or embeddings model. `-a` is the short form of `--analyzer`:
 
-```bash
+```bash Snippet:cu_cli_analyze_layout
 # Generate Markdown from the analyzer result with the CU SDK's to_llm_input().
 cu analyze ./document.pdf -a prebuilt-layout
 ```
@@ -146,7 +146,7 @@ cu analyze ./document.pdf -a prebuilt-layout
 Analyze a remote file with `--url` without downloading it through the CLI.
 Quote URLs that contain SAS query parameters so the shell preserves `&` characters:
 
-```bash
+```bash Snippet:cu_cli_analyze_remote_url
 cu analyze --url "https://storage.example.net/container/video.mp4?sv=<version>&sp=r&sig=<signature>" \
   --analyzer prebuilt-videoSearch
 ```
@@ -171,7 +171,7 @@ Domain-specific prebuilt analyzers, such as `prebuilt-invoice`, extract a
 defined set of structured fields. They require the model setup described in
 [Deploy models and configure defaults](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/provisioning.md#deploy-models-and-configure-defaults):
 
-```bash
+```bash Snippet:cu_cli_analyze_prebuilt_invoice
 cu analyze ./invoice.pdf --analyzer prebuilt-invoice --json
 ```
 
@@ -182,7 +182,7 @@ Analyze several files into one output directory. `--pattern` requires
 `--source`, because a positional path can be either a file or a directory and
 `--pattern` only makes sense once a directory is named explicitly:
 
-```bash
+```bash Snippet:cu_cli_analyze_directory_pattern
 cu analyze --source ./documents --pattern "*.pdf" --output-dir ./results
 ```
 
@@ -208,7 +208,7 @@ Custom analyzers require supported model deployments and configured Content
 Understanding defaults. Confirm the model-to-deployment mappings before creating
 the analyzer:
 
-```bash
+```bash Snippet:cu_cli_show_defaults
 # Show the Content Understanding defaults configured on the resource.
 cu defaults show
 ```
@@ -218,7 +218,7 @@ If the required mappings are missing, follow
 to configure them. Then generate a starter analyzer schema from a representative
 file:
 
-```bash
+```bash Snippet:cu_cli_create_and_test_custom_analyzer
 # Generate a schema from a representative document.
 cu analyzer schema create \
   --from-sample ./invoice.pdf \
@@ -259,7 +259,7 @@ Further reading:
 
 Every command provides examples:
 
-```bash
+```bash Snippet:cu_cli_command_help
 cu profile --help
 cu analyzer copy --help
 cu infra generate --help
@@ -307,7 +307,7 @@ for more information.
 If you work with multiple resources, create named profiles and either activate
 one or select it per command:
 
-```bash
+```bash Snippet:cu_cli_use_multiple_profiles
 cu profile create dev
 cu profile set endpoint https://<dev-resource>.services.ai.azure.com/ --name dev
 cu profile create prod

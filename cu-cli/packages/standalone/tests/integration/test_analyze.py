@@ -21,8 +21,15 @@ import pytest
 from cu_cli.cli import main
 
 from support.recording import use_cassette
+from tests.support.doc_snippets import load_doc_snippets, parse_cu_commands
 
 pytestmark = pytest.mark.integration
+
+_PRODUCT_ROOT = Path(__file__).resolve().parents[4]
+_DOC_SNIPPETS = load_doc_snippets(
+    _PRODUCT_ROOT / "README.md",
+    _PRODUCT_ROOT / "docs" / "usage-guide.md",
+)
 
 
 def _run(*args):
@@ -31,19 +38,27 @@ def _run(*args):
 
 def _copy_sample(name: str = "sample_invoice.pdf") -> Path:
     dest = Path.cwd() / name
-    dest.write_bytes((Path(__file__).parent / "fixtures" / name).read_bytes())
+    source = Path(__file__).parent / "fixtures" / "sample_invoice.pdf"
+    dest.write_bytes(source.read_bytes())
     return dest
 
 
-def test_scenario_1_analyze_single_file_markdown(cloud_project):
-    _copy_sample()
+@pytest.mark.parametrize(
+    "snippet_id",
+    [
+        "cu_cli_analyze_layout",
+        "cu_cli_analyze_local_file",
+        "cu_cli_analyze_with_default_analyzer",
+    ],
+)
+def test_scenario_1_analyze_single_file_markdown(cloud_project, snippet_id):
+    _copy_sample("document.pdf")
+    commands = parse_cu_commands(_DOC_SNIPPETS[snippet_id])
+    for args in commands[:-1]:
+        res = _run(*args)
+        assert res.exit_code == 0, res.output
     with use_cassette("analyze_single"):
-        res = _run(
-            "analyze",
-            "sample_invoice.pdf",
-            "--analyzer",
-            "prebuilt-layout",
-        )
+        res = _run(*commands[-1])
     assert res.exit_code == 0, res.output
     assert res.output.startswith("---")
     assert "mimeType:" in res.output
@@ -75,10 +90,10 @@ def test_scenario_1_analyze_directory_writes_result_files(cloud_project):
 def test_scenario_3_analyze_prebuilt_invoice_json(cloud_project):
     """`cu analyze --analyzer prebuilt-invoice --json`."""
     import json
-    _copy_sample()
+    _copy_sample("invoice.pdf")
+    [args] = parse_cu_commands(_DOC_SNIPPETS["cu_cli_analyze_prebuilt_invoice"])
     with use_cassette("analyze_prebuilt_invoice_json"):
-        res = _run("analyze", "sample_invoice.pdf",
-                   "--analyzer", "prebuilt-invoice", "--json")
+        res = _run(*args)
     assert res.exit_code == 0, res.output
     payload = json.loads(res.output[res.output.find("{"):])
     assert payload["status"] == "Succeeded"

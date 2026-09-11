@@ -57,7 +57,7 @@ command or environment overrides back to the profile.
 Suppose `dev` is active and `prod` has a different endpoint. Create both
 profiles first so the commands below can run in sequence:
 
-```bash
+```bash Snippet:cu_cli_profile_resolution_precedence
 # Create dev and prod, then set a distinct endpoint on each.
 cu profile create dev
 cu profile set endpoint https://<dev-resource>.services.ai.azure.com/ --name dev
@@ -88,7 +88,7 @@ the operation. Use it to verify precedence without exposing an API key.
 
 For example, `cu analyzer list --info` output begins with:
 
-```text
+```text Snippet:cu_cli_profile_info_output
 endpoint: https://my-foundry-resource.services.ai.azure.com/
 auth mode: entra
 api-version: 2025-11-01
@@ -113,7 +113,7 @@ Azure CLI sections and their settings, and set new configuration files to mode
 
 ### CU CLI profile commands
 
-```bash
+```bash Snippet:cu_cli_profile_commands
 # Show all effective values for the active profile.
 cu profile show
 
@@ -167,7 +167,7 @@ hyphens or underscores. The names `default` and `model_deployments` are reserved
 
 Login authentication is the recommended default:
 
-```bash
+```bash Snippet:cu_cli_azure_login
 # Sign in for the default login authentication mode.
 az login
 
@@ -179,7 +179,7 @@ az login
 
 To use a resource key:
 
-```bash
+```bash Snippet:cu_cli_set_key_authentication
 # Save a resource key on the active profile and select key authentication.
 cu profile set api_key <key>
 ```
@@ -187,7 +187,7 @@ cu profile set api_key <key>
 Setting an API key also selects key authentication. Unsetting the key returns
 the CU CLI profile to login authentication:
 
-```bash
+```bash Snippet:cu_cli_unset_key_authentication
 # Remove the saved key and return this profile to login authentication.
 cu profile unset api_key
 ```
@@ -204,7 +204,7 @@ Use environment variables for temporary or automated overrides rather than
 rewriting a saved profile. List the exact variables supported by the installed
 version:
 
-```bash
+```bash Snippet:cu_cli_list_environment_overrides
 # List set, recognized environment overrides in a table.
 cu env-var list
 
@@ -218,7 +218,7 @@ overrides without parsing a rendered table or exposing `CU_API_KEY`.
 
 For example:
 
-```bash
+```bash Snippet:cu_cli_temporarily_override_endpoint
 # Temporarily override only the endpoint; other values still resolve normally.
 export CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/
 
@@ -246,7 +246,7 @@ doesn't need to provide the mappings.
 
 Import Content Understanding defaults into a CU CLI profile:
 
-```bash
+```bash Snippet:cu_cli_sync_profile_defaults
 # Import remote defaults into the active CU CLI profile.
 cu profile sync-defaults
 
@@ -261,7 +261,7 @@ still be overridden with `--auth-mode` or `--api-key`.
 Set mappings manually in a CU CLI profile and apply them as Content
 Understanding defaults:
 
-```bash
+```bash Snippet:cu_cli_configure_and_apply_defaults
 # Replace my-gpt-52-deployment with the completion deployment name on your resource.
 cu profile set model_deployments.gpt-5.2 my-gpt-52-deployment
 
@@ -309,7 +309,7 @@ the authoritative [Microsoft Foundry provisioning guide](provisioning.md).
 An analyzer defines how Content Understanding processes a file. Analyze one file
 with the `prebuilt-layout` content extraction analyzer:
 
-```bash
+```bash Snippet:cu_cli_analyze_local_file
 # Analyze is a billed service call. Markdown is written to standard output.
 cu analyze ./document.pdf --analyzer prebuilt-layout
 ```
@@ -321,7 +321,7 @@ explicitly.
 
 Use the CU CLI profile's default analyzer:
 
-```bash
+```bash Snippet:cu_cli_analyze_with_default_analyzer
 # Save the default analyzer on the active profile.
 cu profile set default_analyzer prebuilt-layout
 
@@ -335,7 +335,7 @@ Pass an HTTPS URL with the named `--url` option. CU CLI sends
 the reference to Content Understanding and does not download or upload the file
 itself. This enables URL-based service limits, including large video workflows:
 
-```bash
+```bash Snippet:cu_cli_analyze_public_url
 cu analyze --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/videos/sdk_samples/FlightSimulator.mp4" \
   --analyzer prebuilt-videoSearch
 ```
@@ -349,7 +349,7 @@ Azure Blob SAS query parameters are preserved exactly for the service request.
 Replace the placeholders below with your storage account, container, blob, and
 SAS token. Quote the complete URL so the shell does not interpret `&` characters:
 
-```bash
+```bash Snippet:cu_cli_analyze_sas_url
 cu analyze --url "https://<storage-account>.blob.core.windows.net/<container>/<blob>?<sas-token>" \
   --analyzer prebuilt-videoSearch \
   --json
@@ -393,7 +393,7 @@ For multiple inputs that include a URL, specify `--output-dir` because a remote
 result cannot be written next to its source. A dry run reports remote sizes as
 unavailable and does not probe or download remote content:
 
-```bash
+```bash Snippet:cu_cli_analyze_multiple_urls_dry_run
 cu analyze \
   --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/invoice.pdf" \
   --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/receipt.png" \
@@ -406,7 +406,7 @@ cu analyze \
 
 Analyze immediate files in a directory:
 
-```bash
+```bash Snippet:cu_cli_analyze_directory
 # Analyze only matching files directly inside ./documents.
 cu analyze --source ./documents --pattern "*.pdf" --output-dir ./results
 ```
@@ -414,7 +414,7 @@ cu analyze --source ./documents --pattern "*.pdf" --output-dir ./results
 Directory input selects immediate files only. Add `--recursive` to include
 nested directories:
 
-```bash
+```bash Snippet:cu_cli_analyze_directory_recursive
 # Quote the pattern so CU CLI, rather than the shell, applies it.
 cu analyze --source ./documents \
   --recursive \
@@ -426,7 +426,7 @@ cu analyze --source ./documents \
 With `--output-dir`, CU CLI preserves each input path relative to the selected
 source directory. For example:
 
-```text
+```text Snippet:cu_cli_directory_output_mapping
 ./documents/2026/invoice-01.pdf
   -> ./results/2026/invoice-01.pdf.result.md
 ```
@@ -437,7 +437,7 @@ write the result to standard output or use `--output-file` to choose one file.
 
 These single-file examples show the terminal and file-output forms:
 
-```bash
+```bash Snippet:cu_cli_analyze_output_formats
 # Print human-readable Markdown to the terminal.
 cu analyze ./invoice.pdf --analyzer prebuilt-layout
 
@@ -462,7 +462,7 @@ content, CU CLI recommends `--json`.
 Every non-dry-run analyze request is billed. Preview discovery, output paths,
 and existing-file actions before a batch:
 
-```bash
+```bash Snippet:cu_cli_preview_batch
 # Preview the discovered files and output mappings without service calls.
 cu analyze --source ./documents \
   --recursive \
@@ -499,7 +499,7 @@ successful, failed, and skipped inputs, and exits with status `1` if any input
 failed. This lets automation keep good results while reporting files that need
 attention.
 
-```bash
+```bash Snippet:cu_cli_analyze_batch_with_report
 # Analyze recursively, save one result per input, and record all statuses in JSON.
 cu analyze ./documents \
   --recursive \
@@ -518,7 +518,7 @@ Useful options include:
 
 For example:
 
-```bash
+```bash Snippet:cu_cli_analyze_concurrency_and_timing
 # Process up to eight batch jobs concurrently instead of the default four.
 cu analyze ./documents --analyzer prebuilt-layout --output-dir ./results -j 8
 
@@ -528,7 +528,7 @@ cu analyze ./invoice.pdf --analyzer prebuilt-layout --time
 
 `--time` output resembles:
 
-```text
+```text Snippet:cu_cli_timing_output
 CU service calling time: 1.428s
 Total command time: 1.612s
 ```
@@ -548,7 +548,7 @@ Hyphens are reserved for service-provided prebuilt analyzer IDs.
 
 ### Inspect and manage
 
-```bash
+```bash Snippet:cu_cli_manage_analyzers
 # List analyzers available on the selected resource.
 cu analyzer list
 
@@ -563,7 +563,7 @@ cu analyzer delete invoice_v1
 
 Generate a starter schema:
 
-```bash
+```bash Snippet:cu_cli_create_local_schemas
 # Defaults to a document field-extraction schema.
 cu analyzer schema create --output-file schema.json
 
@@ -578,7 +578,7 @@ cu analyzer schema create \
 
 Generate from a representative sample:
 
-```bash
+```bash Snippet:cu_cli_create_schema_from_sample
 # Ask the service to draft a schema from one representative invoice.
 cu analyzer schema create \
   --from-sample ./invoice.pdf \
@@ -591,7 +591,7 @@ outputs are checked before sample-derived generation calls the CU service.
 
 Review generated schemas before deployment. Validate offline:
 
-```bash
+```bash Snippet:cu_cli_validate_schema
 # Validate the local schema shape.
 cu analyzer validate ./schema.json
 
@@ -605,7 +605,7 @@ status with the failing location.
 
 ### Create and test
 
-```bash
+```bash Snippet:cu_cli_create_and_test_analyzer
 # Create a remote custom analyzer from the reviewed local schema.
 cu analyzer create --name invoice_v1 --schema ./schema.json
 
@@ -631,7 +631,7 @@ need the complete analyzer result.
 
 Use CU CLI profile selectors for resources already configured in CU CLI:
 
-```bash
+```bash Snippet:cu_cli_copy_analyzer_with_profiles
 # Copy one analyzer between resources represented by saved CU CLI profiles.
 # --source is the existing analyzer ID on the dev resource.
 # --destination is the analyzer ID to create on the prod resource.
@@ -647,7 +647,7 @@ cu analyzer copy \
 Use direct Azure resource selectors for discovery-based, login-authenticated
 copy:
 
-```bash
+```bash Snippet:cu_cli_copy_analyzer_with_resources
 # Copy one analyzer using Azure resource discovery instead of saved profiles.
 # --source is the existing analyzer ID on the source resource.
 # --destination is the analyzer ID to create on the destination resource.
@@ -674,7 +674,7 @@ CU CLI profile's configured authentication.
 
 ## Content Understanding defaults
 
-```bash
+```bash Snippet:cu_cli_manage_defaults
 # Show remote model-to-deployment mappings as JSON.
 cu defaults show
 
@@ -699,7 +699,7 @@ bare `cu defaults set` command fails before contacting the service.
 
 Run diagnostics after initial setup or when changing resources:
 
-```bash
+```bash Snippet:cu_cli_run_diagnostics
 # Check the active profile.
 cu doctor
 
@@ -723,7 +723,7 @@ their effective non-secret settings.
 
 Every command has examples and supported-version information:
 
-```bash
+```bash Snippet:cu_cli_help_and_exit_behavior
 # List top-level command groups and global options.
 cu --help
 

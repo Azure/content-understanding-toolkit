@@ -20,6 +20,7 @@ import cu_cli.commands.analyze as analyze_module
 from cu_cli.cli import main
 from cu_cli.core.analyze import AnalyzeResponse
 from cu_cli.errors import CuCliError
+from tests.support.doc_snippets import load_doc_snippets, parse_cu_commands
 
 
 import pytest
@@ -28,6 +29,11 @@ pytestmark = pytest.mark.unit
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 _BOX_RE = re.compile(r"[│╭╮╰╯─]")
+_PRODUCT_ROOT = Path(__file__).resolve().parents[4]
+_DOC_SNIPPETS = load_doc_snippets(
+    _PRODUCT_ROOT / "README.md",
+    _PRODUCT_ROOT / "docs" / "usage-guide.md",
+)
 
 
 def _plain(output: str) -> str:
@@ -107,6 +113,18 @@ def test_bare_cu_prints_help():
     res = _run()
     assert res.exit_code == 0
     assert "Usage:" in res.output
+
+
+@pytest.mark.parametrize(
+    "snippet_id",
+    ["cu_cli_command_help", "cu_cli_help_and_exit_behavior"],
+)
+def test_documented_help_commands_execute(snippet_id):
+    for args in parse_cu_commands(_DOC_SNIPPETS[snippet_id]):
+        result = _run(*args)
+
+        assert result.exit_code == 0, result.output
+        assert "Usage:" in result.output
 
 
 def test_env_var_help_documents_all_supported_variables():
