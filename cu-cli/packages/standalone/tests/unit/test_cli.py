@@ -20,6 +20,7 @@ import cu_cli.commands.analyze as analyze_module
 from cu_cli.cli import main
 from cu_cli.core.analyze import AnalyzeResponse
 from cu_cli.errors import CuCliError
+from cu_cli_core.errors import ServiceError, ServiceErrorDetail
 
 
 import pytest
@@ -2999,6 +3000,39 @@ def test_analyze_single_input_writes_report_on_failure(monkeypatch):
     assert Path(entry["input"]).name == "only.pdf"
     assert entry["status"] == "failed"
     assert "boom" in entry["error"]
+
+
+def test_analyze_service_failed_envelope_is_reported_as_failure(monkeypatch):
+    Path("only.pdf").write_bytes(b"not a supported document")
+
+    def _fake_run_one(_client, _job):
+        raise ServiceError(
+            "Analysis failed according to the service response. InvalidRequest: invalid input; "
+            "InvalidContent: unsupported content; InvalidFormat: unsupported format",
+            details=(
+                ServiceErrorDetail("InvalidRequest", "invalid input"),
+                ServiceErrorDetail("InvalidContent", "unsupported content"),
+                ServiceErrorDetail("InvalidFormat", "unsupported format"),
+            ),
+        )
+
+    monkeypatch.setattr("cu_cli.commands.analyze.build_client", lambda *_a, **_k: object())
+    monkeypatch.setattr("cu_cli.commands.analyze._run_one", _fake_run_one)
+
+    res = _run(
+        "analyze", "only.pdf", "--analyzer", "prebuilt-layout",
+        "--json", "--output-dir", "out", "--report-file", "report.json",
+    )
+
+    assert res.exit_code == 1, res.output
+    assert not (Path("out") / "only.pdf.result.json").exists()
+    report = json.loads(Path("report.json").read_text(encoding="utf-8"))
+    assert report["counts"]["failed"] == 1
+    entry = report["results"][0]
+    assert entry["status"] == "failed"
+    assert "InvalidRequest" in entry["error"]
+    assert "InvalidContent" in entry["error"]
+    assert "InvalidFormat" in entry["error"]
 
 
 def test_analyze_empty_markdown_error_is_user_facing_in_output_and_report(monkeypatch):
