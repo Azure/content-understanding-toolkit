@@ -80,7 +80,7 @@ def test_canonical_template_has_expected_assets() -> None:
 
 def test_canonical_template_matches_golden_hashes() -> None:
     assert {
-        relative: hashlib.sha256(content).hexdigest()
+        relative: hashlib.sha256(content.replace(b"\r\n", b"\n")).hexdigest()
         for relative, content in iter_template_files(template_root())
     } == {
         "README.md": "d75fd48b73f92dbec27795f9dcc981f4b7a4237b5e38175bf2002591d2f8bc0d",
