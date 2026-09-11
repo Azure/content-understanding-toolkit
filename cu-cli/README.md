@@ -228,6 +228,12 @@ cu analyzer schema create \
 # then create the analyzer.
 cu analyzer create --name invoice_v1 --schema ./invoice-schema.json
 
+# Update mutable metadata without changing the analyzer schema.
+cu analyzer update invoice_v1 \
+  --description "Extract invoice header and totals" \
+  --tag owner=finance \
+  --tag environment=production
+
 # Run the analyzer against the sample and summarize whether fields were returned
 # and any confidence values supplied by the service. This is not an accuracy
 # benchmark and does not compare the result with labeled ground truth.
@@ -235,6 +241,11 @@ cu analyzer test invoice_v1 ./invoice.pdf
 
 cu analyze ./invoice.pdf --analyzer invoice_v1 --json
 ```
+
+`cu analyzer update` requires `--description`, at least one repeatable
+`--tag KEY=VALUE`, or both. Each tag assignment sets or replaces that key while
+preserving other existing tags. The command does not accept or update analyzer
+schemas, configuration, or model settings.
 
 Schema generation preserves existing files by default. Pass `--force` only when
 you intentionally want to replace the selected `--output-file`.
@@ -250,7 +261,7 @@ Further reading:
 | Command | Purpose |
 | --- | --- |
 | `cu analyze` | Analyze local files or HTTPS URLs and return analyzer results. |
-| `cu analyzer` | List, show, create, copy, delete, and test analyzers; create and validate local analyzer schemas. |
+| `cu analyzer` | List, show, create, update, copy, delete, and test analyzers; create and validate local analyzer schemas. |
 | `cu defaults` | Read or configure Content Understanding defaults that map models to deployments. |
 | `cu profile` | Manage local CU CLI endpoint, authentication, API, and model settings. |
 | `cu infra generate` | Generate an azd/Bicep project used to provision a Microsoft Foundry resource and configure Content Understanding. Run `azd up` to provision it. |

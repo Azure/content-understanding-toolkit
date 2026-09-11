@@ -122,6 +122,150 @@ def test_analyzer_create_rejects_duplicate_name_before_client(monkeypatch):
 
 
 @pytest.mark.parametrize(
+    ("metadata_args", "expected_description", "expected_tags"),
+    [
+        (("--description", "Updated"), "Updated", None),
+        (("--tag", "owner=cu-cli"), None, {"owner": "cu-cli"}),
+        (
+            (
+                "--description",
+                "Updated",
+                "--tag",
+                "owner=cu-cli",
+                "--tag",
+                "scenario=validation",
+            ),
+            "Updated",
+            {"owner": "cu-cli", "scenario": "validation"},
+        ),
+    ],
+)
+def test_analyzer_update_supports_metadata_combinations(
+    monkeypatch,
+    metadata_args,
+    expected_description,
+    expected_tags,
+):
+    monkeypatch.setattr(
+        "cu_cli.commands.analyzer._client",
+        lambda *_args, **_kwargs: object(),
+    )
+    captured = {}
+
+    def update(_client, analyzer_id, *, description, tags):
+        captured.update(
+            analyzer_id=analyzer_id,
+            description=description,
+            tags=tags,
+        )
+        return SimpleNamespace(analyzer_id=analyzer_id)
+
+    monkeypatch.setattr("cu_cli_core.operations.analyzers.update_analyzer", update)
+
+    result = _run("analyzer", "update", "invoice_v1", *metadata_args)
+
+    assert result.exit_code == 0, result.output
+    assert captured == {
+        "analyzer_id": "invoice_v1",
+        "description": expected_description,
+        "tags": expected_tags,
+    }
+
+
+@pytest.mark.parametrize(
+    ("metadata_args", "message"),
+    [
+        ((), "at least one metadata change"),
+        (("--tag", "owner"), "expected KEY=VALUE"),
+        (("--tag", "=cu-cli"), "non-empty key"),
+        (("--tag", " owner=cu-cli"), "cannot start or end with whitespace"),
+        (("--tag", "owner=one", "--tag", "owner=two"), "duplicate tag key"),
+    ],
+)
+def test_analyzer_update_rejects_invalid_input_before_client(
+    monkeypatch,
+    metadata_args,
+    message,
+):
+    monkeypatch.setattr(
+        "cu_cli.commands.analyzer._client",
+        lambda *_args, **_kwargs: pytest.fail("client must not build"),
+    )
+
+    result = _run("analyzer", "update", "invoice_v1", *metadata_args)
+
+    assert result.exit_code == 2
+    assert message in result.output
+
+
+def test_analyzer_update_help_is_metadata_only():
+    result = _run("analyzer", "update", "--help")
+
+    assert result.exit_code == 0, result.output
+    assert "--description" in result.output
+    assert "--tag" in result.output
+    assert "--schema" not in result.output
+
+
+def test_analyzer_update_routes_standard_service_options(monkeypatch):
+    captured = {}
+
+    def fake_client(
+        endpoint,
+        api_key,
+        api_version,
+        entra,
+        profile_name,
+        show_runtime_context,
+    ):
+        captured.update(
+            endpoint=endpoint,
+            api_key=api_key,
+            api_version=api_version,
+            entra=entra,
+            profile_name=profile_name,
+            show_runtime_context=show_runtime_context,
+        )
+        return object()
+
+    monkeypatch.setattr("cu_cli.commands.analyzer._client", fake_client)
+    monkeypatch.setattr(
+        "cu_cli_core.operations.analyzers.update_analyzer",
+        lambda _client, analyzer_id, **_kwargs: SimpleNamespace(analyzer_id=analyzer_id),
+    )
+
+    result = _run(
+        "analyzer",
+        "update",
+        "invoice_v1",
+        "--description",
+        "Updated",
+        "--endpoint",
+        "https://override.example/",
+        "--api-version",
+        "2026-06-01-preview",
+        "--auth-mode",
+        "login",
+        "--profile",
+        "prod",
+        "--info",
+        "--time",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert captured == {
+        "endpoint": "https://override.example/",
+        "api_key": None,
+        "api_version": "2026-06-01-preview",
+        "entra": "login",
+        "profile_name": "prod",
+        "show_runtime_context": True,
+    }
+    assert "CU service calling time:" in result.output
+    assert "Total command time:" in result.output
+
+
+@pytest.mark.parametrize(
     "selector",
     [
         ("invoice_v1",),

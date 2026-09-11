@@ -17,6 +17,7 @@ from click.testing import CliRunner
 from cu_cli.cli import main
 from cu_cli_core.command_spec import (
     ANALYZER_SHOW,
+    ANALYZER_UPDATE,
     COMMAND_SPECS,
     CommandBindingError,
     SurfaceClassification,
@@ -32,6 +33,7 @@ pytestmark = pytest.mark.unit
 
 def test_registry_uses_lazy_identifiers_and_unique_paths():
     assert get_command_spec("analyzer", "show") is ANALYZER_SHOW
+    assert get_command_spec("analyzer", "update") is ANALYZER_UPDATE
     assert len({spec.path for spec in COMMAND_SPECS}) == len(COMMAND_SPECS)
     assert ANALYZER_SHOW.operation == "cu_cli_core.operations.analyzers#get_analyzer"
     assert ANALYZER_SHOW.request_type == "cu_cli_core.contracts#AnalyzerShowRequest"
@@ -127,3 +129,14 @@ def test_analyzer_show_help_exposes_canonical_and_positional_forms():
     assert "--name" in result.output
     assert "-n" in result.output
     assert "-a" in result.output
+
+
+def test_analyzer_update_help_exposes_repeatable_metadata_options():
+    result = CliRunner().invoke(main, ["analyzer", "update", "--help"])
+
+    assert result.exit_code == 0, result.output
+    assert "[ANALYZER_NAME]" in result.output
+    assert "--description" in result.output
+    assert "--tag" in result.output
+    assert "KEY=VALUE" in result.output
+    assert "--schema" not in result.output

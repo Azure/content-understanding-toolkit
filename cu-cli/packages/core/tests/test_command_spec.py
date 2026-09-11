@@ -14,6 +14,7 @@ import pytest
 from cu_cli_core.command_spec import (
     ANALYZER_LIST,
     ANALYZER_SHOW,
+    ANALYZER_UPDATE,
     COMMAND_SPECS,
     DEFAULTS_SET,
     PROFILE_COPY,
@@ -26,7 +27,7 @@ from cu_cli_core.command_spec import (
     get_command_spec,
     resolve_identifier,
 )
-from cu_cli_core.contracts import AnalyzerShowRequest
+from cu_cli_core.contracts import AnalyzerShowRequest, AnalyzerUpdateRequest
 
 pytestmark = pytest.mark.unit
 
@@ -91,6 +92,12 @@ def test_analyzer_show_canonical_and_positional_forms_bind_identically():
             {"name": "invoice-v1", "schema": Path("schema.json")},
         ),
         (
+            ("analyzer", "update"),
+            {"analyzer_name": "invoice-v1", "description": "Updated"},
+            {"positional_analyzer_name": "invoice-v1", "description": "Updated"},
+            {"name": "invoice-v1", "description": "Updated"},
+        ),
+        (
             ("analyzer", "delete"),
             {"analyzer_name": "invoice-v1"},
             {"positional_analyzer_name": "invoice-v1"},
@@ -135,6 +142,22 @@ def test_analyzer_show_builds_normalized_typed_request():
     )
 
     assert request == AnalyzerShowRequest(name="invoice-v1")
+
+
+def test_analyzer_update_builds_typed_metadata_request():
+    request = build_request(
+        ANALYZER_UPDATE,
+        {
+            "analyzer_name": " invoice-v1 ",
+            "tag_assignments": ("owner=cu-cli",),
+        },
+    )
+
+    assert request == AnalyzerUpdateRequest(
+        name="invoice-v1",
+        tag_assignments=("owner=cu-cli",),
+    )
+    assert request.tags == {"owner": "cu-cli"}
 
 
 def test_analyze_named_urls_bind_as_repeatable_common_strings():

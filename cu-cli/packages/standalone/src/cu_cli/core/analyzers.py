@@ -15,6 +15,7 @@ from cu_cli_core.operations.analyzers import (
     delete_analyzer,
     get_analyzer,
     list_analyzers,
+    update_analyzer,
 )
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "get_copy_source_analyzer",
     "list_analyzers",
     "preflight_dependencies_on_target",
+    "update_analyzer",
 ]

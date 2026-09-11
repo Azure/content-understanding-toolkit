@@ -149,6 +149,42 @@ class AnalyzerCreateRequest:
 
 
 @dataclass(frozen=True)
+class AnalyzerUpdateRequest:
+    name: str
+    description: str | None = None
+    tag_assignments: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        normalized = self.name.strip()
+        if not normalized:
+            raise ValueError("analyzer name cannot be empty.")
+        object.__setattr__(self, "name", normalized)
+
+        assignments = tuple(self.tag_assignments)
+        if self.description is None and not assignments:
+            raise ValueError("provide at least one metadata change: --description or --tag.")
+
+        keys: set[str] = set()
+        for assignment in assignments:
+            key, separator, _ = assignment.partition("=")
+            normalized_key = key.strip()
+            if not separator or not normalized_key:
+                raise ValueError("invalid --tag value; expected KEY=VALUE with a non-empty key.")
+            if key != normalized_key:
+                raise ValueError(
+                    "invalid --tag value; tag keys cannot start or end with whitespace."
+                )
+            if key in keys:
+                raise ValueError(f"duplicate tag key '{key}'.")
+            keys.add(key)
+        object.__setattr__(self, "tag_assignments", assignments)
+
+    @property
+    def tags(self) -> dict[str, str]:
+        return dict(assignment.split("=", 1) for assignment in self.tag_assignments)
+
+
+@dataclass(frozen=True)
 class AnalyzerDeleteRequest:
     name: str
     yes: bool = False

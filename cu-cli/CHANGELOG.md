@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `cu analyzer update` to change analyzer descriptions and tags without
+	forwarding schema, configuration, or model fields.
 - Added HTTPS and Azure Blob SAS URL inputs to `cu analyze` through repeatable
 	`--url` options or standalone positional shortcuts, including URL-based analysis
 	for large audio and video files without downloading them through the CLI.

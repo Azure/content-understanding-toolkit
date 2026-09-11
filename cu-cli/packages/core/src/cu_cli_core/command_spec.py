@@ -448,6 +448,45 @@ ANALYZER_CREATE = CommandSpec(
     service_options=_SERVICE_OPTIONS,
 )
 
+ANALYZER_UPDATE = CommandSpec(
+    path=("analyzer", "update"),
+    help="Update an analyzer description or tags.",
+    operation="cu_cli_core.operations.analyzers#update_analyzer",
+    request_type="cu_cli_core.contracts#AnalyzerUpdateRequest",
+    arguments=(
+        ArgumentSpec(
+            "--name",
+            aliases=("-n", "-a"),
+            field="name",
+            parser_name="analyzer_name",
+            help="Analyzer name.",
+            required=True,
+        ),
+        ArgumentSpec(
+            "ANALYZER_NAME",
+            field="name",
+            parser_name="positional_analyzer_name",
+            help="Standalone positional shortcut for --name.",
+            classification=SurfaceClassification.STANDALONE_SHORTCUT,
+        ),
+        ArgumentSpec(
+            "--description",
+            field="description",
+            parser_name="description",
+            help="New analyzer description.",
+        ),
+        ArgumentSpec(
+            "--tag",
+            field="tag_assignments",
+            parser_name="tag_assignments",
+            help="Set a tag as KEY=VALUE; repeat for multiple tags.",
+            repeatable=True,
+            metavar="KEY=VALUE",
+        ),
+    ),
+    service_options=_SERVICE_OPTIONS,
+)
+
 ANALYZER_DELETE = CommandSpec(
     path=("analyzer", "delete"),
     help="Delete an analyzer.",
@@ -1086,6 +1125,7 @@ COMMAND_SPECS: tuple[CommandSpec, ...] = (
     ANALYZER_LIST,
     ANALYZER_SHOW,
     ANALYZER_CREATE,
+    ANALYZER_UPDATE,
     ANALYZER_COPY,
     ANALYZER_DELETE,
     ANALYZER_VALIDATE,

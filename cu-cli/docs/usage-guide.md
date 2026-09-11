@@ -555,9 +555,21 @@ cu analyzer list
 # Print one analyzer definition.
 cu analyzer show invoice_v1
 
+# Update the description and set two tags.
+cu analyzer update invoice_v1 \
+  --description "Extract invoice header and totals" \
+  --tag owner=finance \
+  --tag environment=production
+
 # Delete a custom analyzer after confirmation.
 cu analyzer delete invoice_v1
 ```
+
+`cu analyzer update` requires `--description`, at least one repeatable
+`--tag KEY=VALUE`, or both. Tag assignments set or replace the named keys and
+preserve other existing tags. The command sends only mutable metadata and does
+not accept `--schema`; analyzer schemas, configuration, and model settings are
+never forwarded in its update request.
 
 ### Create a schema
 

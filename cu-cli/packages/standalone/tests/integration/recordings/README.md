@@ -1,7 +1,7 @@
 # Cassettes (record / playback)
 
 Sanitized HTTP recordings for cloud-gated commands, replayed by
-`tests/test_cloud_playback.py` in **playback** mode (default, offline, CI).
+`tests/integration/` in **playback** mode (default, offline, CI).
 
 Modes are selected via env (not stripped by the test env isolation):
 
@@ -19,7 +19,7 @@ Modes are selected via env (not stripped by the test env isolation):
 Regenerate against a live endpoint:
 
     CU_TEST_REC_MODE=record CU_TEST_REC_ENDPOINT=https://<res>.services.ai.azure.com/ \
-      CU_TEST_REC_KEY=<key> pytest tests/test_cloud_playback.py
+  CU_TEST_REC_KEY=<key> pytest tests/integration/
 
 Cassettes are host-agnostic (matched on method + path + query) and have all
 secrets and real hostnames scrubbed, so they are safe to commit.
@@ -39,6 +39,8 @@ secrets and real hostnames scrubbed, so they are safe to commit.
   - `analyzer_create.yaml`
   - `analyzer_show.yaml`
   - `analyzer_delete.yaml`
+- Update analyzer metadata without changing its schema
+  - `analyzer_update_lifecycle.yaml`
 - Analyzer copy lifecycle tests are live/record-only. Same-resource copy needs
   `CU_TEST_REC_COPY_SOURCE_ID` set to a stable, ready custom analyzer. Cross-resource
   copy needs two Azure resources. Set the corresponding `CU_TEST_REC_*` values and run
