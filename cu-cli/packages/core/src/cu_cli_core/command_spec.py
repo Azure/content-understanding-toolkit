@@ -387,6 +387,18 @@ ANALYZER_LIST = CommandSpec(
     request_type="cu_cli_core.contracts#AnalyzerListRequest",
     arguments=(
         ArgumentSpec(
+            "--id",
+            field="analyzer_id",
+            parser_name="analyzer_id",
+            help="Return the analyzer with this exact ID.",
+        ),
+        ArgumentSpec(
+            "--id-prefix",
+            field="id_prefix",
+            parser_name="id_prefix",
+            help="Filter analyzer IDs by a case-sensitive prefix.",
+        ),
+        ArgumentSpec(
             "--kind",
             field="kind",
             parser_name="kind",
@@ -403,10 +415,24 @@ ANALYZER_LIST = CommandSpec(
             choices=("analyzerId", "createdAt", "lastModifiedAt"),
         ),
         ArgumentSpec(
+            "--limit",
+            field="limit",
+            parser_name="limit",
+            help="Maximum number of analyzers to return.",
+            value_type=ArgumentValueType.INTEGER,
+            minimum=1,
+        ),
+        ArgumentSpec(
+            "--continuation-token",
+            field="continuation_token",
+            parser_name="continuation_token",
+            help="Continue a limited query using the token from the previous result.",
+        ),
+        ArgumentSpec(
             "--json",
             field="json",
             parser_name="json_output",
-            help="Write the complete result as JSON.",
+            help="Write JSON; limited results include a continuation token.",
             value_type=ArgumentValueType.BOOLEAN,
             classification=SurfaceClassification.FRONTEND_PRESENTATION,
         ),

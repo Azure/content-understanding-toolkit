@@ -552,12 +552,53 @@ Hyphens are reserved for service-provided prebuilt analyzer IDs.
 # List analyzers available on the selected resource.
 cu analyzer list
 
+# Return one analyzer by exact ID. This uses the analyzer GET operation.
+cu analyzer list --id invoice_v1 --json
+
+# Return up to 20 matching custom analyzers.
+cu analyzer list \
+  --id-prefix invoice_ \
+  --kind custom \
+  --sort-by analyzerId \
+  --limit 20 \
+  --json
+
+# Continue the same query with the token returned by the previous command.
+cu analyzer list \
+  --id-prefix invoice_ \
+  --kind custom \
+  --sort-by analyzerId \
+  --limit 20 \
+  --continuation-token <TOKEN> \
+  --json
+
 # Print one analyzer definition.
 cu analyzer show invoice_v1
 
 # Delete a custom analyzer after confirmation.
 cu analyzer delete invoice_v1
 ```
+
+`--id` and `--id-prefix` are mutually exclusive, and ID matching is
+case-sensitive. A limited JSON result has this shape:
+
+```json
+{
+  "items": [],
+  "continuationToken": "<TOKEN>"
+}
+```
+
+Repeat the same `--id`, `--id-prefix`, `--kind`, and `--sort-by` values when
+using a continuation token. The page size may change. A missing
+`continuationToken` value means there are no more matches. Without `--limit`,
+the command reads all pages and preserves the original JSON array output.
+
+The Content Understanding list API currently provides `nextLink` paging but no
+server-side analyzer ID filter or sort parameters. The CLI therefore reads all
+service pages before applying prefix, kind, and sort options. Continuation is a
+stable CLI cursor over the current collection, not a service snapshot; analyzers
+created, deleted, or modified between commands can affect later pages.
 
 ### Create a schema
 

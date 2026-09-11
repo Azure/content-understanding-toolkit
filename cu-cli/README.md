@@ -132,7 +132,31 @@ List the prebuilt analyzers available to the configured resource:
 
 ```bash
 cu analyzer list
+
+# Limit output and filter analyzer IDs by a case-sensitive prefix.
+cu analyzer list --id-prefix prebuilt-tax --limit 25
+
+# Retrieve one exact analyzer ID without scanning the analyzer collection.
+cu analyzer list --id prebuilt-layout --json
 ```
+
+With `--limit`, JSON output is an object containing `items` and
+`continuationToken`. Pass the token back with the same filters and sort order to
+read the next result page:
+
+```bash
+cu analyzer list \
+  --id-prefix prebuilt-tax \
+  --limit 25 \
+  --continuation-token <TOKEN> \
+  --json
+```
+
+Without `--limit`, `--json` retains the original complete JSON array output.
+The service currently exposes collection paging but no list filter or sort
+parameters, so prefix filtering and sorting require the CLI to read all service
+pages. Continuation results reflect the current analyzer collection and are not
+a snapshot.
 
 Start with the `prebuilt-layout` content extraction analyzer. It extracts text,
 paragraphs, tables, figures, and document structure without requiring a language

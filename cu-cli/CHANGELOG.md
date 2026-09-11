@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added result limits, continuation tokens, and exact or prefix ID filtering to
+	`cu analyzer list`, while preserving complete array output for unlimited JSON
+	queries.
 - Added HTTPS and Azure Blob SAS URL inputs to `cu analyze` through repeatable
 	`--url` options or standalone positional shortcuts, including URL-based analysis
 	for large audio and video files without downloading them through the CLI.

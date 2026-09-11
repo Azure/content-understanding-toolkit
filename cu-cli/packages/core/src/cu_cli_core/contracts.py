@@ -127,12 +127,37 @@ class AnalyzerShowRequest:
 class AnalyzerListRequest:
     kind: str = "all"
     sort_by: str = "analyzerId"
+    analyzer_id: str | None = None
+    id_prefix: str | None = None
+    limit: int | None = None
+    continuation_token: str | None = None
 
     def __post_init__(self) -> None:
         if self.kind not in {"all", "prebuilt", "custom"}:
             raise ValueError(f"invalid analyzer kind: {self.kind}")
         if self.sort_by not in {"analyzerId", "createdAt", "lastModifiedAt"}:
             raise ValueError(f"invalid analyzer sort field: {self.sort_by}")
+        if self.analyzer_id is not None and self.id_prefix is not None:
+            raise ValueError("--id and --id-prefix cannot be used together.")
+        for field_name in ("analyzer_id", "id_prefix", "continuation_token"):
+            value = getattr(self, field_name)
+            if value is None:
+                continue
+            normalized = value.strip()
+            if not normalized:
+                option = field_name.replace("analyzer_id", "id").replace("_", "-")
+                raise ValueError(f"--{option} cannot be empty.")
+            object.__setattr__(self, field_name, normalized)
+        if self.limit is not None and self.limit < 1:
+            raise ValueError("--limit must be greater than zero.")
+        if self.continuation_token is not None and self.limit is None:
+            raise ValueError("--continuation-token requires --limit.")
+
+
+@dataclass(frozen=True)
+class AnalyzerListResult:
+    items: tuple[Any, ...]
+    continuation_token: str | None = None
 
 
 @dataclass(frozen=True)

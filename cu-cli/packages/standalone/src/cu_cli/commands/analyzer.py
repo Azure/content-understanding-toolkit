@@ -191,32 +191,58 @@ def analyzer_group() -> None:
     epilog=common_commands(
         ("cu analyzer list", "List all analyzers as a table."),
         ("cu analyzer list --kind custom", "List only custom analyzers."),
-        ("cu analyzer list --json", "List analyzers as machine-readable JSON."),
+        ("cu analyzer list --json", "List all analyzers as machine-readable JSON."),
+        ("cu analyzer list --id-prefix invoice --limit 50", "List a filtered result page."),
     ),
 )
 @with_command_arguments(ANALYZER_LIST)
 @with_auth_options
 @friendly_errors
 def cmd_list(
-    kind, sort_by, json_output, endpoint, api_key, api_version, entra, profile_name,
-    show_runtime_context, show_calling_time
+    analyzer_id, id_prefix, kind, sort_by, limit, continuation_token, json_output,
+    endpoint, api_key, api_version, entra, profile_name, show_runtime_context,
+    show_calling_time
 ) -> None:
-    request = build_request(
-        ANALYZER_LIST,
-        {"kind": kind, "sort_by": sort_by, "json_output": json_output},
-    )
+    try:
+        request = build_request(
+            ANALYZER_LIST,
+            {
+                "analyzer_id": analyzer_id,
+                "id_prefix": id_prefix,
+                "kind": kind,
+                "sort_by": sort_by,
+                "limit": limit,
+                "continuation_token": continuation_token,
+                "json_output": json_output,
+            },
+        )
+    except CommandBindingError as exc:
+        raise CuCliError(str(exc), exit_code=VALIDATION_FAILURE) from exc
     client = _client(endpoint, api_key, api_version, entra, profile_name, show_runtime_context)
     with calling_time(show_calling_time) as calling_timer:
-        items = resolve_identifier(ANALYZER_LIST.operation)(
+        result = resolve_identifier(ANALYZER_LIST.operation)(
             client,
             kind=request.kind,
             sort_by=request.sort_by,
+            analyzer_id=request.analyzer_id,
+            id_prefix=request.id_prefix,
+            limit=request.limit,
+            continuation_token=request.continuation_token,
         )
     if json_output:
-        dump_json([a.as_dict() for a in items])
+        items = [a.as_dict() for a in result.items]
+        if request.limit is None:
+            dump_json(items)
+        else:
+            dump_json({"items": items, "continuationToken": result.continuation_token})
     else:
-        console.print(analyzer_table(items))
-        console.print(f"\n[dim]{len(items)} analyzer(s)[/dim]")
+        console.print(analyzer_table(result.items))
+        console.print(f"\n[dim]{len(result.items)} analyzer(s)[/dim]")
+        if result.continuation_token is not None:
+            console.print(
+                "[dim]continuation token:[/dim] "
+                f"[cyan]{result.continuation_token}[/cyan]"
+            )
     calling_timer.print()
 
 

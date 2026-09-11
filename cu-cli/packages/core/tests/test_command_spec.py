@@ -199,11 +199,19 @@ def test_defaults_set_does_not_implicitly_select_profile_mappings():
 def test_frontend_presentation_arguments_are_not_bound_to_core_request():
     request = build_request(
         ANALYZER_LIST,
-        {"kind": "custom", "sort_by": "createdAt", "json_output": True},
+        {
+            "id_prefix": "invoice_",
+            "kind": "custom",
+            "sort_by": "createdAt",
+            "limit": 25,
+            "json_output": True,
+        },
     )
 
+    assert request.id_prefix == "invoice_"
     assert request.kind == "custom"
     assert request.sort_by == "createdAt"
+    assert request.limit == 25
 
 
 @pytest.mark.parametrize(

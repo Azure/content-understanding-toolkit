@@ -2001,12 +2001,26 @@ class _FakeListAnalyzer:
 
 
 class _FakeListAnalyzerClient:
+    def __init__(self):
+        self.list_calls = 0
+        self.get_calls = []
+
     def list_analyzers(self):
+        self.list_calls += 1
         return [
             _FakeListAnalyzer("my_custom_v1", "2026-01-03T00:00:00Z", "2026-01-01T00:00:00Z"),
             _FakeListAnalyzer("prebuilt-invoice", "2026-01-01T00:00:00Z", "2026-01-03T00:00:00Z"),
             _FakeListAnalyzer("prebuilt-document", "2026-01-02T00:00:00Z", "2026-01-02T00:00:00Z"),
         ]
+
+    def get_analyzer(self, analyzer_id):
+        self.get_calls.append(analyzer_id)
+        for analyzer in self.list_analyzers():
+            if analyzer.analyzer_id == analyzer_id:
+                return analyzer
+        from azure.core.exceptions import ResourceNotFoundError
+
+        raise ResourceNotFoundError("not found")
 
 
 class _FakeConfigListClient:
@@ -2251,6 +2265,90 @@ def test_analyzer_list_kind_all_is_default(monkeypatch):
     assert res.exit_code == 0, res.output
     payload = json.loads(res.output)
     assert len(payload) == 3  # no filtering by default
+
+
+def test_analyzer_list_limited_json_can_continue(monkeypatch):
+    client = _FakeListAnalyzerClient()
+    monkeypatch.setattr("cu_cli.commands.analyzer._client", lambda *_a, **_k: client)
+
+    first = _run("analyzer", "list", "--json", "--limit", "2")
+    assert first.exit_code == 0, first.output
+    first_payload = json.loads(first.output)
+    token = first_payload["continuationToken"]
+    assert [item["analyzerId"] for item in first_payload["items"]] == [
+        "my_custom_v1",
+        "prebuilt-document",
+    ]
+    assert token
+
+    second = _run(
+        "analyzer", "list", "--json", "--limit", "2",
+        "--continuation-token", token,
+    )
+    assert second.exit_code == 0, second.output
+    second_payload = json.loads(second.output)
+    assert [item["analyzerId"] for item in second_payload["items"]] == [
+        "prebuilt-invoice"
+    ]
+    assert second_payload["continuationToken"] is None
+
+
+def test_analyzer_list_limited_table_prints_continuation_token(monkeypatch):
+    monkeypatch.setattr("cu_cli.commands.analyzer._client", lambda *_a, **_k: _FakeListAnalyzerClient())
+
+    result = _run("analyzer", "list", "--limit", "1")
+
+    assert result.exit_code == 0, result.output
+    assert "1 analyzer(s)" in result.output
+    assert "continuation token:" in result.output
+
+
+def test_analyzer_list_combines_prefix_kind_and_sort(monkeypatch):
+    monkeypatch.setattr("cu_cli.commands.analyzer._client", lambda *_a, **_k: _FakeListAnalyzerClient())
+
+    result = _run(
+        "analyzer", "list", "--json", "--id-prefix", "prebuilt-",
+        "--kind", "prebuilt", "--sort-by", "createdAt",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert [item["analyzerId"] for item in json.loads(result.output)] == [
+        "prebuilt-invoice",
+        "prebuilt-document",
+    ]
+
+
+def test_analyzer_list_exact_id_uses_single_resource_lookup(monkeypatch):
+    client = _FakeListAnalyzerClient()
+    monkeypatch.setattr("cu_cli.commands.analyzer._client", lambda *_a, **_k: client)
+
+    result = _run("analyzer", "list", "--json", "--id", "prebuilt-invoice")
+
+    assert result.exit_code == 0, result.output
+    assert [item["analyzerId"] for item in json.loads(result.output)] == [
+        "prebuilt-invoice"
+    ]
+    assert client.get_calls == ["prebuilt-invoice"]
+
+
+@pytest.mark.parametrize(
+    "arguments, message",
+    [
+        (("--limit", "0"), "0 is not in the range"),
+        (("--continuation-token", "bad"), "requires --limit"),
+        (("--id", "one", "--id-prefix", "o"), "cannot be used together"),
+        (("--limit", "1", "--continuation-token", "bad"), "invalid continuation token"),
+    ],
+)
+def test_analyzer_list_rejects_invalid_paging_arguments(monkeypatch, arguments, message):
+    client = _FakeListAnalyzerClient()
+    monkeypatch.setattr("cu_cli.commands.analyzer._client", lambda *_a, **_k: client)
+
+    result = _run("analyzer", "list", *arguments)
+
+    assert result.exit_code == 2
+    assert message in result.output
+    assert client.list_calls == 0
 
 
 def test_analyzer_list_sort_by_analyzer_id(monkeypatch):
