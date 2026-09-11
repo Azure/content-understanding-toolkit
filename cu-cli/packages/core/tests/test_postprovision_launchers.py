@@ -11,7 +11,7 @@ import subprocess
 
 import pytest
 
-pytestmark = [pytest.mark.unit, pytest.mark.skipif(os.name == "nt", reason="POSIX stubs")]
+pytestmark = pytest.mark.unit
 
 HOOKS = Path(str(resources.files("cu_cli_core").joinpath("resources/azd_template/hooks")))
 
@@ -33,6 +33,7 @@ def _command(path: Path, log: Path, label: str) -> None:
         (("az",), "azure cu infra _postprovision-v1"),
     ],
 )
+@pytest.mark.skipif(os.name == "nt", reason="POSIX stubs")
 def test_posix_launcher_selects_one_available_frontend(tmp_path, frontends, expected):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -52,6 +53,7 @@ def test_posix_launcher_selects_one_available_frontend(tmp_path, frontends, expe
     assert log.read_text(encoding="utf-8").strip() == expected
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX stubs")
 def test_posix_launcher_prefers_azure_cli_over_system_commands(tmp_path):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -70,6 +72,7 @@ def test_posix_launcher_prefers_azure_cli_over_system_commands(tmp_path):
     assert log.read_text(encoding="utf-8").strip() == "azure cu infra _postprovision-v1"
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX stubs")
 def test_posix_launcher_fails_when_no_frontend_is_installed(tmp_path):
     result = subprocess.run(
         ["/bin/sh", str(HOOKS / "postprovision.sh")],
@@ -89,3 +92,26 @@ def test_launchers_are_policy_free_and_reference_both_frontends():
         assert "_postprovision-v1" in content
         assert "/usr/bin/cu" in content
     assert shutil.which("pwsh") is None or "exit $LASTEXITCODE" in powershell
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows PowerShell launcher")
+def test_powershell_launcher_selects_azure_cli(tmp_path):
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    log = tmp_path / "calls"
+    (bin_dir / "az.cmd").write_text(
+        f'@echo off\r\necho azure %*>>"{log}"\r\n', encoding="utf-8"
+    )
+    powershell = shutil.which("pwsh") or shutil.which("powershell")
+    assert powershell is not None
+
+    result = subprocess.run(
+        [powershell, "-NoProfile", "-File", str(HOOKS / "postprovision.ps1")],
+        check=False,
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PATH": str(bin_dir)},
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert log.read_text(encoding="utf-8").strip() == "azure cu infra _postprovision-v1"

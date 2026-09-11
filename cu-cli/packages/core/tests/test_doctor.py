@@ -95,6 +95,29 @@ def test_connectivity_failure_is_required_and_redacts_key():
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    "failure",
+    (
+        "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.payload.signature",
+        "api_key=another-secret",
+        "token: token-value",
+        "https://example.test/file?sig=sas-signature&other=safe",
+    ),
+)
+def test_connectivity_failure_redacts_common_credential_formats(failure):
+    request = resolve_doctor_request(profile())
+
+    result = assess_doctor(request, lambda _: FakeClient(error=RuntimeError(failure)))
+
+    message = result.failures[0].message
+    assert "eyJhbGciOiJIUzI1NiJ9" not in message
+    assert "another-secret" not in message
+    assert "token-value" not in message
+    assert "sas-signature" not in message
+    assert "***redacted***" in message
+
+
+@pytest.mark.unit
 def test_fix_reads_once_preserves_mappings_and_adds_aliases():
     request = resolve_doctor_request(
         profile(

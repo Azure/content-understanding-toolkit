@@ -166,7 +166,7 @@ def test_cli_requires_stable_core_dependency(tmp_path: Path) -> None:
         dependencies=["cu-cli-core>=0.1.0.dev0,<0.2.0"],
     )
 
-    with pytest.raises(ValueError, match="selected core release exactly"):
+    with pytest.raises(ValueError, match="bounded compatible core requirement"):
         _validate(
             tmp_path,
             package="cli",

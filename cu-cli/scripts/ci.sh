@@ -30,12 +30,19 @@ end_section() {
 
 section "Install dependencies"
 python -m pip install --upgrade pip
+python -m pip install "build==1.3.0"
 cd "${core_dir}"
 python -m pip install -e ".[dev]"
 cd "${cli_dir}"
 python -m pip install -e ".[dev]"
 cd "${extension_dir}"
 python -m pip install -e ".[dev]"
+end_section
+
+section "Build shared core wheel"
+cd "${core_dir}"
+rm -rf build dist
+python -m build --wheel
 end_section
 
 section "Copyright headers"
@@ -54,6 +61,49 @@ end_section
 
 section "Unit tests - shared core"
 python -m pytest -q -m unit tests/
+end_section
+
+section "Validate installed shared core wheel"
+installed_core="$(mktemp -d)"
+generated_project="$(mktemp -d)"
+trap 'rm -rf "${installed_core}" "${generated_project}"' EXIT
+python -m pip install --no-deps --target "${installed_core}" dist/cu_cli_core-*.whl
+cd "${product_dir}"
+PYTHONPATH="${installed_core}" GENERATED_PROJECT="${generated_project}" python - <<'PY'
+import os
+from pathlib import Path
+
+from cu_cli_core.infra import AzureAccount, InfraChoices, materialize_project
+
+target = Path(os.environ["GENERATED_PROJECT"])
+files, reused = materialize_project(
+    target,
+    InfraChoices(
+        environment="release",
+        location="eastus2",
+        api_version="2025-11-01",
+        account=AzureAccount("subscription", "Release", "tenant"),
+        foundry_prefix=None,
+        foundry_endpoint=None,
+        foundry_resource_group=None,
+        model_selection="recommended",
+    ),
+    force=False,
+)
+expected = {
+    "README.md",
+    "azure.yaml",
+    "hooks/postprovision.ps1",
+    "hooks/postprovision.sh",
+    "infra/main.bicep",
+    "infra/main.parameters.json",
+    "infra/models.json",
+    "infra/modules/foundry.bicep",
+}
+assert expected <= set(files)
+assert not reused
+assert all((target / relative).is_file() for relative in expected)
+PY
 end_section
 
 section "Lint standalone CLI (ruff)"
@@ -93,5 +143,6 @@ python -m pytest -q -m unit tests/unit/
 end_section
 
 section "Build Azure CLI extension wheel"
+rm -rf build dist
 python -m build --wheel
 end_section

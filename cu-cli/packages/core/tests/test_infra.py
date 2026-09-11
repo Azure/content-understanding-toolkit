@@ -79,9 +79,21 @@ def test_canonical_template_has_expected_assets() -> None:
 
 def test_built_wheel_contains_canonical_assets() -> None:
     wheels = sorted((Path(__file__).parents[1] / "dist").glob("cu_cli_core-*.whl"))
-    if not wheels:
-        pytest.skip("build the core wheel before running wheel-content validation")
+    assert wheels, "CI must build the core wheel before running core tests"
     with zipfile.ZipFile(wheels[-1]) as wheel:
-        names = set(wheel.namelist())
-    assert "cu_cli_core/resources/azd_template/hooks/postprovision.sh" in names
-    assert "cu_cli_core/resources/azd_template/infra/modules/foundry.bicep" in names
+        names = {
+            name.removeprefix("cu_cli_core/resources/azd_template/")
+            for name in wheel.namelist()
+            if name.startswith("cu_cli_core/resources/azd_template/")
+            and not name.endswith("/")
+        }
+    assert names == {
+        "README.md",
+        "azure.yaml",
+        "hooks/postprovision.ps1",
+        "hooks/postprovision.sh",
+        "infra/main.bicep",
+        "infra/main.parameters.json",
+        "infra/models.json",
+        "infra/modules/foundry.bicep",
+    }

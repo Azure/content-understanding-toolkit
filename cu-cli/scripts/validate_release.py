@@ -129,7 +129,7 @@ def validate_frontend_metadata(root: Path, frontend: str) -> str:
     expected_requirement = f"cu-cli-core>={core_version},<{core_upper_bound}"
     if expected_requirement not in dependencies:
         raise ValueError(
-            f"{frontend} must require the selected core release exactly as "
+            f"{frontend} must use the bounded compatible core requirement "
             f"{expected_requirement}"
         )
 
@@ -167,7 +167,7 @@ def verify_package_release(
     releases = payload.get("releases")
     if not isinstance(releases, dict) or not releases.get(version):
         raise ValueError(
-            f"{project_name} {version} must be published to {index} before cu-cli"
+            f"{project_name} {version} must be published to {index} before the frontend"
         )
 
 

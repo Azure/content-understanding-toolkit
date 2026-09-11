@@ -1,8 +1,8 @@
 Release History
 ===============
 
-0.1.0b1
-+++++++
+0.1.0b1 (2026-09-11)
++++++++++++++++++++++
 
 * Add the preview ``az cu analyzer list`` vertical slice.
 * Add analyzer show, create, and delete commands.
@@ -13,6 +13,7 @@ Release History
 * Add profile management with atomic updates and secret redaction.
 * Add host-context analyzer copy, structured doctor checks, and safe environment-variable listing.
 * Add ``az cu infra generate`` with Azure CLI-native subscription and wizard behavior.
-* Bundle the canonical azd/Bicep project and use an internal ``az cu`` post-provision model helper.
+* Generate the canonical azd/Bicep project supplied by ``cu-cli-core`` and use
+  an internal ``az cu`` post-provision model helper.
 * Generate command and argument registration from the shared ``cu-cli-core``
 	command specifications while omitting direct provisioning and self-upgrade.

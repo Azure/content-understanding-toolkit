@@ -4,19 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: Package index to publish to
+        description: Publication destination
         required: true
         type: choice
         options:
           - testpypi
           - pypi
+          - github
       package:
-        description: Package to publish; publish core before cli
+        description: Package to publish; publish core before a frontend
         required: true
         type: choice
         options:
           - core
           - cli
+          - extension
       version:
         description: Exact package version from pyproject.toml
         required: true
@@ -54,16 +56,25 @@ jobs:
           RELEASE_PACKAGE: ${{ inputs.package }}
           RELEASE_VERSION: ${{ inputs.version }}
           EXPECTED_COMMIT: ${{ inputs.commit }}
-        run: >-
-          python scripts/validate_release.py
-          --index "${RELEASE_TARGET}"
-          --package "${RELEASE_PACKAGE}"
-          --version "${RELEASE_VERSION}"
-          --expected-commit "${EXPECTED_COMMIT}"
-          --actual-commit "${GITHUB_SHA}"
-          --repository "${GITHUB_REPOSITORY}"
-          --ref "${GITHUB_REF}"
-          ${{ inputs.package == 'cli' && '--verify-core-on-index' || '' }}
+          VALIDATION_INDEX: ${{ inputs.target == 'github' && 'pypi' || inputs.target }}
+        run: |
+          if [[ "${RELEASE_TARGET}" == "github" && "${RELEASE_PACKAGE}" != "extension" ]]; then
+            echo "The GitHub target is only valid for the extension." >&2
+            exit 1
+          fi
+          if [[ "${RELEASE_TARGET}" != "github" && "${RELEASE_PACKAGE}" == "extension" ]]; then
+            echo "The extension must be published to GitHub Releases." >&2
+            exit 1
+          fi
+          python scripts/validate_release.py \
+            --index "${VALIDATION_INDEX}" \
+            --package "${RELEASE_PACKAGE}" \
+            --version "${RELEASE_VERSION}" \
+            --expected-commit "${EXPECTED_COMMIT}" \
+            --actual-commit "${GITHUB_SHA}" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --ref "${GITHUB_REF}" \
+            ${{ (inputs.package == 'cli' || inputs.package == 'extension') && '--verify-core-on-index' || '' }}
       - name: Test exact release commit
         run: bash scripts/ci.sh
       - name: Build selected distribution
@@ -73,13 +84,22 @@ jobs:
           python -m pip install "build==1.3.0" "twine==6.2.0"
           if [[ "${PACKAGE}" == "core" ]]; then
             package_directory="packages/core"
-          else
+          elif [[ "${PACKAGE}" == "cli" ]]; then
             package_directory="packages/standalone"
+          else
+            package_directory="packages/azure-cli-extension"
           fi
-          python -m build "${package_directory}"
+          if [[ "${PACKAGE}" == "extension" ]]; then
+            python -m build --wheel "${package_directory}"
+          else
+            python -m build "${package_directory}"
+          fi
           mkdir -p dist
           cp "${package_directory}"/dist/* dist/
           python -m twine check dist/*
+          if [[ "${PACKAGE}" == "extension" ]]; then
+            (cd dist && sha256sum *.whl > "content-understanding-${{ inputs.version }}.sha256")
+          fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dist-${{ inputs.target }}-${{ inputs.package }}-${{ inputs.version }}
@@ -123,3 +143,30 @@ jobs:
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: dist/
+
+  publish-github:
+    name: Publish extension ${{ inputs.version }} to GitHub Releases
+    if: inputs.target == 'github' && inputs.package == 'extension'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: dist-${{ inputs.target }}-${{ inputs.package }}-${{ inputs.version }}
+          path: dist
+      - name: Publish immutable extension artifacts
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ inputs.commit }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: >-
+          gh release create "content-understanding-v${RELEASE_VERSION}"
+          dist/*.whl dist/*.sha256
+          --repo "${GITHUB_REPOSITORY}"
+          --target "${RELEASE_COMMIT}"
+          --title "Azure Content Understanding CLI extension ${RELEASE_VERSION}"
+          --notes "Preview release of the Azure Content Understanding CLI extension."
+          --prerelease

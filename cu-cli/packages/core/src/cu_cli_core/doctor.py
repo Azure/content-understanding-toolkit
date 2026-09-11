@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import re
 from typing import Any, Callable, Mapping, Protocol
 
 from .defaults import (
@@ -173,10 +174,21 @@ def missing_requirements(mapped: Mapping[str, str]) -> tuple[str, ...]:
     return tuple(missing)
 
 
+_SENSITIVE_FAILURE_PATTERNS = (
+    re.compile(r"(?i)(authorization\s*[:=]\s*(?:bearer\s+)?)[^\s,;]+"),
+    re.compile(r"(?i)((?:api[-_ ]?key|token|secret|password)\s*[:=]\s*)[^\s,;]+"),
+    re.compile(r"(?i)([?&](?:sig|signature|token|code|key|api[-_]?key)=)[^&#\s]+"),
+)
+
+
 def _safe_failure_message(exc: Exception, secret: str | None) -> str:
+    """Remove known and commonly formatted credentials from adapter failures."""
+
     message = str(exc)
     if secret:
         message = message.replace(secret, "***redacted***")
+    for pattern in _SENSITIVE_FAILURE_PATTERNS:
+        message = pattern.sub(r"\1***redacted***", message)
     return message
 
 
