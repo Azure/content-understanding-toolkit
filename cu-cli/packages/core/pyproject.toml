@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cu-cli-core"
-version = "0.1.0b1"
+version = "0.1.0b2"
 description = "Framework-neutral command contracts and operations for Azure Content Understanding CLIs."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -34,6 +34,13 @@ where = ["src"]
 "cu_cli_core" = [
     "py.typed",
     "resources/openapi/*/*.json",
+    "resources/azd_template/*.md",
+    "resources/azd_template/*.yaml",
+    "resources/azd_template/hooks/*.ps1",
+    "resources/azd_template/hooks/*.sh",
+    "resources/azd_template/infra/*.bicep",
+    "resources/azd_template/infra/*.json",
+    "resources/azd_template/infra/modules/*.bicep",
 ]
 
 [tool.pytest.ini_options]

@@ -13,14 +13,16 @@ import subprocess
 import sys
 
 import rich_click as click
+from cu_cli_core.command_spec import INFRA_GENERATE
 
-from ..apiversion import API_VERSION_HELP, DEFAULT_API_VERSION, ensure_supported
+from ..apiversion import DEFAULT_API_VERSION, ensure_supported
 from ..core.foundry import endpoint_host, host_label, normalize_foundry_endpoint
 from ..errors import CuCliError, friendly_errors
 from ..exit_codes import VALIDATION_FAILURE
 from ..output import console
 from ._help import common_commands
 from ._infra_wizard import _validate_azd_environment_name, run_wizard
+from ._command_spec import with_command_arguments
 
 AZURE_SIGNUP_URL = "https://azure.microsoft.com/free/"
 
@@ -206,37 +208,7 @@ def infra_group() -> None:
         ),
     ),
 )
-@click.option(
-    "-d",
-    "--output-dir",
-    type=click.Path(path_type=Path, file_okay=False),
-    default=Path("provision"),
-    show_default=True,
-    help="Directory where the azd template is generated.",
-)
-@click.option("-e", "--environment", default=None, help="azd environment name.")
-@click.option("-l", "--location", default=None, help="Azure region.")
-@click.option("--subscription", default=None, help="Azure subscription name or ID.")
-@click.option("--api-version", default=None, help=API_VERSION_HELP)
-@click.option(
-    "--models",
-    default=None,
-    help=(
-        "Comma-separated model names, 'recommended', or 'none'; omit for an interactive "
-        "picker. Explicit names are validated against the live model catalog during azd up."
-    ),
-)
-@click.option(
-    "--foundry-endpoint",
-    default=None,
-    help="Existing Microsoft Foundry resource endpoint; only selected models are deployed.",
-)
-@click.option(
-    "--foundry-prefix",
-    default=None,
-    help="Prefix for a new globally unique Microsoft Foundry resource name.",
-)
-@click.option("--force", is_flag=True, help="Overwrite an existing generated template.")
+@with_command_arguments(INFRA_GENERATE)
 @friendly_errors
 def cmd_infra_generate(
     output_dir: Path,
@@ -247,6 +219,7 @@ def cmd_infra_generate(
     models: str | None,
     foundry_endpoint: str | None,
     foundry_prefix: str | None,
+    assign_roles: bool | None,
     force: bool,
 ) -> None:
     selected_models = _parse_models(models)
@@ -297,6 +270,6 @@ def cmd_infra_generate(
         foundry_endpoint=normalized_endpoint,
         foundry_resource_group=existing_resource_group,
         models=selected_models,
-        assign_roles=None,
+        assign_roles=assign_roles,
         force=force,
     )

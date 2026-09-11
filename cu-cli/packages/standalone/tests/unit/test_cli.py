@@ -2360,6 +2360,45 @@ def test_check_az_subscription_resolves_override_without_mutating_default(monkey
     assert "set" not in calls[0]
 
 
+def test_check_az_subscription_rejects_missing_azure_cli(monkeypatch):
+    monkeypatch.setattr("cu_cli.commands.infra.shutil.which", lambda _name: None)
+
+    from cu_cli.commands.infra import _check_az_subscription
+
+    with pytest.raises(CuCliError, match="was not found on PATH") as exc_info:
+        _check_az_subscription()
+
+    assert "azcli" in (exc_info.value.hint or "")
+
+
+def test_check_az_subscription_reports_failed_login(monkeypatch):
+    monkeypatch.setattr("cu_cli.commands.infra.shutil.which", lambda _name: "/usr/bin/az")
+    monkeypatch.setattr(
+        "cu_cli.commands.infra.subprocess.run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=1, stdout="", stderr="login"),
+    )
+
+    from cu_cli.commands.infra import _check_az_subscription
+
+    with pytest.raises(CuCliError, match="Azure subscription is not accessible") as exc_info:
+        _check_az_subscription()
+
+    assert "az login" in (exc_info.value.hint or "")
+
+
+def test_check_az_subscription_names_inaccessible_selection(monkeypatch):
+    monkeypatch.setattr("cu_cli.commands.infra.shutil.which", lambda _name: "/usr/bin/az")
+    monkeypatch.setattr(
+        "cu_cli.commands.infra.subprocess.run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=1, stdout="", stderr="forbidden"),
+    )
+
+    from cu_cli.commands.infra import _check_az_subscription
+
+    with pytest.raises(CuCliError, match="Azure subscription 'Restricted' is not accessible"):
+        _check_az_subscription("Restricted")
+
+
 def test_check_az_subscription_rejects_incomplete_account_json(monkeypatch):
     monkeypatch.setattr("cu_cli.commands.infra.shutil.which", lambda _name: "/usr/bin/az")
     monkeypatch.setattr(

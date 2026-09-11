@@ -6,9 +6,11 @@
 from __future__ import annotations
 
 from click.testing import CliRunner
+from types import SimpleNamespace
 
 from cu_cli.cli import main
-from cu_cli.commands.doctor import _is_defaults_not_set, _missing_requirements
+from cu_cli.core.doctor import is_defaults_not_set as _is_defaults_not_set
+from cu_cli.core.doctor import missing_requirements as _missing_requirements
 
 
 
@@ -105,8 +107,10 @@ class _FakeClient:
         self._mapping = mapping or {}
         self._raise = raise_exc
         self.updated = None
+        self.reads = 0
 
     def get_defaults(self):
+        self.reads += 1
         if self._raise is not None:
             raise self._raise
         return _FakeDefaults(self._mapping)
@@ -205,6 +209,41 @@ def test_doctor_fix_defaults_calls_update(monkeypatch):
     assert fake.updated.get("text-embedding-3-large") == "dep-emb"
 
 
+def test_doctor_fix_defaults_reads_once_and_preserves_service_mappings(monkeypatch):
+    _set_endpoint()
+    assert _run(
+        "profile", "set", "model_deployments.gpt-5.2", "dep-gpt"
+    ).exit_code == 0
+    fake = _FakeClient({"unrelated": "keep", "text-embedding-3-large": "dep-emb"})
+    monkeypatch.setattr("cu_cli.commands.doctor.build_client", lambda *a, **k: fake)
+
+    res = _run("doctor", "--fix-defaults")
+
+    assert res.exit_code == 0, res.output
+    assert fake.reads == 1
+    assert fake.updated["unrelated"] == "keep"
+    assert fake.updated["prebuilt-analyzer-completion"] == "dep-gpt"
+    assert fake.updated["prebuilt-analyzer-embedding"] == "dep-emb"
+
+
+def test_doctor_unsupported_version_fails_before_client_creation(monkeypatch):
+    _set_endpoint()
+    called = False
+
+    def fail_if_called(*args, **kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("client must not be created")
+
+    monkeypatch.setattr("cu_cli.commands.doctor.build_client", fail_if_called)
+
+    res = _run("doctor", "--api-version", "1999-01-01")
+
+    assert res.exit_code != 0
+    assert "not supported" in res.output
+    assert called is False
+
+
 def test_doctor_explains_missing_default_analyzer(monkeypatch):
     _set_endpoint()
     fake = _FakeClient({
@@ -219,3 +258,29 @@ def test_doctor_explains_missing_default_analyzer(monkeypatch):
     assert res.exit_code == 0, res.output
     assert "Default analyzer: not configured" in res.output
     assert "`cu analyze` requires --analyzer" in res.output
+
+
+def test_doctor_loads_named_profile_without_changing_active_profile(monkeypatch):
+    loaded = []
+    profile = SimpleNamespace(
+        profile_name="named",
+        endpoint="https://named.services.ai.azure.com/",
+        api_version="2025-11-01",
+        auth_mode="login",
+        api_key=None,
+        default_analyzer="prebuilt-layout",
+        model_deployments={},
+    )
+    monkeypatch.setattr(
+        "cu_cli.commands.doctor.Profile.load",
+        lambda **kwargs: loaded.append(kwargs) or profile,
+    )
+    monkeypatch.setattr(
+        "cu_cli.commands.doctor.build_client",
+        lambda *args, **kwargs: _FakeClient({}),
+    )
+
+    res = _run("doctor", "--profile", "named")
+
+    assert res.exit_code == 0, res.output
+    assert loaded == [{"profile_name": "named"}]

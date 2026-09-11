@@ -12,7 +12,7 @@ from typing import Any
 
 import rich_click as click
 from azure.core.exceptions import HttpResponseError
-from click.exceptions import Exit
+from click.exceptions import Abort, Exit
 from cu_cli_core.command_spec import (
     PROFILE_COPY,
     PROFILE_CREATE,
@@ -375,8 +375,11 @@ def cmd_create(
 def cmd_delete(
     profile_name: str | None,
     positional_profile_name: str | None,
+    yes: bool,
 ) -> None:
     request = _request(PROFILE_DELETE, locals())
+    if not request.yes and not click.confirm(f"Delete CU profile '{request.name}'?"):
+        raise Abort()
     path = resolve_identifier(PROFILE_DELETE.operation)(request)
     console.print(f"[green]ok[/green] deleted CU CLI profile '{request.name}' -> {path}")
 

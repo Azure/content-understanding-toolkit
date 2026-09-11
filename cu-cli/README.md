@@ -95,6 +95,47 @@ checks the API version, endpoint, authentication, service connectivity, and
 Content Understanding defaults. It exits nonzero when a required check fails,
 so it can serve as a readiness gate.
 
+## Use `cu` and `az cu` interchangeably
+
+The standalone CU CLI and the Azure CLI extension are two frontends over the
+same `cu-cli-core` operations. Install either frontend, or install both and move
+between them for the same analyzer, analysis, defaults, profile, diagnostics,
+and infrastructure-generation workflows.
+
+Both frontends read and write the same `[cu]` profile settings in the active
+Azure CLI configuration file (`~/.azure/config` by default, or the file under
+`AZURE_CONFIG_DIR`). An endpoint, API version, default analyzer, active profile,
+or model-deployment mapping saved with one frontend is immediately available to
+the other. For example:
+
+```bash
+# Save the endpoint with the standalone frontend.
+cu profile set endpoint https://<resource-name>.services.ai.azure.com/
+
+# Use the same default profile with the Azure CLI extension.
+az cu analyzer list --output table
+
+# Change the default analyzer with the Azure CLI extension.
+az cu profile set --key default_analyzer --value prebuilt-layout
+
+# Use that setting with the standalone frontend.
+cu analyze ./document.pdf
+```
+
+The command names and capabilities overlap, but frontend conventions differ:
+
+| Standalone CU CLI | Azure CLI extension |
+| --- | --- |
+| Starts commands with `cu` (`cu-cli` on macOS). | Starts commands with `az cu`. |
+| Supports standalone positional shortcuts and Rich/JSON output options. | Uses explicit options plus global Azure CLI `--output`, `--query`, and `--subscription`. |
+| Uses the profile's `auth_mode` and can use a saved API key. | Always uses the active `az login` identity; shared API keys and `auth_mode` do not override Azure CLI host authentication. |
+
+Run `cu <command> --help` or `az cu <command> --help` when translating a command
+between frontends. Profile values are shared; authentication sessions are not,
+so sign in with `az login` before using `az cu`. For Azure CLI-specific
+installation and command examples, see the
+[Azure Content Understanding extension README](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/packages/azure-cli-extension/README.md).
+
 ## Supported Content Understanding API versions
 
 Content Understanding API version. Known versions: 2025-11-01 (GA) and

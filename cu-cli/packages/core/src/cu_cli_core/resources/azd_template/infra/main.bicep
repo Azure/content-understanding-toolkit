@@ -43,7 +43,7 @@ param principalId string
 param principalType string = 'User'
 
 @description('If "true", assign Cognitive Services User to principalId for Entra-authenticated CU operations. Requires Owner, User Access Administrator, or Role Based Access Control Administrator. Set to "false" when you only have Contributor.')
-param assignRolesToPrincipal string = 'true'
+param assignRolesToPrincipal string = 'false'
 
 // Model deployments are loaded from infra/models.json so the file is
 // hand-editable and round-trippable through other tooling (e.g. `cu infra generate`).

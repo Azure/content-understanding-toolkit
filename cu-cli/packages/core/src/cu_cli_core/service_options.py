@@ -6,10 +6,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 from .command_spec import ArgumentValueType, SurfaceClassification
 
 DEFAULT_API_VERSION = "2025-11-01"
+SUPPORTED_API_VERSIONS = (DEFAULT_API_VERSION, "2026-06-01-preview")
+_PREVIEW_VERSION_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}-preview$")
+
+
+def is_supported_api_version(version: str | None) -> bool:
+    """Return whether an API version follows the CLI's shared support policy."""
+
+    return bool(
+        version in SUPPORTED_API_VERSIONS
+        or (version and _PREVIEW_VERSION_PATTERN.fullmatch(version))
+    )
 
 
 @dataclass(frozen=True)
@@ -38,14 +50,12 @@ API_VERSION = ServiceOptionSpec(
     name="--api-version",
     parser_name="api_version",
     help="Content Understanding service API version.",
-    default=DEFAULT_API_VERSION,
 )
 AUTH_MODE = ServiceOptionSpec(
     key="auth-mode",
     name="--auth-mode",
     parser_name="auth_mode",
     help="Authentication mode.",
-    default="login",
     choices=("login", "key"),
 )
 API_KEY = ServiceOptionSpec(
@@ -55,8 +65,14 @@ API_KEY = ServiceOptionSpec(
     help="Microsoft Foundry resource API key.",
     sensitive=True,
 )
+PROFILE = ServiceOptionSpec(
+    key="profile",
+    name="--profile",
+    parser_name="profile_name",
+    help="CU CLI profile used to resolve endpoint and API-version defaults.",
+)
 
-SERVICE_OPTIONS = (ENDPOINT, API_VERSION, AUTH_MODE, API_KEY)
+SERVICE_OPTIONS = (ENDPOINT, API_VERSION, AUTH_MODE, API_KEY, PROFILE)
 _SERVICE_OPTIONS_BY_KEY = {option.key: option for option in SERVICE_OPTIONS}
 
 if len(_SERVICE_OPTIONS_BY_KEY) != len(SERVICE_OPTIONS):

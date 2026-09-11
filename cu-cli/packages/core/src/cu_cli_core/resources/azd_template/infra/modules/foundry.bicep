@@ -20,7 +20,7 @@ param principalId string
 param principalType string
 
 @description('If true, create role assignments for principalId on the account.')
-param assignRolesToPrincipal bool = true
+param assignRolesToPrincipal bool = false
 
 @description('Model deployments to create on the account.')
 param modelDeployments array

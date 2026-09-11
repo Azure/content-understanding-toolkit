@@ -26,6 +26,28 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -e ".[dev]"
 ```
 
+### Build and install the Azure CLI extension locally
+
+The extension depends on the shared core package. Build both wheels, then expose
+the core wheel to Azure CLI's package installer while installing the extension:
+
+```bash
+cd packages/core
+python -m build --wheel
+
+cd ../azure-cli-extension
+python -m build --wheel
+
+az extension remove --name content-understanding 2>/dev/null || true
+PIP_FIND_LINKS="$(pwd)/../core/dist" \
+	az extension add --source dist/content_understanding-*.whl --yes
+
+az cu --help
+```
+
+In PowerShell, set `$env:PIP_FIND_LINKS = (Resolve-Path ../core/dist)` before
+running `az extension add`.
+
 ## Running checks
 
 ```bash
