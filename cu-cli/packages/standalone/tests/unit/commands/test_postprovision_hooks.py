@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import subprocess
+from importlib import resources
 from pathlib import Path
 
 import pytest
@@ -19,13 +20,13 @@ pytestmark = [
     ),
 ]
 
-_HOOKS = (
-    Path(__file__).parents[3]
-    / "src"
-    / "cu_cli"
-    / "resources"
-    / "azd_template"
-    / "hooks"
+_HOOKS = Path(
+    str(
+        resources.files("cu_cli_core")
+        .joinpath("resources")
+        .joinpath("azd_template")
+        .joinpath("hooks")
+    )
 )
 
 

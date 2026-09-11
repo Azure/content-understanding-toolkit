@@ -43,17 +43,13 @@ def test_write_project_materializes_canonical_template(tmp_path: Path) -> None:
     posix_hook = (target / "hooks/postprovision.sh").read_text(encoding="utf-8")
     powershell_hook = (target / "hooks/postprovision.ps1").read_text(encoding="utf-8")
     readme = (target / "README.md").read_text(encoding="utf-8")
-    assert "az cu infra _models" in posix_hook
-    assert "'cu', 'infra', '_models'" in powershell_hook
-    assert "profile set --key endpoint --value" in posix_hook
-    assert "profile set --key endpoint --value" in powershell_hook
-    assert "defaults set --from-profile" not in posix_hook
-    assert "defaults set --from-profile" not in powershell_hook
-    assert "cu-cli" not in posix_hook
-    assert "cu-cli" not in powershell_hook
-    assert "keep the `cu` CLI installed" not in readme
-    assert "az cu profile set --key endpoint --value" in readme
-    assert "`AZD_ASSIGN_ROLES`" in readme
+    assert '"$CU_CMD" _infra-models' in posix_hook
+    assert "& $cuCmd _infra-models" in powershell_hook
+    assert "profile set endpoint" in posix_hook
+    assert "profile set endpoint" in powershell_hook
+    assert "keep the `cu` CLI installed" in readme
+    assert "cu profile set endpoint" in readme
+    assert "`AZURE_ASSIGN_ROLES`" in readme
     environment = (target / ".azure/dev/.env").read_text(encoding="utf-8")
     assert 'AZURE_SUBSCRIPTION_ID="sub-id"' in environment
     assert 'CU_MODEL_SELECTION="recommended"' in environment
@@ -62,8 +58,7 @@ def test_write_project_materializes_canonical_template(tmp_path: Path) -> None:
 def test_template_is_packaged_with_the_extension() -> None:
     template = _infra._template_root()
 
-    assert template.parent == Path(_infra.__file__).parent
-    assert {relative.as_posix() for _, relative in _infra._iter_template_files(template)} == {
+    assert {relative for relative, _ in _infra._iter_template_files(template)} == {
         "README.md",
         "azure.yaml",
         "hooks/postprovision.ps1",
@@ -122,11 +117,11 @@ def test_generate_noninteractive_uses_active_azure_cli_account(
 
     assert result["subscriptionId"] == "sub-id"
     assert result["model_selection"] == "none"
-    assert result["assign_roles"] is True
+    assert result["assign_roles"] is False
     assert result["nextSteps"][-1] == "azd up"
     assert Path(result["outputDirectory"], "azure.yaml").is_file()
     environment = Path(result["outputDirectory"], ".azure/dev/.env").read_text(encoding="utf-8")
-    assert 'AZD_ASSIGN_ROLES="true"' in environment
+    assert 'AZD_ASSIGN_ROLES="false"' in environment
 
 
 def test_generate_can_explicitly_skip_role_assignment(

@@ -68,15 +68,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "cu_cli" = ["py.typed"]
-"cu_cli.resources" = [
-    "azd_template/azure.yaml",
-    "azd_template/README.md",
-    "azd_template/infra/*.bicep",
-    "azd_template/infra/*.json",
-    "azd_template/infra/modules/*.bicep",
-    "azd_template/hooks/*.ps1",
-    "azd_template/hooks/*.sh",
-]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
