@@ -180,7 +180,10 @@ def _write_markdown_stdout(result, *, input_url: str) -> None:
 def _print_usage(usage, *, input_ref: str) -> None:
     """Render request usage to stderr without changing data written to stdout."""
     console.print("\n")
-    console.print(f"[bold cyan]Usage:[/bold cyan] {_esc(input_ref)}")
+    console.print(
+        f"[bold cyan]Usage:[/bold cyan] {_esc(input_ref)}",
+        soft_wrap=True,
+    )
     if usage is None:
         console.print("[dim]usage details were not returned by the service.[/dim]")
         return
