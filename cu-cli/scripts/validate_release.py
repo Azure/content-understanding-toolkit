@@ -151,6 +151,46 @@ def validate_changelog(path: Path, version: str) -> None:
         raise ValueError(f"{path} release date is invalid: {heading.group(1)}") from error
 
 
+def extension_release_notes(path: Path, version: str) -> str:
+    """Return one extension release section as GitHub-flavored Markdown."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    heading_pattern = re.compile(rf"^{re.escape(version)} \(([^)]+)\)$")
+    heading_index = next(
+        (index for index, line in enumerate(lines) if heading_pattern.fullmatch(line)),
+        None,
+    )
+    if heading_index is None:
+        raise ValueError(f"{path} must contain release notes for {version}")
+
+    heading = lines[heading_index]
+    release_date = heading_pattern.fullmatch(heading)
+    assert release_date is not None
+    try:
+        date.fromisoformat(release_date.group(1))
+    except ValueError as error:
+        raise ValueError(
+            f"{path} release date is invalid: {release_date.group(1)}"
+        ) from error
+
+    underline_index = heading_index + 1
+    if underline_index >= len(lines) or re.fullmatch(r"\++", lines[underline_index]) is None:
+        raise ValueError(f"{path} must use an RST section heading for {version}")
+
+    end_index = len(lines)
+    for index in range(underline_index + 2, len(lines) - 1):
+        if lines[index] and re.fullmatch(r"\++", lines[index + 1]):
+            end_index = index
+            break
+
+    body = "\n".join(lines[underline_index + 1 : end_index]).strip()
+    if not body:
+        raise ValueError(f"{path} release notes for {version} must not be empty")
+
+    # HISTORY.rst uses RST inline-code markers; GitHub release bodies use Markdown.
+    markdown_body = re.sub(r"``([^`]+)``", r"`\1`", body).expandtabs(4)
+    return f"## {heading}\n\n{markdown_body}\n"
+
+
 def verify_package_release(
     project_name: str,
     version: str,
@@ -177,6 +217,7 @@ def validate_release(
     repository: str,
     ref: str,
     verify_core_on_index: bool,
+    release_notes_output: Path | None = None,
 ) -> None:
     validate_request_context(
         expected_commit=expected_commit,
@@ -198,6 +239,14 @@ def validate_release(
         core_version = validate_frontend_metadata(root, package)
         if package == "cli":
             validate_changelog(root / "CHANGELOG.md", actual_version)
+        if package == "extension":
+            notes = extension_release_notes(
+                root / "packages/azure-cli-extension/HISTORY.rst",
+                actual_version,
+            )
+            if release_notes_output is not None:
+                release_notes_output.parent.mkdir(parents=True, exist_ok=True)
+                release_notes_output.write_text(notes, encoding="utf-8")
         if verify_core_on_index:
             verify_package_release("cu-cli-core", core_version, index)
 
@@ -214,6 +263,7 @@ def main() -> int:
     parser.add_argument("--repository", required=True)
     parser.add_argument("--ref", required=True)
     parser.add_argument("--verify-core-on-index", action="store_true")
+    parser.add_argument("--release-notes-output", type=Path)
     args = parser.parse_args()
 
     try:
@@ -227,6 +277,7 @@ def main() -> int:
             repository=args.repository,
             ref=args.ref,
             verify_core_on_index=args.verify_core_on_index,
+            release_notes_output=args.release_notes_output,
         )
     except (OSError, ValueError) as error:
         parser.error(str(error))
