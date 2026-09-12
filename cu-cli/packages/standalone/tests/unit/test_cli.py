@@ -2850,7 +2850,7 @@ def test_validate_binary_pdf_json_output_exits_2():
     assert payload["errors"]
 
 
-def test_analyze_directory_sends_unknown_extensions_to_service(monkeypatch):
+def test_analyze_directory_skips_unsupported_extensions(monkeypatch):
     base = Path("corpus")
     base.mkdir()
     (base / "good.pdf").write_bytes(b"%PDF-1.4 a")
@@ -2871,7 +2871,7 @@ def test_analyze_directory_sends_unknown_extensions_to_service(monkeypatch):
         "analyze", "corpus", "--analyzer", "prebuilt-layout", "--output-dir", "out", "-y"
     )
     assert res.exit_code == 0, res.output
-    assert sorted(analyzed) == ["archive.zip", "good.pdf", "notes.py"]
+    assert analyzed == ["good.pdf"]
 
 
 def test_analyze_explicit_unknown_file_reaches_service(monkeypatch):
@@ -2969,14 +2969,14 @@ def test_analyze_report_writes_per_input_status(monkeypatch):
     assert res.exit_code == 1, res.output  # a failure occurred, but the report is still written
     report = json.loads(Path("report.json").read_text(encoding="utf-8"))
     assert report["schema"] == "cu-cli/analyze-report/v1"
-    assert report["counts"]["succeeded"] == 2
+    assert report["counts"]["succeeded"] == 1
     assert report["counts"]["failed"] == 1
-    assert report["counts"]["skipped"] == 0
+    assert report["counts"]["skipped"] == 1
     assert report["counts"]["total"] == 3
     by_status = {Path(r["input"]).name: r["status"] for r in report["results"]}
     assert by_status["good.pdf"] == "succeeded"
     assert by_status["bad.pdf"] == "failed"
-    assert by_status["notes.py"] == "succeeded"
+    assert by_status["notes.py"] == "skipped"
     failed = next(r for r in report["results"] if r["status"] == "failed")
     assert "boom" in failed["error"]
 

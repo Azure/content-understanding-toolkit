@@ -908,7 +908,7 @@ def test_remote_batch_writes_safe_distinct_results(analyze_runtime, input_option
     assert all("secret" not in path.name for path in outputs)
 
 
-def test_source_pattern_is_nonrecursive_and_accepts_unknown_extensions(
+def test_source_pattern_is_nonrecursive_and_rejects_unknown_extensions(
     analyze_runtime,
 ):
     source = Path("documents")
@@ -931,8 +931,10 @@ def test_source_pattern_is_nonrecursive_and_accepts_unknown_extensions(
         "--yes",
     )
 
-    assert result.exit_code == 0, result.output
-    assert Path("results/immediate.new.result.json").exists()
+    assert result.exit_code == 2, result.output
+    assert "immediate.new" in result.output
+    assert "unsupported file type skipped" in result.output
+    assert not Path("results/immediate.new.result.json").exists()
     assert not Path("results/nested/nested.new.result.json").exists()
 
 

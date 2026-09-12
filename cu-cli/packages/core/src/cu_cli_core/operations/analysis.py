@@ -40,7 +40,7 @@ def execute_analyze(
     """Execute a normalized analyze request against an injected client."""
 
     planned = input_plan or _input_plan(request)
-    selected_jobs = jobs or [
+    selected_jobs = jobs if jobs is not None else [
         AnalyzeJob(
             input_ref=redact_input_reference(item.reference),
             analyzer_id=request.analyzer or "",

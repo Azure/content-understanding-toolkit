@@ -32,6 +32,60 @@ _RESULT_SUFFIX = {
     ResultView.FULL: ".result.json",
 }
 _GENERATED_RESULT_SUFFIXES = tuple(_RESULT_SUFFIX.values())
+_SUPPORTED_INPUT_SUFFIXES = frozenset(
+    {
+        ".pdf",
+        ".tiff",
+        ".jpg",
+        ".jpeg",
+        ".jpe",
+        ".png",
+        ".bmp",
+        ".heif",
+        ".heic",
+        ".docx",
+        ".xlsx",
+        ".pptx",
+        ".docm",
+        ".xlsm",
+        ".pptm",
+        ".doc",
+        ".xls",
+        ".ppt",
+        ".odt",
+        ".ods",
+        ".odp",
+        ".epub",
+        ".txt",
+        ".html",
+        ".md",
+        ".rtf",
+        ".xml",
+        ".json",
+        ".csv",
+        ".tsv",
+        ".kml",
+        ".eml",
+        ".msg",
+        ".wav",
+        ".mp3",
+        ".mp4",
+        ".opus",
+        ".ogg",
+        ".flac",
+        ".wma",
+        ".aac",
+        ".webm",
+        ".m4a",
+        ".m4v",
+        ".flv",
+        ".wmv",
+        ".asf",
+        ".avi",
+        ".mkv",
+        ".mov",
+    }
+)
 _MAX_GENERATED_RESULT_NAME_BYTES = 240
 _MAX_URL_LENGTH = 8192
 _WINDOWS_DRIVE_PATH = re.compile(r"^[a-zA-Z]:[\\/]")
@@ -193,6 +247,12 @@ def _directory_files(
             skipped.setdefault(
                 path,
                 SkippedInput(path=path, reason="hidden file skipped"),
+            )
+            continue
+        if path.suffix.lower() not in _SUPPORTED_INPUT_SUFFIXES:
+            skipped.setdefault(
+                path,
+                SkippedInput(path=path, reason="unsupported file type skipped"),
             )
             continue
         selected.append(path)

@@ -338,19 +338,44 @@ def test_unknown_extension_is_selected_without_local_rejection(tmp_path):
 def test_directory_discovery_excludes_hidden_and_generated_files(tmp_path):
     source = tmp_path / "source"
     source.mkdir()
-    visible = source / "visible.brandnew"
+    visible = source / "visible.pdf"
     hidden = source / ".hidden.pdf"
+    unsupported = source / "archive.zip"
     markdown_result = source / "report.pdf.result.md"
     json_result = source / "report.pdf.result.json"
-    for path in (visible, hidden, markdown_result, json_result):
+    for path in (visible, hidden, unsupported, markdown_result, json_result):
         path.write_text(path.name)
 
     plan = plan_inputs(sources=[source])
 
     assert [item.path for item in plan.inputs] == [visible.resolve()]
     assert [(item.path, item.reason) for item in plan.skipped] == [
-        (hidden.resolve(), "hidden file skipped")
+        (hidden.resolve(), "hidden file skipped"),
+        (unsupported.resolve(), "unsupported file type skipped"),
     ]
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "document.json",
+        "document.csv",
+        "document.md",
+        "image.heic",
+        "audio.mp3",
+        "video.mkv",
+    ],
+)
+def test_directory_discovery_includes_supported_service_inputs(tmp_path, filename):
+    source = tmp_path / "source"
+    source.mkdir()
+    selected = source / filename
+    selected.write_text(filename)
+
+    plan = plan_inputs(sources=[source])
+
+    assert [item.path for item in plan.inputs] == [selected.resolve()]
+    assert plan.skipped == ()
 
 
 def test_recursive_discovery_excludes_hidden_paths_and_generated_files(tmp_path):
@@ -358,8 +383,17 @@ def test_recursive_discovery_excludes_hidden_paths_and_generated_files(tmp_path)
     visible = source / "visible" / "nested.pdf"
     hidden_file = source / "visible" / ".hidden.pdf"
     hidden_directory_file = source / ".hidden" / "nested.pdf"
+    unsupported = source / "visible" / "tool.py"
+    extensionless = source / "visible" / "binary"
     nested_result = source / "visible" / "nested.pdf.result.json"
-    for path in (visible, hidden_file, hidden_directory_file, nested_result):
+    for path in (
+        visible,
+        hidden_file,
+        hidden_directory_file,
+        unsupported,
+        extensionless,
+        nested_result,
+    ):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(path.name)
 
@@ -367,7 +401,9 @@ def test_recursive_discovery_excludes_hidden_paths_and_generated_files(tmp_path)
 
     assert [item.path for item in plan.inputs] == [visible.resolve()]
     assert [(item.path, item.reason) for item in plan.skipped] == [
-        (hidden_file.resolve(), "hidden file skipped")
+        (hidden_file.resolve(), "hidden file skipped"),
+        (extensionless.resolve(), "unsupported file type skipped"),
+        (unsupported.resolve(), "unsupported file type skipped"),
     ]
 
 

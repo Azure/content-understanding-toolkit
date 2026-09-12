@@ -207,6 +207,20 @@ def test_execute_analyze_plans_named_urls_without_a_frontend():
     assert client.calls == []
 
 
+def test_execute_analyze_respects_an_explicit_empty_job_list(tmp_path):
+    client = _FakeClient()
+    input_file = tmp_path / "input.pdf"
+    input_file.write_bytes(b"%PDF-1.4")
+    request = AnalyzeRequest(files=(input_file,), analyzer="prebuilt-layout")
+
+    result = execute_analyze(client, request, jobs=[])
+
+    assert result.successes == []
+    assert result.failures == []
+    assert client.calls == []
+    assert client.url_calls == []
+
+
 def test_analyze_url_inline_uses_synchronous_url_method():
     client = _FakeClient()
     url = "https://storage.example.test/c/document.pdf"

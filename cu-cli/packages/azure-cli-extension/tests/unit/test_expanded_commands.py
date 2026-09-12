@@ -279,6 +279,44 @@ def test_frontends_emit_identical_analysis_report_contract(tmp_path: Path) -> No
 
 
 @pytest.mark.unit
+def test_analyze_existing_output_is_only_reported_as_skipped(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    input_file = tmp_path / "input.pdf"
+    input_file.write_bytes(b"%PDF-1.4")
+    output_file = tmp_path / "output.json"
+    output_file.write_text("existing", encoding="utf-8")
+    client = SimpleNamespace()
+    monkeypatch.setattr(
+        _analysis.Profile,
+        "load",
+        lambda **kwargs: SimpleNamespace(default_analyzer=None),
+    )
+    monkeypatch.setattr(
+        _analysis,
+        "create_content_understanding_client",
+        lambda *args, **kwargs: client,
+    )
+
+    result = _analysis.analyze(
+        SimpleNamespace(),
+        files=[str(input_file)],
+        analyzer_id="prebuilt-layout",
+        output_file=str(output_file),
+        on_existing="skip",
+    )
+
+    assert result == [
+        {
+            "input": str(input_file),
+            "status": "skipped",
+            "reason": "result file already exists",
+            "output": str(output_file),
+        }
+    ]
+
+
+@pytest.mark.unit
 def test_env_var_list_redacts_secret(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CU_API_KEY", "top-secret")
     monkeypatch.setenv("CU_ENDPOINT", "https://example.test")
