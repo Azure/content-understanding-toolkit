@@ -74,6 +74,7 @@ jobs:
             --actual-commit "${GITHUB_SHA}" \
             --repository "${GITHUB_REPOSITORY}" \
             --ref "${GITHUB_REF}" \
+            --release-notes-output dist/release-notes.md \
             ${{ (inputs.package == 'cli' || inputs.package == 'extension') && '--verify-core-on-index' || '' }}
       - name: Test exact release commit
         run: bash scripts/ci.sh
@@ -168,5 +169,5 @@ jobs:
           --repo "${GITHUB_REPOSITORY}"
           --target "${RELEASE_COMMIT}"
           --title "Azure Content Understanding CLI extension ${RELEASE_VERSION}"
-          --notes "Preview release of the Azure Content Understanding CLI extension."
+          --notes-file dist/release-notes.md
           --prerelease
