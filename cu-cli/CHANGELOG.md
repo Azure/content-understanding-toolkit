@@ -6,8 +6,11 @@
 
 ### Features Added
 
+- Added HTTPS and Azure Blob SAS URL inputs to `cu analyze` through repeatable
+  `--url` options or standalone positional shortcuts, including URL-based analysis
+  for large audio and video files without downloading them through the CLI.
 - Improved redaction of sensitive URL query values in analysis reports, service
-	errors, and diagnostic output.
+  errors, and diagnostic output.
 
 ## 0.1.0b1 (2026-09-04)
 
