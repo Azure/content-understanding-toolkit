@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cu-cli"
 version = "0.1.0b2"
-description = "Author, validate, and run Azure Content Understanding custom analyzers from the terminal — advanced document layout, industry-leading OCR, and grounded field extraction with confidence, all backed by Azure Content Understanding."
+description = "Run Azure Content Understanding prebuilt analyzers, and/or author, validate, and run custom analyzers from the terminal — advanced document layout, industry-leading OCR, and grounded field extraction with confidence, all backed by Azure Content Understanding."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
