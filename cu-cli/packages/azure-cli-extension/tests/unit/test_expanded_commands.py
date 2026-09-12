@@ -3,6 +3,7 @@
 
 """Focused tests for Preview 2 and Preview 3 adapters."""
 
+import json
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -12,6 +13,79 @@ from azure.core.exceptions import HttpResponseError
 from cu_cli_core.errors import ServiceError, UsageError, ValidationError
 
 from azext_content_understanding import _analysis, _analyzers, _diagnostics, _profiles
+
+
+@pytest.mark.unit
+def test_analyze_llm_input_preserves_sdk_result_for_formatter(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "invoice.pdf"
+    source.write_bytes(b"pdf")
+    sdk_result = object()
+    formatted = "---\nmimeType: application/pdf\n---\ninvoice"
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(
+        _analysis.Profile,
+        "load",
+        lambda **_kwargs: SimpleNamespace(default_analyzer=None),
+    )
+    monkeypatch.setattr(
+        _analysis, "create_content_understanding_client", lambda *_args, **_kwargs: object()
+    )
+
+    def execute(_client, _request, *, jobs, on_result, **_kwargs):
+        captured["output_format"] = jobs[0].output_format
+        on_result(SimpleNamespace(job=jobs[0], ok=True, result=sdk_result))
+        return SimpleNamespace(failures=[])
+
+    monkeypatch.setattr(_analysis, "resolve_identifier", lambda _operation: execute)
+    import azure.ai.contentunderstanding as content_understanding
+
+    monkeypatch.setattr(
+        content_understanding,
+        "to_llm_input",
+        lambda result: captured.setdefault("result", result) and formatted,
+    )
+
+    result = _analysis.analyze(
+        SimpleNamespace(cli_ctx=object()),
+        files=[source],
+        analyzer_id="prebuilt-layout",
+        llm_input=True,
+        yes=True,
+    )
+
+    assert result == formatted
+    assert captured == {"output_format": "markdown", "result": sdk_result}
+
+
+@pytest.mark.unit
+def test_analyzer_create_rejects_schema_pin_that_differs_from_profile(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    schema = tmp_path / "schema.json"
+    schema.write_text(
+        json.dumps({"analyzerId": "invoice", "apiVersion": "2025-11-01"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        _analyzers.Profile,
+        "load",
+        lambda **_kwargs: SimpleNamespace(api_version="2026-06-01-preview"),
+    )
+    monkeypatch.setattr(
+        _analyzers,
+        "create_content_understanding_client",
+        lambda *_args, **_kwargs: pytest.fail("client must not target the schema's GA namespace"),
+    )
+
+    with pytest.raises(ValidationError, match="selected profile.*2026-06-01-preview"):
+        _analyzers.create_analyzer(
+            SimpleNamespace(),
+            analyzer_name="invoice",
+            schema_path=schema,
+            profile_name="preview",
+        )
 
 
 @pytest.mark.unit
