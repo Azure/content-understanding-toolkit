@@ -83,6 +83,17 @@ def _write_release_tree(
         f"# Release History\n\n## {core_version} ({core_status})\n",
         encoding="utf-8",
     )
+    (root / "packages/azure-cli-extension/HISTORY.rst").write_text(
+        """Release History
+===============
+
+0.1.0b1 (2026-09-04)
++++++++++++++++++++++
+
+* Add the preview ``az cu`` command group.
+""",
+        encoding="utf-8",
+    )
 
 
 def _validate(root: Path, **overrides: object) -> None:
@@ -118,6 +129,34 @@ def test_validates_extension_release_metadata(tmp_path: Path) -> None:
     _write_release_tree(tmp_path)
 
     _validate(tmp_path, package="extension", expected_version="0.1.0b1")
+
+
+def test_writes_extension_release_notes_as_markdown(tmp_path: Path) -> None:
+    _write_release_tree(tmp_path)
+    output = tmp_path / "dist/release-notes.md"
+
+    _validate(
+        tmp_path,
+        package="extension",
+        expected_version="0.1.0b1",
+        release_notes_output=output,
+    )
+
+    assert output.read_text(encoding="utf-8") == (
+        "## 0.1.0b1 (2026-09-04)\n\n"
+        "* Add the preview `az cu` command group.\n"
+    )
+
+
+def test_extension_requires_versioned_release_notes(tmp_path: Path) -> None:
+    _write_release_tree(tmp_path)
+    (tmp_path / "packages/azure-cli-extension/HISTORY.rst").write_text(
+        "Release History\n===============\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="must contain release notes"):
+        _validate(tmp_path, package="extension", expected_version="0.1.0b1")
 
 
 def test_rejects_duplicate_frontend_template(tmp_path: Path) -> None:
