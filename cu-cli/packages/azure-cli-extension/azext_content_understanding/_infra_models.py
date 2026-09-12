@@ -55,9 +55,15 @@ def _recommended(candidates: list[DeployableModel]) -> list[DeployableModel]:
     return recommended_models(candidates)
 
 
+def _prompt_with_default(message: str, default: str) -> str:
+    return prompt(f"{message} [{default}]: ") or default
+
+
 def _prompt_models(candidates: list[DeployableModel]) -> list[DeployableModel]:
-    choices = ["0: no models"] + [f"{index}: {item.selector} ({item.kind})" for index, item in enumerate(candidates, 1)]
-    raw = prompt("Select model numbers, comma-separated\n" + "\n".join(choices), default="0")
+    choices = ["0: no models"] + [
+        f"{index}: {item.selector} ({item.kind})" for index, item in enumerate(candidates, 1)
+    ]
+    raw = _prompt_with_default("Select model numbers, comma-separated\n" + "\n".join(choices), "0")
     try:
         indices = [int(value.strip()) for value in raw.split(",")]
     except ValueError as exc:

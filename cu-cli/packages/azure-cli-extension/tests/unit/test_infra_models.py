@@ -158,7 +158,7 @@ def test_prompt_only_offers_models_supported_by_cu_and_foundry(
     monkeypatch.setattr(
         _infra_models,
         "prompt",
-        lambda message, **_kwargs: (prompt_text.append(message) or "1"),
+        lambda message, help_string=None: (prompt_text.append(message) or "1"),
     )
 
     result = _infra_models.setup_models(
@@ -177,6 +177,25 @@ def test_prompt_only_offers_models_supported_by_cu_and_foundry(
     assert "cu-only" not in prompt_text[0]
     assert len(deployed) == 1
     assert result["models"][0]["model"] == "gpt-5"
+
+
+def test_prompt_models_defaults_to_no_models_on_blank_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = {}
+
+    def enter(message, help_string=None):
+        captured["message"] = message
+        captured["help_string"] = help_string
+        return ""
+
+    monkeypatch.setattr(_infra_models, "prompt", enter)
+
+    assert _infra_models._prompt_models([]) == []
+    assert captured == {
+        "message": "Select model numbers, comma-separated\n0: no models [0]: ",
+        "help_string": None,
+    }
 
 
 def test_deploy_reuses_matching_name_and_version() -> None:
