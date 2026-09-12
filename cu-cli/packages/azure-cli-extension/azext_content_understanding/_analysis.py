@@ -136,7 +136,7 @@ def analyze(cmd: Any, **values: Any) -> Any:
             input_url=output.source.url,
             analyzer_id=analyzer,
             out_path=output.path,
-            output_format="json",
+            output_format="markdown" if request.llm_input else "json",
         )
         for output in execution.outputs
         if not output.skipped

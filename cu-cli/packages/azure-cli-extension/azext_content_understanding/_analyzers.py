@@ -74,17 +74,19 @@ def create_analyzer(cmd: Any, **values: Any) -> Any:
         parsed = None
     pinned = schema_pinned_version(parsed) if isinstance(parsed, dict) else None
     profile = Profile.load(profile_name=values.get("profile_name"))
-    version = values.get("api_version") or pinned or profile.api_version
+    version = values.get("api_version") or profile.api_version
+    if pinned and pinned != version:
+        source = "--api-version" if values.get("api_version") else "the selected profile"
+        raise ValidationError(
+            f"schema pins apiVersion '{pinned}' but {source} resolves to '{version}'.",
+            hint="Align the schema apiVersion with the selected API version before creating the analyzer.",
+        )
     validation, body = parse_and_validate(text, api_version=version)
     if body is None or validation.errors:
         finding = validation.errors[0]
         raise ValidationError(
             f"invalid schema at {finding.path}: {finding.msg}",
             hint="Run 'az cu analyzer validate --schema PATH' for all findings.",
-        )
-    if pinned and values.get("api_version") and pinned != values["api_version"]:
-        raise ValidationError(
-            f"schema pins apiVersion '{pinned}' but --api-version '{values['api_version']}' was passed."
         )
     client = create_content_understanding_client(
         cmd,
