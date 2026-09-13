@@ -1,6 +1,12 @@
 Release History
 ===============
 
+0.1.0b2 (2026-09-14)
++++++++++++++++++++++
+
+* Declare the Azure AI Content Understanding SDK as a direct dependency so
+	Azure CLI validation environments install the SDK imported by the extension.
+
 0.1.0b1 (2026-09-11)
 +++++++++++++++++++++
 
