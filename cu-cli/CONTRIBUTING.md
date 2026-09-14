@@ -66,7 +66,8 @@ then runs the same pinned `azdev` wheel linter used by their pipeline:
 ```bash
 bash scripts/validate_extension_azdev.sh \
 	packages/azure-cli-extension/dist/content_understanding-*.whl \
-	packages/core/dist/cu_cli_core-*.whl
+	packages/core/dist/cu_cli_core-*.whl \
+	packages/azure-cli-extension
 ```
 
 ## Running checks

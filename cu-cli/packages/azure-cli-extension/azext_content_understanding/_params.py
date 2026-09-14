@@ -23,6 +23,7 @@ _EXCLUDED_CLASSIFICATIONS = {
 }
 
 
+# pylint: disable=too-few-public-methods
 class _ExplicitArgumentContext:
     """Register arguments absent from variadic command wrapper signatures."""
 

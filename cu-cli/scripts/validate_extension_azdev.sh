@@ -4,13 +4,14 @@
 
 set -euo pipefail
 
-if [[ "$#" -ne 2 ]]; then
-    echo "Usage: $0 <extension-wheel> <core-wheel>" >&2
+if [[ "$#" -ne 3 ]]; then
+    echo "Usage: $0 <extension-wheel> <core-wheel> <extension-source>" >&2
     exit 2
 fi
 
 extension_wheel="$(realpath "$1")"
 core_wheel="$(realpath "$2")"
+extension_source="$(realpath "$3")"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 temp_root="$(mktemp -d)"
 trap 'rm -rf "${temp_root}"' EXIT
@@ -75,4 +76,44 @@ PY
         --min-severity medium
 )
 
-echo "Validated $(basename "${extension_wheel}") with the Azure CLI extension linter."
+rm -rf "${AZURE_EXTENSION_DIR}/content-understanding"
+extension_checkout="${temp_root}/azure-cli-extensions/src/content-understanding"
+mkdir -p "${extension_checkout}"
+cp -R "${extension_source}/." "${extension_checkout}/"
+rm -rf \
+    "${extension_checkout}/build" \
+    "${extension_checkout}/dist" \
+    "${extension_checkout}/.pytest_cache" \
+    "${extension_checkout}"/*.egg-info
+find "${extension_checkout}" -type d -name __pycache__ -prune -exec rm -rf {} +
+# azdev 0.2.13 discovers source extensions by setup.py even though its build
+# pipeline supports pyproject.toml. Add a temporary shim only in the checkout.
+cat > "${extension_checkout}/setup.py" <<'PY'
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
+from setuptools import setup
+
+setup()
+PY
+(
+    cd "${temp_root}/azure-cli-extensions"
+    azdev extension add content-understanding
+)
+python -m pip install --disable-pip-version-check --quiet \
+    --no-deps \
+    --upgrade \
+    --force-reinstall \
+    "${core_wheel}"
+python -m pip install --disable-pip-version-check --quiet \
+    --no-deps \
+    --upgrade \
+    --force-reinstall \
+    --target "${AZURE_EXTENSION_DIR}/content-understanding" \
+    "${core_wheel}"
+(
+    cd "${temp_root}/azure-cli-extensions"
+    azdev style content-understanding
+)
+
+echo "Validated $(basename "${extension_wheel}") with Azure CLI extension lint and style checks."

@@ -84,16 +84,20 @@ jobs:
         run: bash cu-cli/scripts/ci.sh
 
   extension-wheel-smoke:
-    name: extension wheel smoke test (ubuntu-latest, py3.12)
+    name: extension wheel smoke test (ubuntu-latest, py${{ matrix.python-version }})
     needs: changes
     if: needs.changes.outputs.cu-cli == 'true' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: |
             cu-cli/packages/core/pyproject.toml
@@ -138,6 +142,7 @@ jobs:
           bash scripts/validate_extension_azdev.sh
           packages/azure-cli-extension/dist/content_understanding-*.whl
           packages/core/dist/cu_cli_core-*.whl
+          packages/azure-cli-extension
 
   dynamic-hitl-test:
     name: dynamic HITL calibration tests (ubuntu-latest, py3.14)

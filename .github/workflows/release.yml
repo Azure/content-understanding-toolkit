@@ -117,6 +117,7 @@ jobs:
           bash scripts/validate_extension_azdev.sh
           dist/content_understanding-*.whl
           packages/core/dist/cu_cli_core-*.whl
+          packages/azure-cli-extension
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dist-${{ inputs.target }}-${{ inputs.package }}-${{ inputs.version }}

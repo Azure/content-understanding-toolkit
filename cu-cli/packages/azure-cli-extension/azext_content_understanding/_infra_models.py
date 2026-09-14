@@ -33,6 +33,7 @@ from ._client_factory import (
 )
 from ._resources import _management_client
 
+
 def _value(value: Any, snake: str, camel: str | None = None) -> Any:
     if isinstance(value, dict):
         return value.get(snake, value.get(camel or snake))
