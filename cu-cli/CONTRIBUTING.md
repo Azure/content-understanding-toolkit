@@ -70,6 +70,10 @@ bash scripts/validate_extension_azdev.sh \
 	packages/azure-cli-extension
 ```
 
+The clean wheel installation and pinned `azdev` checks run automatically in
+both `.github/workflows/ci.yml` for pull requests and
+`.github/workflows/release.yml` before an extension artifact is published.
+
 ## Running checks
 
 ```bash

@@ -18,6 +18,8 @@ permissions:
   contents: read
 
 jobs:
+  # Detect which product areas changed so unrelated suites can be skipped while
+  # workflow edits and ambiguous Git history still trigger every suite.
   changes:
     name: detect changed areas
     runs-on: ubuntu-latest
@@ -63,6 +65,8 @@ jobs:
             echo "${area//_/-}=${matched}" >> "${GITHUB_OUTPUT}"
           done
 
+  # Give non-main branch pushes fast CU CLI feedback without duplicating the
+  # full pull-request matrix that runs for the same commit.
   quick-test:
     name: quick test (ubuntu-latest, py3.12)
     needs: changes
@@ -83,6 +87,8 @@ jobs:
       - name: Run CI
         run: bash cu-cli/scripts/ci.sh
 
+  # Build and install the extension/core wheel pair in an isolated Azure CLI
+  # directory, catching missing dependencies and extension loading failures.
   extension-wheel-smoke:
     name: extension wheel smoke test (ubuntu-latest, py${{ matrix.python-version }})
     needs: changes
@@ -115,6 +121,8 @@ jobs:
           packages/azure-cli-extension/dist/content_understanding-*.whl
           packages/core/dist/cu_cli_core-*.whl
 
+  # Run the upstream Azure CLI command linter and source style checks, catching
+  # CLI convention violations before the extension is submitted upstream.
   extension-azdev-linter:
     name: extension azdev linter (ubuntu-latest, py3.14)
     needs: changes
@@ -144,6 +152,8 @@ jobs:
           packages/core/dist/cu_cli_core-*.whl
           packages/azure-cli-extension
 
+  # Exercise calibration behavior only when Dynamic HITL changes, independently
+  # from CU CLI packaging and command tests.
   dynamic-hitl-test:
     name: dynamic HITL calibration tests (ubuntu-latest, py3.14)
     needs: changes
@@ -167,6 +177,8 @@ jobs:
       - name: Run calibration tests
         run: python -m pytest test_calibration.py -q
 
+  # Run the complete CU CLI suite across supported Python versions and operating
+  # systems, catching platform-specific behavior and packaging regressions.
   full-test:
     name: full test (${{ matrix.os }}, py${{ matrix.python-version }})
     needs: changes
