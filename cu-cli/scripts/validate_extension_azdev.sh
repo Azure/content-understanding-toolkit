@@ -55,11 +55,12 @@ python -m pip install --disable-pip-version-check --quiet \
     --target "${AZURE_EXTENSION_DIR}/content-understanding" \
     "${core_wheel}"
 python - <<'PY'
+import os
 import sys
 
 from pathlib import Path
 
-extension_dir = Path(__import__("os").environ["AZURE_EXTENSION_DIR"]) / "content-understanding"
+extension_dir = Path(os.environ["AZURE_EXTENSION_DIR"]) / "content-understanding"
 sys.path.insert(0, str(extension_dir))
 
 from cu_cli_core import serialization

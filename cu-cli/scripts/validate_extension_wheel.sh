@@ -41,11 +41,12 @@ export PIP_FIND_LINKS="$(dirname "${core_wheel}")"
     "${core_wheel}"
 
 "${python_bin}" - <<'PY'
+import os
 import sys
 
 from pathlib import Path
 
-extension_dir = Path(__import__("os").environ["AZURE_EXTENSION_DIR"]) / "content-understanding"
+extension_dir = Path(os.environ["AZURE_EXTENSION_DIR"]) / "content-understanding"
 sys.path.insert(0, str(extension_dir))
 
 import azure.ai  # Simulate Azure CLI command modules that load this namespace first.
