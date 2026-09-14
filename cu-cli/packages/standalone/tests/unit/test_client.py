@@ -1,7 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-"""Credential-hygiene warnings emitted by ``build_client``."""
+"""Credential-hygiene warnings emitted by ``build_client``.
+
+Regression coverage for an ``--api-key`` value on argv leaking via
+``ps``/shell history, and ``--api-key`` being silently ignored when
+``--entra`` also given).
+"""
 
 from __future__ import annotations
 
@@ -38,6 +43,7 @@ def test_build_client_warns_when_api_key_combined_with_entra(capsys):
 
 
 def test_build_client_silent_without_argv_api_key(capsys):
+    # A key sourced from config (not argv) must not trigger the warning.
     profile = Profile(
         endpoint="https://x.services.ai.azure.com/",
         auth_mode="key",
@@ -69,6 +75,8 @@ def test_build_client_rejects_malformed_endpoint_before_core_factory(monkeypatch
 
 
 def test_build_client_honors_telemetry_opt_out(monkeypatch):
+    # Opt-out flows all the way to the SDK client as an empty User-Agent prefix
+    # (azure-core then sends only its standard azsdk moniker, no cu-cli marker).
     captured: dict = {}
     monkeypatch.setattr(
         "cu_cli.client.build_content_understanding_client",
@@ -77,6 +85,7 @@ def test_build_client_honors_telemetry_opt_out(monkeypatch):
     monkeypatch.setenv("CU_TELEMETRY", "off")
     build_client(Profile(endpoint="https://x.services.ai.azure.com/"))
     assert captured["user_agent"] == ""
+    assert "cu-cli" not in captured["user_agent"]
 
 
 def test_build_client_sends_marker_when_telemetry_on(monkeypatch):
@@ -85,6 +94,7 @@ def test_build_client_sends_marker_when_telemetry_on(monkeypatch):
         "cu_cli.client.build_content_understanding_client",
         lambda **kwargs: captured.update(kwargs),
     )
+    # CU_* env is stripped by the isolate fixture -> telemetry on by default.
     build_client(Profile(endpoint="https://x.services.ai.azure.com/"))
     assert captured["user_agent"].startswith("cu-cli/")
 

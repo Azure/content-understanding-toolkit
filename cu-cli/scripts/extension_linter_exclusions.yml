@@ -1,4 +1,3 @@
-
 # These source/destination qualifiers are required because analyzer copy can
 # operate across two Azure resources. Keep these exclusions synchronized with
 # the Azure CLI extension index PR.
@@ -6,7 +5,11 @@ cu analyzer copy:
   parameters:
     destination_resource_group:
       rule_exclusions:
+        - option_length_too_long
         - parameter_should_not_end_in_resource_group
+    destination_subscription:
+      rule_exclusions:
+        - option_length_too_long
     source_resource_group:
       rule_exclusions:
         - parameter_should_not_end_in_resource_group
