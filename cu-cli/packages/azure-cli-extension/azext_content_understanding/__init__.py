@@ -7,7 +7,7 @@ from importlib.metadata import version
 
 from azure.cli.core import AzCommandsLoader
 
-from ._help import helps as helps
+from ._help import helps as helps  # pylint: disable=unused-import,useless-import-alias
 
 __version__ = version("content-understanding")
 

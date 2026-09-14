@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable
 
-from cu_cli_core.serialization import to_plain_value
+from cu_cli_core.serialization import render_llm_input, to_plain_value
 from rich.console import Console
 from rich.table import Table
 
@@ -125,15 +125,7 @@ def dump_json(
 
 def render_markdown(result: Any) -> str:
     """Render an analysis result as LLM-friendly markdown via SDK helper only."""
-    try:
-        from azure.ai.contentunderstanding import to_llm_input
-    except Exception as exc:  # noqa: BLE001
-        raise RuntimeError(
-            "Markdown output requires SDK support for to_llm_input(). "
-            "Install azure-ai-contentunderstanding>=1.2.0b3."
-        ) from exc
-
-    rendered = to_llm_input(result)
+    rendered = render_llm_input(result)
     if not isinstance(rendered, str) or not rendered.strip():
         raise EmptyMarkdownOutputError("to_llm_input() returned empty markdown output.")
     return rendered

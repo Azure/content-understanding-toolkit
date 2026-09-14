@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.1.0b3 (2026-09-14)
+
+### Bugs Fixed
+
+- Minor bug fixes.
+
 ## 0.1.0b2 (2026-09-11)
 
 ### Features Added

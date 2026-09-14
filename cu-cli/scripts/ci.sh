@@ -59,6 +59,10 @@ cd "${product_dir}"
 python scripts/check_headers.py
 end_section
 
+section "Frontend CU SDK boundary"
+python scripts/validate_frontend_sdk_boundary.py
+end_section
+
 section "Lint shared core (ruff)"
 cd "${core_dir}"
 python -m ruff check .

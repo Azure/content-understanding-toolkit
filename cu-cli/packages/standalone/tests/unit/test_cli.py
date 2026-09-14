@@ -1626,12 +1626,19 @@ def test_analyze_usage_prints_inline_usage_to_stderr_without_changing_json(monke
 
 def test_analyze_usage_title_is_colored(monkeypatch):
     printed = []
-    monkeypatch.setattr(analyze_module.console, "print", printed.append)
+    monkeypatch.setattr(
+        analyze_module.console,
+        "print",
+        lambda value, **kwargs: printed.append((value, kwargs)),
+    )
     monkeypatch.setattr(analyze_module.console, "print_json", lambda **_kwargs: None)
 
     analyze_module._print_usage({}, input_ref="sample.pdf")
 
-    assert printed == ["\n", "[bold cyan]Usage:[/bold cyan] sample.pdf"]
+    assert printed == [
+        ("\n", {}),
+        ("[bold cyan]Usage:[/bold cyan] sample.pdf", {"soft_wrap": True}),
+    ]
 
 
 def test_analyze_usage_prints_lro_usage_for_each_batch_input(monkeypatch):

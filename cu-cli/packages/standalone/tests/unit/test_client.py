@@ -10,15 +10,22 @@ Regression coverage for an ``--api-key`` value on argv leaking via
 
 from __future__ import annotations
 
+import pytest
+
 from cu_cli.client import build_client
+from cu_cli.errors import CuCliError
 from cu_cli.profile import Profile
 
-
-
-import pytest
-from cu_cli.errors import CuCliError
-
 pytestmark = pytest.mark.unit
+
+
+@pytest.fixture(autouse=True)
+def _stub_core_client_factory(monkeypatch):
+    monkeypatch.setattr(
+        "cu_cli.client.build_content_understanding_client",
+        lambda **kwargs: kwargs,
+    )
+
 
 def test_build_client_warns_on_argv_api_key(capsys):
     profile = Profile(endpoint="https://x.services.ai.azure.com/")
@@ -37,38 +44,32 @@ def test_build_client_warns_when_api_key_combined_with_entra(capsys):
 
 def test_build_client_silent_without_argv_api_key(capsys):
     # A key sourced from config (not argv) must not trigger the warning.
-    profile = Profile(endpoint="https://x.services.ai.azure.com/", auth_mode="key",
-                      api_key="from-profile")
-    build_client(profile)
-    err = capsys.readouterr().err
-    assert "--api-key" not in err
-
-
-def test_build_client_rejects_non_https_login_endpoint_before_sdk_construction(
-    monkeypatch,
-):
-    monkeypatch.setattr(
-        "azure.ai.contentunderstanding.ContentUnderstandingClient",
-        lambda **_kwargs: pytest.fail("SDK client must not be constructed"),
+    profile = Profile(
+        endpoint="https://x.services.ai.azure.com/",
+        auth_mode="key",
+        api_key="from-profile",
     )
+    build_client(profile)
+    assert "--api-key" not in capsys.readouterr().err
 
+
+def test_build_client_rejects_non_https_login_endpoint_before_core_factory(monkeypatch):
+    monkeypatch.setattr(
+        "cu_cli.client.build_content_understanding_client",
+        lambda **_kwargs: pytest.fail("core client factory must not be called"),
+    )
     with pytest.raises(CuCliError) as exc_info:
-        build_client(
-            Profile(endpoint="http://not-https.example.invalid/"),
-            force_entra=True,
-        )
-
+        build_client(Profile(endpoint="http://not-https.example.invalid/"), force_entra=True)
     rendered = exc_info.value.format_message()
     assert "authentication mode 'login' requires an HTTPS endpoint" in rendered
     assert "******" not in rendered
 
 
-def test_build_client_rejects_malformed_endpoint_before_sdk_construction(monkeypatch):
+def test_build_client_rejects_malformed_endpoint_before_core_factory(monkeypatch):
     monkeypatch.setattr(
-        "azure.ai.contentunderstanding.ContentUnderstandingClient",
-        lambda **_kwargs: pytest.fail("SDK client must not be constructed"),
+        "cu_cli.client.build_content_understanding_client",
+        lambda **_kwargs: pytest.fail("core client factory must not be called"),
     )
-
     with pytest.raises(CuCliError, match="invalid foundry endpoint"):
         build_client(Profile(endpoint="not-a-url"))
 
@@ -77,13 +78,9 @@ def test_build_client_honors_telemetry_opt_out(monkeypatch):
     # Opt-out flows all the way to the SDK client as an empty User-Agent prefix
     # (azure-core then sends only its standard azsdk moniker, no cu-cli marker).
     captured: dict = {}
-
-    class _FakeSdkClient:
-        def __init__(self, **kwargs):
-            captured.update(kwargs)
-
     monkeypatch.setattr(
-        "azure.ai.contentunderstanding.ContentUnderstandingClient", _FakeSdkClient
+        "cu_cli.client.build_content_understanding_client",
+        lambda **kwargs: captured.update(kwargs),
     )
     monkeypatch.setenv("CU_TELEMETRY", "off")
     build_client(Profile(endpoint="https://x.services.ai.azure.com/"))
@@ -93,13 +90,9 @@ def test_build_client_honors_telemetry_opt_out(monkeypatch):
 
 def test_build_client_sends_marker_when_telemetry_on(monkeypatch):
     captured: dict = {}
-
-    class _FakeSdkClient:
-        def __init__(self, **kwargs):
-            captured.update(kwargs)
-
     monkeypatch.setattr(
-        "azure.ai.contentunderstanding.ContentUnderstandingClient", _FakeSdkClient
+        "cu_cli.client.build_content_understanding_client",
+        lambda **kwargs: captured.update(kwargs),
     )
     # CU_* env is stripped by the isolate fixture -> telemetry on by default.
     build_client(Profile(endpoint="https://x.services.ai.azure.com/"))
@@ -108,15 +101,9 @@ def test_build_client_sends_marker_when_telemetry_on(monkeypatch):
 
 def test_build_client_polls_long_running_operations_every_second(monkeypatch):
     captured: dict = {}
-
-    class _FakeSdkClient:
-        def __init__(self, **kwargs):
-            captured.update(kwargs)
-
     monkeypatch.setattr(
-        "azure.ai.contentunderstanding.ContentUnderstandingClient", _FakeSdkClient
+        "cu_cli.client.build_content_understanding_client",
+        lambda **kwargs: captured.update(kwargs),
     )
-
     build_client(Profile(endpoint="https://x.services.ai.azure.com/"))
-
     assert captured["polling_interval"] == 1

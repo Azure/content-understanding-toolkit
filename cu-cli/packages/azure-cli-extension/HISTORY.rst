@@ -1,6 +1,12 @@
 Release History
 ===============
 
+0.1.0b2 (2026-09-14)
++++++++++++++++++++++
+
+* Correct loading of the Azure AI Content Understanding SDK installed through
+	the shared ``cu-cli-core`` 0.1.0b3 package in isolated Azure CLI environments.
+
 0.1.0b1 (2026-09-11)
 +++++++++++++++++++++
 

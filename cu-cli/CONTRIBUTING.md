@@ -48,6 +48,32 @@ az cu --help
 In PowerShell, set `$env:PIP_FIND_LINKS = (Resolve-Path ../core/dist)` before
 running `az extension add`.
 
+Before releasing the extension, validate the built wheels in a clean Azure CLI
+environment. This check installs only dependencies resolved from the wheels and
+loads the command group with `az cu --help`:
+
+```bash
+cd ../..
+bash scripts/validate_extension_wheel.sh \
+	packages/azure-cli-extension/dist/content_understanding-*.whl \
+	packages/core/dist/cu_cli_core-*.whl
+```
+
+Run the Azure CLI extensions linter before publishing. This clones clean,
+temporary copies of the Azure CLI `dev` branch and the extensions repository,
+then runs the same pinned `azdev` wheel linter used by their pipeline:
+
+```bash
+bash scripts/validate_extension_azdev.sh \
+	packages/azure-cli-extension/dist/content_understanding-*.whl \
+	packages/core/dist/cu_cli_core-*.whl \
+	packages/azure-cli-extension
+```
+
+The clean wheel installation and pinned `azdev` checks run automatically in
+both `.github/workflows/ci.yml` for pull requests and
+`.github/workflows/release.yml` before an extension artifact is published.
+
 ## Running checks
 
 ```bash

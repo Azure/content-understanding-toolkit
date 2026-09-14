@@ -53,6 +53,47 @@ def test_none_writes_empty_model_file_without_clients(tmp_path: Path) -> None:
     assert result == {"models": [], "outputFile": str(output), "deployed": False}
 
 
+def test_model_setup_with_key_uses_core_client_factory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    captured = {}
+    management = SimpleNamespace(
+        accounts=SimpleNamespace(
+            list_keys=lambda _rg, _account: SimpleNamespace(key1="secret", key2=None),
+            list_models=lambda _rg, _account: [],
+        )
+    )
+    cu_client = SimpleNamespace(
+        get_analyzer=lambda _name: {
+            "supportedModels": {"completion": [], "embedding": []}
+        }
+    )
+
+    monkeypatch.setattr(_infra_models, "get_subscription_id", lambda _ctx: "sub-id")
+    monkeypatch.setattr(_infra_models, "_management_client", lambda _cmd, _sub: management)
+    monkeypatch.setattr(
+        _infra_models,
+        "build_content_understanding_client",
+        lambda **kwargs: captured.update(kwargs) or cu_client,
+    )
+
+    with pytest.raises(_infra_models.ServiceError, match="empty supportedModels catalog"):
+        _infra_models.setup_models(
+            SimpleNamespace(cli_ctx=object()),
+            selection="recommended",
+            out_path=str(tmp_path / "models.json"),
+            resource_group="rg",
+            account_name="account",
+            endpoint="https://example.services.ai.azure.com/",
+            api_version="2026-06-01-preview",
+            use_key=True,
+        )
+
+    assert captured["endpoint"] == "https://example.services.ai.azure.com/"
+    assert captured["api_version"] == "2026-06-01-preview"
+    assert isinstance(captured["credential"], _infra_models.AzureKeyCredential)
+
+
 def test_model_setup_deploys_and_configures_service_defaults(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

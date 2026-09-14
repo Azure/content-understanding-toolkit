@@ -15,6 +15,17 @@ from typing import Any
 from .errors import ValidationError
 
 
+def render_llm_input(result: Any) -> Any:
+    """Render an SDK result or plain result mapping as LLM-ready content."""
+    from azure.ai.contentunderstanding import to_llm_input
+
+    if isinstance(result, Mapping):
+        from azure.ai.contentunderstanding.models import AnalysisResult
+
+        result = AnalysisResult(result)
+    return to_llm_input(result)
+
+
 def to_plain_value(value: Any) -> Any:
     """Recursively convert supported values to dictionaries, lists, and scalars."""
 
