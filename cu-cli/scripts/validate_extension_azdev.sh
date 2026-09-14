@@ -25,6 +25,7 @@ fi
 export VIRTUAL_ENV="${temp_root}/venv"
 export PATH="${VIRTUAL_ENV}/bin:${PATH}"
 export AZURE_CONFIG_DIR="${temp_root}/azure"
+export AZURE_EXTENSION_DIR="${AZURE_CONFIG_DIR}/cliextensions"
 export PIP_FIND_LINKS="$(dirname "${core_wheel}")"
 
 git clone --depth 1 --branch dev \
@@ -51,8 +52,21 @@ python -m pip install --disable-pip-version-check --quiet \
     --no-deps \
     --upgrade \
     --force-reinstall \
-    --target "${AZURE_CONFIG_DIR}/cliextensions/content-understanding" \
+    --target "${AZURE_EXTENSION_DIR}/content-understanding" \
     "${core_wheel}"
+python - <<'PY'
+import sys
+
+from pathlib import Path
+
+extension_dir = Path(__import__("os").environ["AZURE_EXTENSION_DIR"]) / "content-understanding"
+sys.path.insert(0, str(extension_dir))
+
+from cu_cli_core import serialization
+
+assert Path(serialization.__file__).is_relative_to(extension_dir)
+assert hasattr(serialization, "render_llm_input")
+PY
 (
     cd "${temp_root}/azure-cli-extensions"
     azdev linter \

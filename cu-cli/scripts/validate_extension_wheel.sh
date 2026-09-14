@@ -24,6 +24,7 @@ fi
 python_bin="${temp_root}/venv/bin/python"
 az_bin="${temp_root}/venv/bin/az"
 export AZURE_CONFIG_DIR="${temp_root}/azure"
+export AZURE_EXTENSION_DIR="${AZURE_CONFIG_DIR}/cliextensions"
 export PIP_FIND_LINKS="$(dirname "${core_wheel}")"
 
 "${python_bin}" -m pip install --disable-pip-version-check --quiet \
@@ -36,13 +37,23 @@ export PIP_FIND_LINKS="$(dirname "${core_wheel}")"
     --no-deps \
     --upgrade \
     --force-reinstall \
-    --target "${AZURE_CONFIG_DIR}/cliextensions/content-understanding" \
+    --target "${AZURE_EXTENSION_DIR}/content-understanding" \
     "${core_wheel}"
 
 "${python_bin}" - <<'PY'
+import sys
+
+from pathlib import Path
+
+extension_dir = Path(__import__("os").environ["AZURE_EXTENSION_DIR"]) / "content-understanding"
+sys.path.insert(0, str(extension_dir))
+
 import azure.ai  # Simulate Azure CLI command modules that load this namespace first.
+from cu_cli_core import serialization
 from azure.cli.core import get_default_cli
 
+assert Path(serialization.__file__).is_relative_to(extension_dir)
+assert hasattr(serialization, "render_llm_input")
 raise SystemExit(get_default_cli().invoke(["cu", "--help"]))
 PY
 
