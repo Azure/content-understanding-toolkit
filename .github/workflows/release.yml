@@ -100,6 +100,12 @@ jobs:
           if [[ "${PACKAGE}" == "extension" ]]; then
             (cd dist && sha256sum *.whl > "content-understanding-${{ inputs.version }}.sha256")
           fi
+      - name: Test clean extension installation
+        if: inputs.package == 'extension'
+        run: >-
+          bash scripts/validate_extension_wheel.sh
+          dist/content_understanding-*.whl
+          packages/core/dist/cu_cli_core-*.whl
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dist-${{ inputs.target }}-${{ inputs.package }}-${{ inputs.version }}

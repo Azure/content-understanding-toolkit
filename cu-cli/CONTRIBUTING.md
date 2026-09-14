@@ -48,6 +48,17 @@ az cu --help
 In PowerShell, set `$env:PIP_FIND_LINKS = (Resolve-Path ../core/dist)` before
 running `az extension add`.
 
+Before releasing the extension, validate the built wheels in a clean Azure CLI
+environment. This check installs only dependencies resolved from the wheels and
+loads the command group with `az cu --help`:
+
+```bash
+cd ../..
+bash scripts/validate_extension_wheel.sh \
+	packages/azure-cli-extension/dist/content_understanding-*.whl \
+	packages/core/dist/cu_cli_core-*.whl
+```
+
 ## Running checks
 
 ```bash
