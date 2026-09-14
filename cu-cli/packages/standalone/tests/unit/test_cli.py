@@ -1339,50 +1339,6 @@ def test_analyze_requires_analyzer_when_default_is_unset(monkeypatch):
     assert "cu profile set default_analyzer" in out
 
 
-def test_readme_sample_analyze_single_file_output_json(monkeypatch):
-    sample = Path("sample_invoice.pdf")
-    sample.write_bytes(b"%PDF-1.4 sample")
-
-    def _fake_run_one(_client, job):
-        return job, {"analyzerId": job.analyzer_id, "status": "ok"}
-
-    monkeypatch.setattr("cu_cli.commands.analyze.build_client", lambda *_a, **_k: object())
-    monkeypatch.setattr("cu_cli.commands.analyze._run_one", _fake_run_one)
-
-    res = _run(
-        "analyze", "sample_invoice.pdf", "--analyzer", "prebuilt-layout", "--json"
-    )
-    assert res.exit_code == 0, res.output
-    payload = json.loads(res.output)
-    assert payload["status"] == "ok"
-
-
-def test_readme_sample_analyze_single_file_output_markdown_with_prebuilt_invoice(monkeypatch):
-    sample = Path("sample_invoice.pdf")
-    sample.write_bytes(b"%PDF-1.4 sample")
-
-    def _fake_run_one(_client, job):
-        return job, {"analyzerId": job.analyzer_id}
-
-    def _fake_dump_markdown(result, out=None):
-        assert out is None
-        assert result["analyzerId"] == "prebuilt-invoice"
-        print("# INVOICE")
-
-    monkeypatch.setattr("cu_cli.commands.analyze.build_client", lambda *_a, **_k: object())
-    monkeypatch.setattr("cu_cli.commands.analyze._run_one", _fake_run_one)
-    monkeypatch.setattr("cu_cli.commands.analyze.dump_markdown", _fake_dump_markdown)
-
-    res = _run(
-        "analyze",
-        "sample_invoice.pdf",
-        "--analyzer",
-        "prebuilt-invoice",
-    )
-    assert res.exit_code == 0, res.output
-    assert "# INVOICE" in res.output
-
-
 def test_analyze_accepts_short_analyzer_option(monkeypatch):
     sample = Path("sample_invoice.pdf")
     sample.write_bytes(b"%PDF-1.4 sample")
@@ -1421,7 +1377,7 @@ def test_analyze_help_lists_only_supported_analyzer_options():
     assert "--analyzer" in out
 
 
-def test_readme_sample_analyze_glob_writes_json_output_files(monkeypatch):
+def test_analyze_glob_writes_json_output_files(monkeypatch):
     base = Path("sample_files")
     base.mkdir(parents=True, exist_ok=True)
     (base / "a.pdf").write_bytes(b"%PDF-1.4 a")
@@ -1448,7 +1404,7 @@ def test_readme_sample_analyze_glob_writes_json_output_files(monkeypatch):
     ]
 
 
-def test_readme_sample_analyze_directory_writes_markdown_sidecar_files(monkeypatch):
+def test_analyze_directory_writes_markdown_sidecar_files(monkeypatch):
     base = Path("sample_files")
     base.mkdir(parents=True, exist_ok=True)
     (base / "a.pdf").write_bytes(b"%PDF-1.4 a")

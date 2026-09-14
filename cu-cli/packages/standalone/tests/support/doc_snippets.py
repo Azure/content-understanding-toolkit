@@ -31,7 +31,25 @@ class ExecutionMode(str, Enum):
     EXTERNAL = "external"
 
 
-SNIPPET_EXECUTION_MODES = {
+@dataclass(frozen=True)
+class SnippetExecution:
+    mode: ExecutionMode
+    expected_exit_codes: tuple[int, ...] = (0,)
+    setup_fixture: str | None = None
+    cleanup_fixture: str | None = None
+
+    def exit_codes_for(self, snippet: DocSnippet, command_count: int) -> tuple[int, ...]:
+        if len(self.expected_exit_codes) == 1:
+            return self.expected_exit_codes * command_count
+        if len(self.expected_exit_codes) != command_count:
+            raise ValueError(
+                f"{snippet.path}:{snippet.line}: Snippet:{snippet.identifier} has "
+                f"{command_count} commands but {len(self.expected_exit_codes)} expected exit codes"
+            )
+        return self.expected_exit_codes
+
+
+_SNIPPET_EXECUTION_MODES = {
     "cu_cli_analyze_batch_with_report": ExecutionMode.FAKE,
     "cu_cli_analyze_concurrency_and_timing": ExecutionMode.FAKE,
     "cu_cli_analyze_directory": ExecutionMode.FAKE,
@@ -78,6 +96,32 @@ SNIPPET_EXECUTION_MODES = {
     "cu_cli_validate_schema": ExecutionMode.OFFLINE,
 }
 
+SNIPPET_EXECUTIONS = {
+    identifier: SnippetExecution(mode=mode)
+    for identifier, mode in _SNIPPET_EXECUTION_MODES.items()
+}
+SNIPPET_EXECUTIONS.update(
+    {
+        "cu_cli_analyze_multiple_urls_dry_run": SnippetExecution(
+            ExecutionMode.OFFLINE, setup_fixture="sample_documents"
+        ),
+        "cu_cli_preview_batch": SnippetExecution(
+            ExecutionMode.OFFLINE, setup_fixture="sample_documents"
+        ),
+        "cu_cli_temporarily_override_endpoint": SnippetExecution(
+            ExecutionMode.FAKE,
+            setup_fixture="dev_profile",
+            cleanup_fixture="endpoint_environment_override",
+        ),
+        "cu_cli_unset_key_authentication": SnippetExecution(
+            ExecutionMode.OFFLINE, setup_fixture="saved_api_key"
+        ),
+        "cu_cli_validate_schema": SnippetExecution(
+            ExecutionMode.OFFLINE, setup_fixture="generated_schema"
+        ),
+    }
+)
+
 
 def load_doc_snippets(*paths: Path) -> dict[str, DocSnippet]:
     snippets: dict[str, DocSnippet] = {}
@@ -117,6 +161,16 @@ def load_doc_snippets(*paths: Path) -> dict[str, DocSnippet]:
 
 
 def parse_shell_commands(snippet: DocSnippet) -> list[list[str]]:
+    language = snippet.language.lower()
+    continuations = {"bash": "\\", "powershell": "`", "pwsh": "`"}
+    try:
+        continuation = continuations[language]
+    except KeyError as exc:
+        raise ValueError(
+            f"{snippet.path}:{snippet.line}: Snippet:{snippet.identifier} "
+            f"uses unsupported shell language {snippet.language!r}"
+        ) from exc
+
     logical_lines: list[str] = []
     pending = ""
     for raw_line in snippet.body.splitlines():
@@ -124,7 +178,7 @@ def parse_shell_commands(snippet: DocSnippet) -> list[list[str]]:
         if not line or line.startswith("#"):
             continue
         pending = f"{pending} {line}".strip()
-        if pending.endswith("\\"):
+        if pending.endswith(continuation):
             pending = pending[:-1].rstrip()
             continue
         logical_lines.append(pending)
@@ -137,6 +191,8 @@ def parse_shell_commands(snippet: DocSnippet) -> list[list[str]]:
 
     commands = []
     for command in logical_lines:
+        if language in {"powershell", "pwsh"}:
+            command = re.sub(r"`([`\"'$ ])", r"\1", command)
         argv = shlex.split(command, posix=True)
         if any(token in {"|", ">", ">>", "<", "&&", ";"} for token in argv):
             raise ValueError(

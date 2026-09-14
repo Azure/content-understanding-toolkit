@@ -1,0 +1,243 @@
+{
+  "generatedFrom": [
+    "README.md",
+    "docs/usage-guide.md"
+  ],
+  "snippets": [
+    {
+      "id": "cu_cli_install",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_mac_os_help",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_configure_login_profile",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_configure_key_profile",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_analyze_inline_preview",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_list_analyzers",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_analyze_layout",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_analyze_remote_url",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_analyze_prebuilt_invoice",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_analyze_directory_pattern",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_show_defaults",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_create_and_test_custom_analyzer",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_command_help",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_use_multiple_profiles",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
+      "id": "cu_cli_profile_resolution_precedence",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_profile_info_output",
+      "language": "text",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_profile_commands",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_azure_login",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_set_key_authentication",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_unset_key_authentication",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_list_environment_overrides",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_temporarily_override_endpoint",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_sync_profile_defaults",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_configure_and_apply_defaults",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_analyze_local_file",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_analyze_with_default_analyzer",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_analyze_public_url",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_analyze_sas_url",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_analyze_multiple_urls_dry_run",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_analyze_directory",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_analyze_directory_recursive",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_directory_output_mapping",
+      "language": "text",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_analyze_output_formats",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_preview_batch",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_analyze_batch_with_report",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_analyze_concurrency_and_timing",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_timing_output",
+      "language": "text",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_manage_analyzers",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_create_local_schemas",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_create_schema_from_sample",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_validate_schema",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_create_and_test_analyzer",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_copy_analyzer_with_profiles",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_copy_analyzer_with_resources",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_manage_defaults",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_run_diagnostics",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    },
+    {
+      "id": "cu_cli_help_and_exit_behavior",
+      "language": "bash",
+      "document": "docs/usage-guide.md"
+    }
+  ]
+}

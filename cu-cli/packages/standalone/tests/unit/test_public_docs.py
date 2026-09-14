@@ -7,7 +7,14 @@ from pathlib import Path
 import pytest
 
 from cu_cli.apiversion import API_VERSION_HELP
-from tests.support.doc_snippets import SNIPPET_EXECUTION_MODES, load_doc_snippets
+from tests.support.doc_snippets import (
+    ExecutionMode,
+    SNIPPET_EXECUTIONS,
+    DocSnippet,
+    SnippetExecution,
+    load_doc_snippets,
+    parse_shell_commands,
+)
 
 
 pytestmark = pytest.mark.unit
@@ -21,121 +28,6 @@ _REGION_SUPPORT_URL = (
     "https://learn.microsoft.com/azure/ai-services/content-understanding/"
     "language-region-support"
 )
-_SNIPPET_INFO_RE = re.compile(
-    r"^\S+\s+Snippet:(?P<identifier>[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)$"
-)
-_SNIPPET_REFERENCES = {
-    _README: {
-        "cu_cli_analyze_directory_pattern",
-        "cu_cli_analyze_inline_preview",
-        "cu_cli_analyze_layout",
-        "cu_cli_analyze_prebuilt_invoice",
-        "cu_cli_analyze_remote_url",
-        "cu_cli_command_help",
-        "cu_cli_configure_key_profile",
-        "cu_cli_configure_login_profile",
-        "cu_cli_create_and_test_custom_analyzer",
-        "cu_cli_install",
-        "cu_cli_list_analyzers",
-        "cu_cli_mac_os_help",
-        "cu_cli_show_defaults",
-        "cu_cli_use_multiple_profiles",
-    },
-    _USAGE_GUIDE: {
-        "cu_cli_analyze_batch_with_report",
-        "cu_cli_analyze_concurrency_and_timing",
-        "cu_cli_analyze_directory",
-        "cu_cli_analyze_directory_recursive",
-        "cu_cli_analyze_local_file",
-        "cu_cli_analyze_multiple_urls_dry_run",
-        "cu_cli_analyze_output_formats",
-        "cu_cli_analyze_public_url",
-        "cu_cli_analyze_sas_url",
-        "cu_cli_analyze_with_default_analyzer",
-        "cu_cli_azure_login",
-        "cu_cli_configure_and_apply_defaults",
-        "cu_cli_copy_analyzer_with_profiles",
-        "cu_cli_copy_analyzer_with_resources",
-        "cu_cli_create_and_test_analyzer",
-        "cu_cli_create_local_schemas",
-        "cu_cli_create_schema_from_sample",
-        "cu_cli_directory_output_mapping",
-        "cu_cli_help_and_exit_behavior",
-        "cu_cli_list_environment_overrides",
-        "cu_cli_manage_analyzers",
-        "cu_cli_manage_defaults",
-        "cu_cli_preview_batch",
-        "cu_cli_profile_commands",
-        "cu_cli_profile_info_output",
-        "cu_cli_profile_resolution_precedence",
-        "cu_cli_run_diagnostics",
-        "cu_cli_set_key_authentication",
-        "cu_cli_sync_profile_defaults",
-        "cu_cli_temporarily_override_endpoint",
-        "cu_cli_timing_output",
-        "cu_cli_unset_key_authentication",
-        "cu_cli_validate_schema",
-    },
-}
-
-
-def _snippet_reference_problems(
-    documents: dict[Path, str], references: dict[Path, set[str]]
-) -> list[str]:
-    documented_locations: dict[str, list[str]] = {}
-    problems = []
-
-    for path, referenced_ids in references.items():
-        text = documents[path]
-        documented_ids = set()
-        in_fence = False
-
-        for line, content in enumerate(text.splitlines(), start=1):
-            if not content.startswith("```"):
-                continue
-            if in_fence:
-                in_fence = False
-                continue
-            in_fence = True
-            info_match = _SNIPPET_INFO_RE.fullmatch(content[3:].strip())
-            if info_match is None:
-                problems.append(f"{path}:{line}: fence is missing a valid Snippet ID")
-                continue
-            identifier = info_match.group("identifier")
-            documented_ids.add(identifier)
-            documented_locations.setdefault(identifier, []).append(f"{path}:{line}")
-
-        for identifier in sorted(documented_ids - referenced_ids):
-            problems.append(
-                f"{path}: Snippet:{identifier} has no test reference; "
-                "add it to _SNIPPET_REFERENCES"
-            )
-        for identifier in sorted(referenced_ids - documented_ids):
-            problems.append(
-                f"{path}: test reference Snippet:{identifier} is orphaned; "
-                "restore the document block or remove the reference"
-            )
-
-    for identifier, locations in documented_locations.items():
-        if len(locations) > 1:
-            problems.append(
-                f"Snippet:{identifier} is duplicated at "
-                + ", ".join(locations)
-            )
-
-    return problems
-
-
-def test_public_doc_snippet_ids_match_test_references():
-    documents = {
-        path: path.read_text(encoding="utf-8") for path in _SNIPPET_REFERENCES
-    }
-
-    problems = _snippet_reference_problems(documents, _SNIPPET_REFERENCES)
-
-    assert not problems, "\n" + "\n".join(problems)
-
-
 def test_public_doc_snippets_are_loaded_from_markdown():
     snippets = load_doc_snippets(_README, _USAGE_GUIDE)
 
@@ -155,40 +47,71 @@ def test_every_bash_snippet_has_an_execution_mode():
         if snippet.language == "bash"
     }
 
-    assert set(SNIPPET_EXECUTION_MODES) == bash_ids
+    assert set(SNIPPET_EXECUTIONS) == bash_ids
 
 
 @pytest.mark.parametrize(
-    ("document", "references", "expected_problem"),
+    ("language", "body", "expected"),
     [
-        pytest.param("```bash\ncu --help\n```", set(), "missing", id="missing-id"),
         pytest.param(
-            "```bash Snippet:PascalCase\ncu --help\n```",
-            {"PascalCase"},
-            "valid Snippet ID",
-            id="non-python-style-id",
+            "bash",
+            '# comment\nCU_ENDPOINT="https://example.test" \\\n  cu analyzer list --profile "dev profile"',
+            [[
+                "CU_ENDPOINT=https://example.test",
+                "cu",
+                "analyzer",
+                "list",
+                "--profile",
+                "dev profile",
+            ]],
+            id="bash",
         ),
         pytest.param(
-            "```bash Snippet:same\ncu --help\n```\n"
-            "```text Snippet:same\noutput\n```",
-            {"same"},
-            "duplicated",
-            id="duplicate-id",
+            "powershell",
+            '# comment\n$env:CU_ENDPOINT = "https://example.test"\ncu analyzer list `\n'
+            '  --profile "dev` profile"',
+            [
+                ["$env:CU_ENDPOINT", "=", "https://example.test"],
+                ["cu", "analyzer", "list", "--profile", "dev profile"],
+            ],
+            id="powershell",
         ),
-        pytest.param("", {"Gone"}, "orphaned", id="orphaned-reference"),
     ],
 )
-def test_snippet_reference_failures_are_actionable(
-    tmp_path: Path,
-    document: str,
-    references: set[str],
-    expected_problem: str,
+def test_shell_snippets_support_comments_quoting_environment_and_continuations(
+    tmp_path: Path, language: str, body: str, expected: list[list[str]]
 ):
-    path = tmp_path / "doc.md"
+    snippet = DocSnippet("example", language, body, tmp_path / "doc.md", 1)
 
-    problems = _snippet_reference_problems({path: document}, {path: references})
+    assert parse_shell_commands(snippet) == expected
 
-    assert any(expected_problem in problem for problem in problems)
+
+def test_snippet_execution_metadata_has_safe_defaults():
+    metadata = SNIPPET_EXECUTIONS["cu_cli_command_help"]
+
+    assert metadata.mode is ExecutionMode.OFFLINE
+    assert metadata.expected_exit_codes == (0,)
+    assert metadata.setup_fixture is None
+    assert metadata.cleanup_fixture is None
+
+
+def test_snippet_execution_metadata_supports_per_command_exit_codes(tmp_path: Path):
+    snippet = DocSnippet(
+        "mixed_exit_codes", "bash", "cu --help\ncu invalid", tmp_path / "doc.md", 12
+    )
+    metadata = SnippetExecution(ExecutionMode.OFFLINE, expected_exit_codes=(0, 2))
+
+    assert metadata.exit_codes_for(snippet, 2) == (0, 2)
+
+
+def test_snippet_execution_metadata_rejects_exit_code_count_mismatch(tmp_path: Path):
+    snippet = DocSnippet(
+        "mixed_exit_codes", "bash", "cu --help\ncu invalid", tmp_path / "doc.md", 12
+    )
+    metadata = SnippetExecution(ExecutionMode.OFFLINE, expected_exit_codes=(0, 1, 2))
+
+    with pytest.raises(ValueError, match=r"Snippet:mixed_exit_codes.*2 commands.*3 expected"):
+        metadata.exit_codes_for(snippet, 2)
 
 
 def test_documented_custom_analyzer_ids_use_valid_format():
@@ -226,21 +149,38 @@ def test_readme_documents_analyzer_short_option():
     assert "cu analyze ./document.pdf -a prebuilt-layout" in readme
 
 
-def test_usage_guide_directory_patterns_use_source_option():
-    usage_guide = _USAGE_GUIDE.read_text(encoding="utf-8")
-    bash_blocks = re.findall(
-        r"```bash(?:\s+Snippet:\S+)?\n(.*?)```",
-        usage_guide,
-        flags=re.DOTALL,
-    )
-    commands = "\n".join(bash_blocks).replace("\\\n", " ")
-    pattern_commands = [
-        line for line in commands.splitlines()
-        if line.startswith("cu analyze ") and "--pattern" in line
-    ]
+def _analyze_pattern_problems(snippets: dict[str, DocSnippet]) -> list[str]:
+    problems = []
+    for snippet in snippets.values():
+        if snippet.language != "bash":
+            continue
+        for argv in parse_shell_commands(snippet):
+            if argv[:2] == ["cu", "analyze"] and "--pattern" in argv and "--source" not in argv:
+                problems.append(
+                    f"{snippet.path}:{snippet.line}: Snippet:{snippet.identifier} "
+                    "uses --pattern without --source"
+                )
+    return problems
 
-    assert pattern_commands
-    assert all("--source " in command for command in pattern_commands)
+
+def test_public_doc_directory_patterns_use_source_option():
+    snippets = load_doc_snippets(_README, _USAGE_GUIDE)
+
+    assert not _analyze_pattern_problems(snippets)
+
+
+def test_positional_directory_pattern_cannot_enter_public_docs(tmp_path: Path):
+    snippet = DocSnippet(
+        "invalid_directory_pattern",
+        "bash",
+        'cu analyze ./documents --pattern "*.pdf"',
+        tmp_path / "README.md",
+        42,
+    )
+
+    assert _analyze_pattern_problems({snippet.identifier: snippet}) == [
+        f"{snippet.path}:42: Snippet:invalid_directory_pattern uses --pattern without --source"
+    ]
 
 
 def test_api_version_description_matches_cli_help():

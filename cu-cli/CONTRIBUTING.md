@@ -34,6 +34,15 @@ ruff check .      # lint
 mypy src          # type check
 ```
 
+Public command examples in `README.md` and `docs/usage-guide.md` are indexed for
+CI. After adding, removing, renaming, or changing the language of a `Snippet:`
+fence, update the deterministic inventory and check it locally:
+
+```bash
+python scripts/check_doc_snippets.py update
+python scripts/check_doc_snippets.py check
+```
+
 ### Running tests
 
 ```bash
