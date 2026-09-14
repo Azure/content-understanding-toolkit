@@ -88,6 +88,7 @@ _SNIPPET_EXECUTION_MODES = {
     "cu_cli_profile_resolution_precedence": ExecutionMode.FAKE,
     "cu_cli_run_diagnostics": ExecutionMode.FAKE,
     "cu_cli_set_key_authentication": ExecutionMode.OFFLINE,
+    "cu_cli_share_profile_between_frontends": ExecutionMode.FAKE,
     "cu_cli_show_defaults": ExecutionMode.PLAYBACK,
     "cu_cli_sync_profile_defaults": ExecutionMode.FAKE,
     "cu_cli_temporarily_override_endpoint": ExecutionMode.FAKE,
@@ -104,6 +105,9 @@ SNIPPET_EXECUTIONS.update(
     {
         "cu_cli_analyze_multiple_urls_dry_run": SnippetExecution(
             ExecutionMode.OFFLINE, setup_fixture="sample_documents"
+        ),
+        "cu_cli_share_profile_between_frontends": SnippetExecution(
+            ExecutionMode.FAKE, setup_fixture="sample_document"
         ),
         "cu_cli_preview_batch": SnippetExecution(
             ExecutionMode.OFFLINE, setup_fixture="sample_documents"

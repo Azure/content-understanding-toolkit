@@ -108,7 +108,7 @@ Azure CLI configuration file (`~/.azure/config` by default, or the file under
 or model-deployment mapping saved with one frontend is immediately available to
 the other. For example:
 
-```bash
+```bash Snippet:cu_cli_share_profile_between_frontends
 # Save the endpoint with the standalone frontend.
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
 

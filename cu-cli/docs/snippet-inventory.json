@@ -25,6 +25,11 @@
       "document": "README.md"
     },
     {
+      "id": "cu_cli_share_profile_between_frontends",
+      "language": "bash",
+      "document": "README.md"
+    },
+    {
       "id": "cu_cli_analyze_inline_preview",
       "language": "bash",
       "document": "README.md"

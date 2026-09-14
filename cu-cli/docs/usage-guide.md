@@ -149,7 +149,7 @@ cu profile rename test prod
 cu profile set-active dev
 
 # Delete the inactive prod profile; this doesn't delete an Azure resource.
-cu profile delete prod
+cu profile delete prod --yes
 ```
 
 `show --name` is view-only and never changes the active CU CLI profile. The

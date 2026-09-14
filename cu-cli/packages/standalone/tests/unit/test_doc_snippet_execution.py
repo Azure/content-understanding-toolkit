@@ -57,6 +57,7 @@ _MIXED_SHELL_SNIPPET_IDS = [
     "cu_cli_configure_login_profile",
     "cu_cli_install",
     "cu_cli_profile_resolution_precedence",
+    "cu_cli_share_profile_between_frontends",
     "cu_cli_temporarily_override_endpoint",
     "cu_cli_use_multiple_profiles",
 ]
@@ -263,6 +264,9 @@ def _prepare_offline_state(
     runner: CliRunner, work_dir: Path, snippet_id: str
 ) -> None:
     fixture = SNIPPET_EXECUTIONS[snippet_id].setup_fixture
+    if fixture == "sample_document":
+        (work_dir / "document.pdf").write_bytes(b"%PDF-1.4\n")
+
     if fixture == "sample_documents":
         documents = work_dir / "documents"
         documents.mkdir()
@@ -488,8 +492,19 @@ def test_mixed_shell_documented_snippet_executes_safe_commands(
     monkeypatch.setattr(
         "cu_cli.commands.doctor.build_client", lambda *_args, **_kwargs: fake
     )
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze.build_client", lambda *_args, **_kwargs: fake
+    )
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze._run_one",
+        lambda _client, job: (
+            job,
+            AnalysisResult(contents=[DocumentContent(markdown="# result\n")]),
+        ),
+    )
     runner = CliRunner()
     execution = SNIPPET_EXECUTIONS[snippet_id]
+    _prepare_offline_state(runner, tmp_path, snippet_id)
     if execution.setup_fixture == "dev_profile":
         result = runner.invoke(main, ["profile", "create", "dev"])
         assert result.exit_code == 0, result.output
@@ -504,6 +519,26 @@ def test_mixed_shell_documented_snippet_executes_safe_commands(
             assert args == ["python", "-m", "pip", "install", "cu-cli"]
             continue
         if args == ["az", "login"]:
+            continue
+        if args[:2] == ["az", "cu"]:
+            assert tuple(args) in {
+                ("az", "cu", "analyzer", "list", "--output", "table"),
+                (
+                    "az",
+                    "cu",
+                    "profile",
+                    "set",
+                    "--key",
+                    "default_analyzer",
+                    "--value",
+                    "prebuilt-layout",
+                ),
+            }
+            if args[2:4] == ["profile", "set"]:
+                result = runner.invoke(
+                    main, ["profile", "set", args[5], args[7]]
+                )
+                assert result.exit_code == 0, result.output
             continue
         if args[0] == "export":
             name, value = args[1].split("=", 1)
