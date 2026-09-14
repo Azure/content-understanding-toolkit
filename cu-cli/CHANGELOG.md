@@ -6,10 +6,7 @@
 
 ### Bugs Fixed
 
-- Fixed LLM-ready Markdown output compatibility with the installed Content
-  Understanding SDK.
-- Preserved long input paths in analysis usage output without inserting hard
-  line breaks.
+- Minor bug fixes.
 
 ## 0.1.0b2 (2026-09-11)
 
