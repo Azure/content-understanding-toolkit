@@ -8,12 +8,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Iterable
 
-from azure.ai.contentunderstanding import ContentUnderstandingClient
 from azure.core.credentials import AzureKeyCredential
 from azure.cli.core.util import get_az_user_agent
 from azure.mgmt.cognitiveservices.models import Deployment, DeploymentModel, DeploymentProperties, Sku
 from knack.prompting import prompt
 
+from cu_cli_core.client import build_content_understanding_client
 from cu_cli_core.errors import ConflictError, ServiceError, UsageError
 from cu_cli_core.defaults import apply_defaults
 from cu_cli_core.infra_models import (
@@ -120,7 +120,7 @@ def setup_models(cmd: Any, **values: Any) -> dict[str, Any]:
         key = str(keys.key1 or keys.key2 or "")
         if not key:
             raise ServiceError("the Microsoft Foundry resource returned no account key.")
-        cu_client = ContentUnderstandingClient(
+        cu_client = build_content_understanding_client(
             endpoint=endpoint,
             credential=AzureKeyCredential(key),
             api_version=api_version,

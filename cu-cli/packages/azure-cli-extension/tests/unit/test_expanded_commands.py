@@ -39,10 +39,8 @@ def test_analyze_llm_input_preserves_sdk_result_for_formatter(
         return SimpleNamespace(failures=[])
 
     monkeypatch.setattr(_analysis, "resolve_identifier", lambda _operation: execute)
-    import azure.ai.contentunderstanding as content_understanding
-
     monkeypatch.setattr(
-        content_understanding,
+        _analysis,
         "to_llm_input",
         lambda result: captured.setdefault("result", result) and formatted,
     )

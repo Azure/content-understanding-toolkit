@@ -32,7 +32,18 @@ export PIP_FIND_LINKS="$(dirname "${core_wheel}")"
     --source "${extension_wheel}" \
     --yes \
     --only-show-errors
+"${python_bin}" -m pip install --disable-pip-version-check --quiet \
+    --no-deps \
+    --upgrade \
+    --force-reinstall \
+    --target "${AZURE_CONFIG_DIR}/cliextensions/content-understanding" \
+    "${core_wheel}"
 
-"${az_bin}" cu --help >/dev/null
+"${python_bin}" - <<'PY'
+import azure.ai  # Simulate Azure CLI command modules that load this namespace first.
+from azure.cli.core import get_default_cli
+
+raise SystemExit(get_default_cli().invoke(["cu", "--help"]))
+PY
 
 echo "Validated clean Azure CLI installation of $(basename "${extension_wheel}")."

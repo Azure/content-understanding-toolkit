@@ -20,6 +20,7 @@ from cu_cli_core.analysis import (
     analyze_one_inline,
     analyze_one_inline_with_usage,
     analyze_one_with_usage,
+    to_llm_input,
 )
 from cu_cli_core.command_spec import ANALYZE, build_request, resolve_identifier
 from cu_cli_core.contracts import ExistingResultPolicy, ResultView
@@ -170,8 +171,6 @@ def analyze(cmd: Any, **values: Any) -> Any:
         usage = response.usage if isinstance(response, AnalyzeResponse) else None
         result = response.result if isinstance(response, AnalyzeResponse) else response
         if request.llm_input:
-            from azure.ai.contentunderstanding import to_llm_input
-
             payload = to_llm_input(result)
             if not isinstance(payload, str) or not payload.strip():
                 raise ServiceError("analysis succeeded, but the model-input result was empty.")

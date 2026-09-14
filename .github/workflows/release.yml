@@ -106,6 +106,17 @@ jobs:
           bash scripts/validate_extension_wheel.sh
           dist/content_understanding-*.whl
           packages/core/dist/cu_cli_core-*.whl
+      - name: Set up Azure CLI validation Python
+        if: inputs.package == 'extension'
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.14"
+      - name: Run Azure CLI extension linter
+        if: inputs.package == 'extension'
+        run: >-
+          bash scripts/validate_extension_azdev.sh
+          dist/content_understanding-*.whl
+          packages/core/dist/cu_cli_core-*.whl
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dist-${{ inputs.target }}-${{ inputs.package }}-${{ inputs.version }}

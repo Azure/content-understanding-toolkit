@@ -4,12 +4,22 @@
 """Azure CLI command loader for the Content Understanding extension."""
 
 from importlib.metadata import version
+from pathlib import Path
 
+import azure.ai
 from azure.cli.core import AzCommandsLoader
 
 from ._help import helps as helps
 
 __version__ = version("content-understanding")
+
+# Azure CLI adds an extension's ``azure`` directory to the namespace package,
+# but currently does not do the same for an already imported ``azure.ai``.
+# azdev loads that namespace before loading extensions, so expose SDKs bundled
+# with this extension explicitly.
+_azure_ai_path = str(Path(__file__).resolve().parent.parent / "azure" / "ai")
+if Path(_azure_ai_path).is_dir() and _azure_ai_path not in azure.ai.__path__:
+    azure.ai.__path__.append(_azure_ai_path)
 
 
 class ContentUnderstandingCommandsLoader(AzCommandsLoader):

@@ -59,6 +59,16 @@ bash scripts/validate_extension_wheel.sh \
 	packages/core/dist/cu_cli_core-*.whl
 ```
 
+Run the Azure CLI extensions linter before publishing. This clones clean,
+temporary copies of the Azure CLI `dev` branch and the extensions repository,
+then runs the same pinned `azdev` wheel linter used by their pipeline:
+
+```bash
+bash scripts/validate_extension_azdev.sh \
+	packages/azure-cli-extension/dist/content_understanding-*.whl \
+	packages/core/dist/cu_cli_core-*.whl
+```
+
 ## Running checks
 
 ```bash
