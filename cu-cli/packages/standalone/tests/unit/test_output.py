@@ -3,9 +3,6 @@
 
 from __future__ import annotations
 
-import sys
-import types
-
 import pytest
 from cu_cli_core.contracts import OutcomeStatus
 
@@ -14,29 +11,16 @@ from cu_cli.output import EmptyMarkdownOutputError, render_markdown
 pytestmark = pytest.mark.unit
 
 
-def _install_fake_sdk(monkeypatch: pytest.MonkeyPatch, *, fn) -> None:
-    fake = types.ModuleType("azure.ai.contentunderstanding")
-    fake.to_llm_input = fn
-    monkeypatch.setitem(sys.modules, "azure.ai.contentunderstanding", fake)
-
-
 def test_render_markdown_uses_to_llm_input_only(monkeypatch: pytest.MonkeyPatch) -> None:
     class _Result:
         pass
 
-    _install_fake_sdk(monkeypatch, fn=lambda _r: "hello")
+    monkeypatch.setattr("cu_cli.output.render_llm_input", lambda _result: "hello")
     assert render_markdown(_Result()) == "hello"
 
 
-def test_render_markdown_requires_to_llm_input(monkeypatch: pytest.MonkeyPatch) -> None:
-    fake = types.ModuleType("azure.ai.contentunderstanding")
-    monkeypatch.setitem(sys.modules, "azure.ai.contentunderstanding", fake)
-    with pytest.raises(RuntimeError, match="to_llm_input"):
-        render_markdown(object())
-
-
 def test_render_markdown_rejects_empty_output(monkeypatch: pytest.MonkeyPatch) -> None:
-    _install_fake_sdk(monkeypatch, fn=lambda _r: "   \n")
+    monkeypatch.setattr("cu_cli.output.render_llm_input", lambda _result: "   \n")
     with pytest.raises(EmptyMarkdownOutputError, match="empty markdown"):
         render_markdown(object())
 

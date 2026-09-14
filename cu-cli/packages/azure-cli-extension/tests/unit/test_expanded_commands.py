@@ -41,7 +41,7 @@ def test_analyze_llm_input_preserves_sdk_result_for_formatter(
     monkeypatch.setattr(_analysis, "resolve_identifier", lambda _operation: execute)
     monkeypatch.setattr(
         _analysis,
-        "to_llm_input",
+        "render_llm_input",
         lambda result: captured.setdefault("result", result) and formatted,
     )
 

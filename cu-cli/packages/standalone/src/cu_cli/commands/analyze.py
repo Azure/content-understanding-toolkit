@@ -164,9 +164,7 @@ def _redact_remote_result(result, *, input_url: str):
 
 
 def _render_remote_markdown(result, *, input_url: str) -> str:
-    from azure.ai.contentunderstanding.models import AnalysisResult
-
-    return render_markdown(AnalysisResult(_redact_remote_result(result, input_url=input_url)))
+    return render_markdown(_redact_remote_result(result, input_url=input_url))
 
 
 def _write_markdown_stdout(result, *, input_url: str) -> None:

@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from cu_cli_core.errors import ValidationError
-from cu_cli_core.serialization import to_plain_value
+from cu_cli_core.serialization import render_llm_input, to_plain_value
 
 pytestmark = pytest.mark.unit
 
@@ -36,6 +36,33 @@ class _SdkModel:
                 time(12, 30),
             ),
         }
+
+
+def test_render_llm_input_passes_sdk_result_through(monkeypatch):
+    result = _SdkModel()
+    captured = {}
+
+    def render(value):
+        captured["value"] = value
+        return "rendered"
+
+    monkeypatch.setattr("azure.ai.contentunderstanding.to_llm_input", render)
+
+    assert render_llm_input(result) == "rendered"
+    assert captured["value"] is result
+
+
+def test_render_llm_input_converts_mapping_to_analysis_result(monkeypatch):
+    captured = {}
+
+    def render(value):
+        captured["value"] = value
+        return "rendered"
+
+    monkeypatch.setattr("azure.ai.contentunderstanding.to_llm_input", render)
+
+    assert render_llm_input({"contents": []}) == "rendered"
+    assert captured["value"].as_dict() == {"contents": []}
 
 
 def test_to_plain_value_recursively_serializes_supported_values():

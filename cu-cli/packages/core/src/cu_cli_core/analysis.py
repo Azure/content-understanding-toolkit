@@ -256,13 +256,6 @@ def _analysis_url_input(url: str) -> Any:
     return AnalysisInput(url=url)
 
 
-def to_llm_input(result: Any) -> str:
-    """Convert an SDK analysis result to LLM-ready text."""
-    from azure.ai.contentunderstanding import to_llm_input as sdk_to_llm_input
-
-    return sdk_to_llm_input(result)
-
-
 def analyze_url(
     client: Any,
     analyzer_id: str,

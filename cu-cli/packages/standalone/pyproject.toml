@@ -28,7 +28,6 @@ classifiers = [
 ]
 dependencies = [
     "cu-cli-core>=0.1.0b2,<0.2.0",
-    "azure-ai-contentunderstanding>=1.2.0b3",
     "azure-identity>=1.19",
     # Management-plane clients used by `cu analyzer copy` to resolve
     # Foundry endpoint URLs / account names / ARM IDs to canonical

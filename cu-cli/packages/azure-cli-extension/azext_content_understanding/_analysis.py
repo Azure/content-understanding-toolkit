@@ -20,7 +20,6 @@ from cu_cli_core.analysis import (
     analyze_one_inline,
     analyze_one_inline_with_usage,
     analyze_one_with_usage,
-    to_llm_input,
 )
 from cu_cli_core.command_spec import ANALYZE, build_request, resolve_identifier
 from cu_cli_core.contracts import ExistingResultPolicy, ResultView
@@ -33,7 +32,7 @@ from cu_cli_core.input_planning import (
 )
 from cu_cli_core.profiles import Profile
 from cu_cli_core.reporting import build_analysis_report
-from cu_cli_core.serialization import to_plain_value
+from cu_cli_core.serialization import render_llm_input, to_plain_value
 
 from ._client_factory import create_content_understanding_client
 from ._io import write_json, write_text
@@ -171,7 +170,7 @@ def analyze(cmd: Any, **values: Any) -> Any:
         usage = response.usage if isinstance(response, AnalyzeResponse) else None
         result = response.result if isinstance(response, AnalyzeResponse) else response
         if request.llm_input:
-            payload = to_llm_input(result)
+            payload = render_llm_input(result)
             if not isinstance(payload, str) or not payload.strip():
                 raise ServiceError("analysis succeeded, but the model-input result was empty.")
         else:
