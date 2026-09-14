@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.1.0b3 (2026-09-14)
+
+### Bugs Fixed
+
+- Routed Content Understanding SDK integration through `cu-cli-core` so the
+  standalone CLI and Azure CLI extension use one compatible SDK boundary.
+- Preserved long input paths in analysis usage output without inserting hard
+  line breaks.
+
 ## 0.1.0b2 (2026-09-11)
 
 ### Features Added
