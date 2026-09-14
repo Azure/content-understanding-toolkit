@@ -102,7 +102,7 @@ jobs:
           fi
           mkdir -p dist
           cp "${package_directory}"/dist/* dist/
-          python -m twine check dist/*
+          python -m twine check "${package_directory}"/dist/*
           if [[ "${PACKAGE}" == "extension" ]]; then
             (cd dist && sha256sum *.whl > "content-understanding-${{ inputs.version }}.sha256")
           fi
