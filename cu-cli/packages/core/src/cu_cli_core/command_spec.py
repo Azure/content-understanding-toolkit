@@ -622,7 +622,6 @@ ANALYZER_COPY = CommandSpec(
         ),
         ArgumentSpec(
             "--destination-subscription",
-            aliases=("-u",),
             field="destination_subscription",
             parser_name="destination_subscription",
             help=(
@@ -632,7 +631,6 @@ ANALYZER_COPY = CommandSpec(
         ),
         ArgumentSpec(
             "--destination-resource-group",
-            aliases=("-g",),
             field="destination_resource_group",
             parser_name="destination_resource_group",
             help="Resource group used for destination discovery.",
