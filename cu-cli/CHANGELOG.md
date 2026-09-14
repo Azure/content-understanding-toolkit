@@ -6,8 +6,8 @@
 
 ### Bugs Fixed
 
-- Routed Content Understanding SDK integration through `cu-cli-core` so the
-  standalone CLI and Azure CLI extension use one compatible SDK boundary.
+- Fixed LLM-ready Markdown output compatibility with the installed Content
+  Understanding SDK.
 - Preserved long input paths in analysis usage output without inserting hard
   line breaks.
 
