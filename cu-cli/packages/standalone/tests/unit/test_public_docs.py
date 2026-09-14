@@ -2,11 +2,14 @@
 # Licensed under the MIT license.
 
 import re
+import shlex
 from pathlib import Path
 
+from click.testing import CliRunner
 import pytest
 
 from cu_cli.apiversion import API_VERSION_HELP
+from cu_cli.cli import main
 
 
 pytestmark = pytest.mark.unit
@@ -20,6 +23,22 @@ _REGION_SUPPORT_URL = (
     "https://learn.microsoft.com/azure/ai-services/content-understanding/"
     "language-region-support"
 )
+
+
+# [START cu_cli_help]
+CU_CLI_HELP_COMMAND = """\
+cu-cli --help
+"""
+# [END cu_cli_help]
+
+
+def test_readme_cli_help_snippet_executes():
+    executable, *args = shlex.split(CU_CLI_HELP_COMMAND)
+
+    assert executable == "cu-cli"
+    result = CliRunner().invoke(main, args)
+    assert result.exit_code == 0, result.output
+    assert "Usage:" in result.output
 
 
 def test_documented_custom_analyzer_ids_use_valid_format():

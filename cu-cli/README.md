@@ -58,6 +58,7 @@ cu --help
 macOS includes an unrelated system command named `cu`. Use the equivalent
 `cu-cli` executable on macOS:
 
+<!-- Snippet:cu_cli_help -->
 ```bash
 cu-cli --help
 ```

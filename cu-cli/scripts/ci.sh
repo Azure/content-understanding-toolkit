@@ -59,6 +59,10 @@ cd "${product_dir}"
 python scripts/check_headers.py
 end_section
 
+section "Documentation snippets"
+python scripts/check_doc_snippets.py check
+end_section
+
 section "Lint shared core (ruff)"
 cd "${core_dir}"
 python -m ruff check .
