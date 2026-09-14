@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "content-understanding"
+version = "0.1.0b1"
+description = "Azure CLI extension for Azure Content Understanding."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Microsoft Corporation"}]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "cu-cli-core>=0.1.0b2,<0.2.0",
+    "azure-mgmt-cognitiveservices>=13.6.0,<14.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "azure-cli-core>=2.75.0",
+    "build>=1.2",
+    "mypy>=1.8,<2",
+    "pytest>=7.4",
+    "ruff>=0.5,<0.16",
+]
+
+[project.urls]
+Repository = "https://github.com/Azure/content-understanding-toolkit/tree/main/cu-cli"
+
+[tool.setuptools.packages.find]
+include = ["azext_content_understanding*"]
+
+[tool.setuptools.package-data]
+azext_content_understanding = [
+    "azext_metadata.json",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "../core/src"]
+addopts = "-q --import-mode=importlib"
+markers = [
+    "unit: fast offline tests; no external services or network calls",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true

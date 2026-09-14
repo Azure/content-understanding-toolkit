@@ -6,7 +6,8 @@ The **Azure Content Understanding Toolkit** is a set of tools that ease integrat
 
 | Tool | Location | Description |
 | --- | --- | --- |
-| **CU CLI** | [`cu-cli/`](cu-cli/README.md) | Analyze files, create and test custom analyzers, manage resource profiles and model defaults, and generate Azure infrastructure. Install with `pip install cu-cli`. |
+| **CU CLI** | [`cu-cli/`](cu-cli/README.md) | Standalone `cu` frontend for analyzing files, creating and testing custom analyzers, managing resource profiles and model defaults, and generating Azure infrastructure. Install with `pip install cu-cli`. |
+| **Azure CLI extension (preview)** | [`content-understanding`](cu-cli/packages/azure-cli-extension/README.md) | Native `az cu` frontend over the same shared operations, with Azure CLI authentication, output, query, subscription, and extension-update conventions. |
 | **Prebuilt schema definitions** | [`prebuilt-schema/`](prebuilt-schema/README.md) | Browse domain-specific prebuilt analyzer schemas by API version, or use the [single-file analyzer index](prebuilt-schema/SUPPORTED_ANALYZERS.md). |
 | **Dynamic HITL** | [`dynamic_hitl/`](dynamic_hitl/README.md) | Turn Content Understanding confidence scores into a per-field human-review policy: calibrate cutoffs on your own extractions, then route only the values that need a person. Includes a Python calibration lab and an interactive explainer site. |
 

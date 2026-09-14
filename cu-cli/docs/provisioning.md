@@ -59,7 +59,9 @@ resource paths.
 For a new resource, `azd up` can optionally assign **Cognitive Services User**
 to the user or service principal running azd. This grants that principal
 Entra-based data-plane access; it does not grant access to other identities.
-The existing-resource path never creates role assignments.
+Role assignment is disabled by default for noninteractive generation; pass
+`--assign-roles true` to opt in. Interactive generation asks before enabling
+it. The existing-resource path never creates role assignments.
 
 For an existing resource, grant an Entra identity **Cognitive Services User**
 through the resource's **Access control (IAM)** page. Without it,
@@ -185,7 +187,13 @@ return a nonzero status.
 If the default profile already contains values, the hook preserves it unless
 the project was generated with `--force`. Set
 `CU_DISABLE_AUTO_PROFILE_SETUP=true` before `azd up` only when profile setup
-must be skipped entirely.
+must be skipped entirely. Generated projects also honor the legacy
+`CU_AUTOCONFIG=false` alias.
+
+Generated projects use the version 1 postprovision contract, which is supported
+by all `0.1.x` CU CLI releases. The legacy hidden model-setup command remains
+available throughout `0.1.x`; regenerate the project before moving to a later
+minor release unless its release notes explicitly retain that contract.
 
 Verify the generated state:
 

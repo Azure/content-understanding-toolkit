@@ -18,11 +18,14 @@ Resolution precedence (highest -> lowest):
 from __future__ import annotations
 
 import os
-import re
 from dataclasses import dataclass
 from typing import Optional
 
-from cu_cli_core.service_options import DEFAULT_API_VERSION
+from cu_cli_core.service_options import (
+    DEFAULT_API_VERSION,
+    SUPPORTED_API_VERSIONS,
+    is_supported_api_version,
+)
 
 from .errors import CuCliError
 
@@ -43,8 +46,6 @@ API_VERSIONS = (
     ),
 )
 
-SUPPORTED_API_VERSIONS = tuple(item.value for item in API_VERSIONS)
-_PREVIEW_VERSION_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}-preview$")
 _KNOWN_VERSION_LABELS = tuple(
     f"{item.value} ({item.label})" for item in API_VERSIONS
 )
@@ -68,11 +69,15 @@ def _supported_list() -> str:
 
 def is_preview_version(version: Optional[str]) -> bool:
     """Return whether *version* has the forward-compatible preview shape."""
-    return bool(version and _PREVIEW_VERSION_PATTERN.fullmatch(version))
+    return bool(
+        version
+        and version not in SUPPORTED_API_VERSIONS
+        and is_supported_api_version(version)
+    )
 
 
 def is_supported(version: Optional[str]) -> bool:
-    return version in SUPPORTED_API_VERSIONS or is_preview_version(version)
+    return is_supported_api_version(version)
 
 
 def ensure_supported(version: Optional[str]) -> str:

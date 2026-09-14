@@ -16,8 +16,8 @@ pytestmark = pytest.mark.unit
 _runner = CliRunner()
 
 
-def _run(*args: str):
-    return _runner.invoke(main, list(args), color=False)
+def _run(*args: str, input: str | None = None):
+    return _runner.invoke(main, list(args), color=False, input=input)
 
 
 @pytest.mark.parametrize(
@@ -217,11 +217,24 @@ def test_delete_active_profile_is_blocked():
     assert _run("profile", "create", "dev").exit_code == 0
     assert _run("profile", "set-active", "dev").exit_code == 0
 
-    result = _run("profile", "delete", "dev")
+    result = _run("profile", "delete", "dev", "--yes")
 
     assert result.exit_code == 1, result.output
     assert "cannot delete active CU CLI profile" in result.output
     assert ProfileStore.load().has_name("dev")
+
+
+def test_profile_delete_prompts_and_supports_shared_yes_aliases():
+    assert _run("profile", "create", "dev").exit_code == 0
+
+    declined = _run("profile", "delete", "dev", input="n\n")
+    assert declined.exit_code == 1
+    assert "Delete CU profile 'dev'?" in declined.output
+    assert ProfileStore.load().has_name("dev")
+
+    deleted = _run("profile", "delete", "dev", "-y")
+    assert deleted.exit_code == 0, deleted.output
+    assert not ProfileStore.load().has_name("dev")
 
 
 def test_unset_last_value_keeps_empty_named_profile():

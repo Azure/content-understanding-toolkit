@@ -78,6 +78,8 @@ jobs:
           cache-dependency-path: |
             cu-cli/packages/core/pyproject.toml
             cu-cli/packages/standalone/pyproject.toml
+            cu-cli/packages/azure-cli-extension/pyproject.toml
+            cu-cli/packages/azure-cli-extension/setup.py
       - name: Run CI
         run: bash cu-cli/scripts/ci.sh
 
@@ -124,5 +126,7 @@ jobs:
           cache-dependency-path: |
             cu-cli/packages/core/pyproject.toml
             cu-cli/packages/standalone/pyproject.toml
+            cu-cli/packages/azure-cli-extension/pyproject.toml
+            cu-cli/packages/azure-cli-extension/setup.py
       - name: Run CI
         run: bash cu-cli/scripts/ci.sh

@@ -36,6 +36,7 @@ from cu_cli_core.analysis import (
     analyze_one_with_usage,
 )
 from cu_cli_core.input_planning import redact_input_reference, redact_sensitive_urls
+from cu_cli_core.reporting import build_analysis_report
 from ..errors import CuCliError, _format_service_error, friendly_errors
 from ..exit_codes import GENERIC_ERROR, VALIDATION_FAILURE
 from ..output import (
@@ -296,26 +297,15 @@ def _find_non_directory_ancestor(path: Path) -> Path | None:
 
 
 def _write_analyze_report(path: Path, *, analyzer_id, fmt: str, results: list[dict]) -> None:
-    """Write a machine-readable per-input status report (regression).
+    """Write the shared machine-readable per-input status report."""
 
-    ``results`` is a flat list of ``{"input", "status", ...}`` records where
-    ``status`` is ``succeeded`` / ``failed`` / ``skipped``. The stable ``schema`` key
-    lets agents parse the summary without scraping human-formatted stderr.
-    """
-    counts = {"succeeded": 0, "failed": 0, "skipped": 0}
-    for r in results:
-        status = r.get("status")
-        if status in counts:
-            counts[status] += 1
-    counts["total"] = len(results)
+    report = build_analysis_report(
+        analyzer=analyzer_id,
+        result_view="full" if fmt == "json" else "llm-input",
+        results=results,
+    )
     payload = dumps_json(
-        _redact_output_payload({
-            "schema": "cu-cli/analyze-report/v1",
-            "analyzer": analyzer_id,
-            "result_view": "full" if fmt == "json" else "llm-input",
-            "counts": counts,
-            "results": results,
-        })
+        _redact_output_payload(report.to_dict())
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None

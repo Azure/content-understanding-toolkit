@@ -8,8 +8,8 @@ from cu_cli_core.service_options import (
     API_KEY,
     API_VERSION,
     AUTH_MODE,
-    DEFAULT_API_VERSION,
     ENDPOINT,
+    PROFILE,
     SERVICE_OPTIONS,
     get_service_option,
     service_options_for,
@@ -30,11 +30,12 @@ def test_analyzer_show_composes_expected_service_options_in_order():
         API_VERSION,
         AUTH_MODE,
         API_KEY,
+        PROFILE,
     )
 
 
 def test_service_option_security_and_defaults():
     assert API_KEY.sensitive is True
-    assert API_VERSION.default == DEFAULT_API_VERSION
+    assert API_VERSION.default is None
     assert AUTH_MODE.choices == ("login", "key")
-    assert AUTH_MODE.default == "login"
+    assert AUTH_MODE.default is None
