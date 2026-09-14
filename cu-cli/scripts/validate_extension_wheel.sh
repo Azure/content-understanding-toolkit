@@ -42,20 +42,24 @@ export PIP_FIND_LINKS="$(dirname "${core_wheel}")"
 
 "${python_bin}" - <<'PY'
 import os
-import sys
 
+from importlib import import_module
 from pathlib import Path
 
 extension_dir = Path(os.environ["AZURE_EXTENSION_DIR"]) / "content-understanding"
-sys.path.insert(0, str(extension_dir))
-
 import azure.ai  # Simulate Azure CLI command modules that load this namespace first.
-from cu_cli_core import serialization
 from azure.cli.core import get_default_cli
 
+result = get_default_cli().invoke(["cu", "--help"])
+
+sdk = import_module("azure.ai.contentunderstanding")
+serialization = import_module("cu_cli_core.serialization")
+
 assert Path(serialization.__file__).is_relative_to(extension_dir)
+assert Path(sdk.__file__).is_relative_to(extension_dir)
 assert hasattr(serialization, "render_llm_input")
-raise SystemExit(get_default_cli().invoke(["cu", "--help"]))
+assert hasattr(sdk, "ContentUnderstandingClient")
+raise SystemExit(result)
 PY
 
 echo "Validated clean Azure CLI installation of $(basename "${extension_wheel}")."
