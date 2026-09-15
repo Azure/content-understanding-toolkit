@@ -5,9 +5,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
-from ..errors import ConflictError, NotFoundError, ServiceError
+from ..errors import ConflictError, NotFoundError, ServiceError, ValidationError
 
 
 def _value(analyzer: Any, *keys: str) -> str:
@@ -70,6 +71,46 @@ def create_analyzer(client: Any, analyzer_id: str, body: dict[str, Any]) -> Any:
             "was created but its status is FAILED."
         )
     return result
+
+
+def update_analyzer(
+    client: Any,
+    analyzer_id: str,
+    *,
+    description: str | None = None,
+    tags: Mapping[str, str] | None = None,
+) -> Any:
+    from azure.core.exceptions import ResourceNotFoundError
+
+    patch: dict[str, Any] = {}
+    if description is not None:
+        patch["description"] = description
+    if not patch:
+        if not tags:
+            raise ValidationError("provide at least one metadata change: --description or --tag.")
+
+    try:
+        if tags:
+            # The service replaces the tags object, so preserve keys that the user did not set.
+            analyzer = client.get_analyzer(analyzer_id)
+            existing_tags = (
+                analyzer.get("tags")
+                if isinstance(analyzer, Mapping)
+                else getattr(analyzer, "tags", None)
+            )
+            if existing_tags is None and hasattr(analyzer, "as_dict"):
+                value = analyzer.as_dict()
+                if isinstance(value, dict):
+                    existing_tags = value.get("tags")
+            patch["tags"] = {**dict(existing_tags or {}), **dict(tags)}
+        return client.update_analyzer(analyzer_id, patch)
+    except ResourceNotFoundError as exc:
+        raise NotFoundError(
+            f"analyzer '{analyzer_id}' was not found; nothing was updated.",
+            hint="Check the analyzer name and selected profile or endpoint, then run "
+            "`cu analyzer list --info`.",
+            status_code=404,
+        ) from exc
 
 
 def delete_analyzer(client: Any, analyzer_id: str) -> None:
