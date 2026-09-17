@@ -625,15 +625,14 @@ def test_copy_analyzer_progress_never_leaks_authorization_material():
     scrubbed if the SDK model grows sensitive fields in a future version.
     """
     import datetime
-
-    from azure.ai.contentunderstanding.models import CopyAuthorization
+    from types import SimpleNamespace
 
     from cu_cli.core.analyzers import copy_analyzer
 
     source_path = "/subscriptions/S/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/src"
     target_path = "/subscriptions/T/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/tgt"
     expiry = datetime.datetime(2026, 8, 25, 12, tzinfo=datetime.timezone.utc)
-    copy_authorization = CopyAuthorization(
+    copy_authorization = SimpleNamespace(
         source=source_path,
         target_azure_resource_id=target_path,
         expires_at=expiry,

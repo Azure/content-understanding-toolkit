@@ -7,6 +7,13 @@
 - Fixed replacement of service defaults to read existing mappings and send
   explicit merge-patch deletions for mappings outside the replacement set.
 
+## 0.1.0b3 (2026-09-14)
+
+### Features Added
+
+- Added shared LLM-ready analysis result rendering for official Content
+  Understanding command-line frontends.
+
 ## 0.1.0b2 (2026-09-11)
 
 ### Features Added

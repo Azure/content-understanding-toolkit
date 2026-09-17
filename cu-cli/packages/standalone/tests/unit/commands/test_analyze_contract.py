@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from pathlib import Path
@@ -175,7 +176,7 @@ def test_success_markdown_redacts_sas_echoed_by_service(
     )
     monkeypatch.setattr(
         "cu_cli.commands.analyze.render_markdown",
-        lambda result: result.contents[0].markdown,
+        lambda result: result["contents"][0]["markdown"],
     )
 
     result = _run("analyze", url)
@@ -203,7 +204,8 @@ def test_remote_result_preserves_unrelated_links_and_markdown(
         lambda _client, job: (job, {"contents": [{"markdown": body}], "source": url}),
     )
     monkeypatch.setattr(
-        "cu_cli.commands.analyze.render_markdown", lambda result: result.contents[0].markdown,
+        "cu_cli.commands.analyze.render_markdown",
+        lambda result: result["contents"][0]["markdown"],
     )
     output_dir = Path("results")
     args = ["analyze", url]
@@ -234,7 +236,6 @@ def test_remote_result_preserves_unrelated_links_and_markdown(
 def test_remote_markdown_redacts_before_sdk_yaml_escaping(
     analyze_runtime, monkeypatch, write_file,
 ):
-    from azure.ai.contentunderstanding.models import AnalysisResult, DocumentContent
     from cu_cli.output import render_markdown
 
     url = "https://example.test/bob's.pdf?sv=1&sig=render-secret"
@@ -242,11 +243,11 @@ def test_remote_markdown_redacts_before_sdk_yaml_escaping(
     public_link = "[invoice](https://example.test/view?id=42)"
 
     def make_result(source):
-        return AnalysisResult(contents=[DocumentContent(
-            mime_type="application/pdf",
-            metadata={"source": f"Downloaded: {source}"},
-            markdown=f"{public_link}\n[source]({source}) after",
-        )])
+        return {"contents": [{
+            "mimeType": "application/pdf",
+            "metadata": {"source": f"Downloaded: {source}"},
+            "markdown": f"{public_link}\n[source]({source}) after",
+        }]}
 
     original = make_result(url)
     expected = render_markdown(make_result(safe_url))
@@ -264,7 +265,7 @@ def test_remote_markdown_redacts_before_sdk_yaml_escaping(
     assert text.rstrip("\n") == expected.rstrip("\n")
     assert "render-secret" not in text
     assert public_link in text
-    assert original.contents[0].metadata["source"] == f"Downloaded: {url}"
+    assert original["contents"][0]["metadata"]["source"] == f"Downloaded: {url}"
 
 
 @pytest.mark.parametrize("json_output", [False, True], ids=["markdown", "json"])
@@ -276,7 +277,6 @@ def test_remote_markdown_redacts_before_sdk_yaml_escaping(
 def test_remote_result_redaction_preserves_span_boundaries(
     analyze_runtime, monkeypatch, tmp_path, json_output, write_file, classification, query,
 ):
-    from azure.ai.contentunderstanding.models import AnalysisResult
     from cu_cli.output import render_markdown
 
     url = f"https://example.test/bob's.pdf{query}"
@@ -315,10 +315,10 @@ def test_remote_result_redaction_preserves_span_boundaries(
                 {"pageNumber": page_number, "spans": [span]}
                 for page_number, span in enumerate(spans, start=1)
             ]
-        return AnalysisResult({"contents": [content]})
+        return {"contents": [content]}
 
     original = make_result(url)
-    snapshot = original.as_dict()
+    snapshot = copy.deepcopy(original)
     expected_result = make_result(safe_url)
     expected = render_markdown(expected_result)
     monkeypatch.setattr(
@@ -337,13 +337,13 @@ def test_remote_result_redaction_preserves_span_boundaries(
     text = destination.read_text(encoding="utf-8") if write_file else result.stdout
     if json_output:
         exported = json.loads(text)
-        assert exported == expected_result.as_dict()
-        rendered = render_markdown(AnalysisResult(exported))
+        assert exported == expected_result
+        rendered = render_markdown(exported)
     else:
         rendered = text
     assert rendered.rstrip("\n") == expected.rstrip("\n")
     assert public_link in text
-    assert original.as_dict() == snapshot
+    assert original == snapshot
 
 
 @pytest.mark.parametrize("write_file", [False, True])
@@ -353,7 +353,6 @@ def test_remote_result_redaction_preserves_span_boundaries(
 def test_remote_json_redaction_preserves_nested_spans(
     analyze_runtime, monkeypatch, tmp_path, write_file, query,
 ):
-    from azure.ai.contentunderstanding.models import AnalysisResult
     from cu_cli.output import render_markdown
 
     url = f"https://example.test/input.pdf{query}"
@@ -366,7 +365,7 @@ def test_remote_json_redaction_preserves_nested_spans(
         url_span = {"offset": len(prefix), "length": len(source)}
         tail_span = {"offset": len(prefix) + len(source) + 1, "length": len(tail)}
         opaque = {"span": {"offset": 100, "length": 20}, "spans": [1, 2], "url": source}
-        return AnalysisResult({
+        return {
             "stringEncoding": "unicodeCodePoint",
             "contents": [{
                 "kind": "document",
@@ -404,10 +403,10 @@ def test_remote_json_redaction_preserves_nested_spans(
                 "markdown": tail,
                 "pages": [{"pageNumber": 2, "spans": [{"offset": 0, "length": len(tail)}]}],
             }],
-        })
+        }
 
     original = make_result(url)
-    snapshot = original.as_dict()
+    snapshot = copy.deepcopy(original)
     expected = make_result(safe_url)
     monkeypatch.setattr(
         "cu_cli.commands.analyze._run_one", lambda _client, job: (job, original),
@@ -422,9 +421,9 @@ def test_remote_json_redaction_preserves_nested_spans(
     assert result.exit_code == 0, result.output
     text = destination.read_text(encoding="utf-8") if write_file else result.stdout
     exported = json.loads(text)
-    assert exported == expected.as_dict()
-    assert render_markdown(AnalysisResult(exported)) == render_markdown(expected)
-    assert original.as_dict() == snapshot
+    assert exported == expected
+    assert render_markdown(exported) == render_markdown(expected)
+    assert original == snapshot
 
 
 @pytest.mark.parametrize("input_option", [(), ("--url",)], ids=["positional", "named"])
@@ -434,7 +433,6 @@ def test_remote_json_redaction_preserves_nested_spans(
 def test_remote_json_preserves_sdk_response_envelope(
     monkeypatch, tmp_path, inline, write_file, show_usage, input_option,
 ):
-    from azure.ai.contentunderstanding.models import AnalysisResult
     from cu_cli.output import render_markdown
 
     url = "https://example.test/bob's.pdf?sv=1&sig=raw-response-secret"
@@ -474,7 +472,7 @@ def test_remote_json_preserves_sdk_response_envelope(
         return response
 
     raw_response = make_response(url)
-    sdk_result = AnalysisResult(raw_response["result"])
+    sdk_result = raw_response["result"]
     calls = []
 
     def sdk_analyze(*, analyzer_id, inputs, cls=None):
@@ -512,12 +510,10 @@ def test_remote_json_preserves_sdk_response_envelope(
     exported = json.loads(text)
     expected = make_response(safe_url)
     assert exported == expected
-    assert render_markdown(AnalysisResult(exported["result"])) == render_markdown(
-        AnalysisResult(expected["result"]),
-    )
+    assert render_markdown(exported["result"]) == render_markdown(expected["result"])
     assert "raw-response-secret" not in result.output + text
     assert raw_response == make_response(url)
-    assert sdk_result.as_dict() == raw_response["result"]
+    assert sdk_result == raw_response["result"]
     if show_usage:
         assert usage_key in result.stderr
 
@@ -645,7 +641,6 @@ def test_remote_legacy_hash_result_is_not_reused(analyze_runtime, monkeypatch, t
 def test_remote_result_filename_is_written_and_reused(
     analyze_runtime, monkeypatch, tmp_path, json_output, character, explicit_output,
 ):
-    from azure.ai.contentunderstanding.models import AnalysisResult, DocumentContent
     from cu_cli.output import render_markdown
 
     suffix = ".result.json" if json_output else ".result.md"
@@ -655,9 +650,7 @@ def test_remote_result_filename_is_written_and_reused(
     if explicit_output:
         basename = character + basename
     url = f"https://example.test/{basename}?sig=secret"
-    original = AnalysisResult(contents=[DocumentContent(
-        mime_type="application/pdf", markdown="Example",
-    )])
+    original = {"contents": [{"mimeType": "application/pdf", "markdown": "Example"}]}
     calls = []
 
     def run_one(_client, job):
@@ -686,7 +679,7 @@ def test_remote_result_filename_is_written_and_reused(
         assert len(outputs[0].name.encode("utf-8")) == 240
     text = outputs[0].read_text(encoding="utf-8")
     if json_output:
-        assert json.loads(text) == original.as_dict()
+        assert json.loads(text) == original
     else:
         assert text == render_markdown(original)
 
@@ -965,15 +958,13 @@ def test_recursive_source_preserves_relative_output_path(
 
 
 def test_explicit_llm_input_uses_markdown_renderer(analyze_runtime, monkeypatch):
-    from azure.ai.contentunderstanding.models import AnalysisResult
-
     Path("input.pdf").write_text("input")
     markdown = "# Extracted content\n"
-    analysis = AnalysisResult({"contents": [{
+    analysis = {"contents": [{
         "kind": "document", "mimeType": "application/pdf", "path": "input1",
         "markdown": markdown,
         "pages": [{"pageNumber": 1, "spans": [{"offset": 0, "length": len(markdown)}]}],
-    }]})
+    }]}
     monkeypatch.setattr(
         "cu_cli.commands.analyze._run_one", lambda _client, job: (job, analysis),
     )
@@ -1017,7 +1008,6 @@ def test_output_file_writes_single_primary_payload(analyze_runtime):
 def test_input_view_and_destination_combinations(
     analyze_runtime, monkeypatch, input_mode, view, destination,
 ):
-    from azure.ai.contentunderstanding.models import AnalysisResult
     from cu_cli.output import render_markdown
 
     copy_sample_invoice("documents/sample_invoice.pdf")
@@ -1029,11 +1019,11 @@ def test_input_view_and_destination_combinations(
         "url": ("--url", url),
     }[input_mode]
     markdown = "# Controlled contract result\n"
-    analysis = AnalysisResult({"analyzerId": "prebuilt-layout", "contents": [{
+    analysis = {"analyzerId": "prebuilt-layout", "contents": [{
         "kind": "document", "mimeType": "application/pdf", "path": "input1", "markdown": markdown,
         "pages": [{"pageNumber": 1, "spans": [{"offset": 0, "length": len(markdown)}]}],
-    }]})
-    response = {"status": "Succeeded", "result": analysis.as_dict()}
+    }]}
+    response = {"status": "Succeeded", "result": analysis}
     jobs = []
 
     def run_one(_client, job):

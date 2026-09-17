@@ -164,9 +164,7 @@ def _redact_remote_result(result, *, input_url: str):
 
 
 def _render_remote_markdown(result, *, input_url: str) -> str:
-    from azure.ai.contentunderstanding.models import AnalysisResult
-
-    return render_markdown(AnalysisResult(_redact_remote_result(result, input_url=input_url)))
+    return render_markdown(_redact_remote_result(result, input_url=input_url))
 
 
 def _write_markdown_stdout(result, *, input_url: str) -> None:
@@ -180,7 +178,10 @@ def _write_markdown_stdout(result, *, input_url: str) -> None:
 def _print_usage(usage, *, input_ref: str) -> None:
     """Render request usage to stderr without changing data written to stdout."""
     console.print("\n")
-    console.print(f"[bold cyan]Usage:[/bold cyan] {_esc(input_ref)}")
+    console.print(
+        f"[bold cyan]Usage:[/bold cyan] {_esc(input_ref)}",
+        soft_wrap=True,
+    )
     if usage is None:
         console.print("[dim]usage details were not returned by the service.[/dim]")
         return
