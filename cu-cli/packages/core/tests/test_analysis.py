@@ -453,14 +453,14 @@ def test_plan_jobs_direct_files_with_same_basename_collide(tmp_path):
 
 
 def test_disambiguate_collisions_embeds_input_path_hash(tmp_path):
-    # The disambiguated filename carries a short sha1 of the *input path*, so it
+    # The disambiguated filename carries a short SHA-256 of the *input path*, so it
     # is deterministic and unique per distinct input while keeping its dir.
     jobs = plan_jobs(["/x/a.pdf", "x/a.pdf"], analyzer_id="test-analyzer",
                      out_dir=tmp_path, fmt="json", to_stdout=False)
     disambiguate_collisions(jobs)
 
     for job in jobs:
-        digest = hashlib.sha1(job.input_ref.encode("utf-8")).hexdigest()[:8]
+        digest = hashlib.sha256(job.input_ref.encode("utf-8")).hexdigest()[:8]
         assert job.out_path == tmp_path / f"a.pdf.{digest}.result.json"
 
 

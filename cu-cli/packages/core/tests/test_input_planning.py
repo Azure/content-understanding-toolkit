@@ -556,7 +556,7 @@ def test_exhausted_local_collision_names_are_rejected(tmp_path, view):
         local.write_text("local input")
         inputs.append(str(local))
     local = Path(inputs[0])
-    digest = hashlib.sha1(str(local.resolve()).encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(str(local.resolve()).encode("utf-8")).hexdigest()
     for length in range(8, len(digest) + 1, 8):
         neighbor = local.with_name(f"{local.name}.{digest[:length]}")
         neighbor.write_text("neighbor input")
@@ -576,8 +576,8 @@ def test_local_digest_collisions_stay_stable_when_reordered(tmp_path, monkeypatc
         local.parent.mkdir()
         local.write_text(directory)
         inputs.append(local)
-    digest = hashlib.sha1(b"collision")
-    monkeypatch.setattr("cu_cli_core.input_planning.hashlib.sha1", lambda _value: digest)
+    digest = hashlib.sha256(b"collision")
+    monkeypatch.setattr("cu_cli_core.input_planning.hashlib.sha256", lambda _value: digest)
     original = plan_outputs(
         plan_inputs(positional=inputs), view=view, output_dir=tmp_path / "results",
     )
