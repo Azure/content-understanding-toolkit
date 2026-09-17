@@ -14,18 +14,16 @@ from __future__ import annotations
 
 import json
 
-from click.testing import CliRunner
 import pytest
 
-from cu_cli.cli import main
-
+from support.command_catalog import invoke_cli, record_output
 from support.recording import use_cassette
 
 pytestmark = pytest.mark.integration
 
 
 def _run(*args):
-    return CliRunner().invoke(main, list(args))
+    return invoke_cli(args)
 
 
 def test_scenario_4_doctor_connectivity(cloud_project):
@@ -35,10 +33,24 @@ def test_scenario_4_doctor_connectivity(cloud_project):
     assert res.exit_code == 0, res.output
 
 
-def test_scenario_4_defaults_show_json(cloud_project):
+@pytest.mark.parametrize("table_output", [False, True], ids=["json", "table"])
+def test_scenario_4_defaults_show_json(cloud_project, table_output):
     """`cu defaults show` reads the CU service defaults."""
     with use_cassette("defaults_get"):
-        res = _run("defaults", "show")
+        if table_output:
+            # region Snippet:defaults_table
+            res = _run("defaults", "show", "--table")
+            # endregion
+        else:
+            # region Snippet:defaults_show
+            res = _run("defaults", "show")
+            # endregion
     assert res.exit_code == 0, res.output
-    payload = json.loads(res.output[res.output.find("{"):])
-    assert "modelDeployments" in payload
+    if table_output:
+        assert "Model" in res.stdout and "Deployment" in res.stdout
+    else:
+        payload = json.loads(res.stdout)
+        assert payload["modelDeployments"]
+        # region Snippet:defaults_json_output
+        record_output(res.stdout, language="json")
+        # endregion

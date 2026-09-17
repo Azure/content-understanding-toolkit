@@ -17,19 +17,20 @@ import json
 import os
 import time
 from pathlib import Path
+from uuid import uuid4
 
-from click.testing import CliRunner
+from click import unstyle
 import pytest
 
-from cu_cli.cli import main
-
+from support.command_catalog import invoke_cli
+from support.recording import copy_sample_invoice as _copy_sample
 from support.recording import mode, use_cassette
 
 pytestmark = pytest.mark.integration
 
 
 def _run(*args):
-    return CliRunner().invoke(main, list(args))
+    return invoke_cli(args)
 
 
 def _resolved_completion_model() -> str:
@@ -76,12 +77,6 @@ def _require_create_success(res):
             "run `cu defaults set --from-profile` after configuring model_deployments."
         )
     assert res.exit_code == 0, res.output
-
-
-def _copy_sample(name: str = "sample_invoice.pdf") -> Path:
-    dest = Path.cwd() / name
-    dest.write_bytes((Path(__file__).parent / "fixtures" / name).read_bytes())
-    return dest
 
 
 def _write_schema(path: str = "schema.json", analyzer_id: str = "cu_cli_test_v1") -> Path:
@@ -132,19 +127,32 @@ def _build_classifier_schema_with_routing(path: str, route_target_id: str) -> Pa
     return p
 
 
-def test_scenario_3_analyzer_list_json(cloud_project):
+@pytest.mark.parametrize("json_output", [False, True], ids=["table", "json"])
+def test_scenario_3_analyzer_list_json(cloud_project, json_output):
     with use_cassette("analyzer_list"):
-        res = _run("analyzer", "list", "--json")
+        if json_output:
+            res = _run("analyzer", "list", "--json")
+        else:
+            # region Snippet:analyzer_list
+            res = _run("analyzer", "list")
+            # endregion
     assert res.exit_code == 0, res.output
-    json.loads(res.output[res.output.find("["):])  # output includes context lines
+    if json_output:
+        payload = json.loads(res.stdout)
+        assert payload and all(item["analyzerId"] for item in payload)
+    else:
+        output = unstyle(res.stderr)
+        assert "Analyzers" in output and "analyzer(s)" in output
 
 
 def test_scenario_3_analyzer_list_custom_sorted(cloud_project):
     with use_cassette("analyzer_list"):
+        # region Snippet:analyzer_list_custom
         res = _run(
             "analyzer", "list", "--json", "--kind", "custom",
             "--sort-by", "analyzerId",
         )
+        # endregion
     assert res.exit_code == 0, res.output
     payload = json.loads(res.output[res.output.find("["):])
     ids = [item["analyzerId"] for item in payload]
@@ -159,6 +167,88 @@ def test_scenario_3_analyzer_list_sorted_by_created_at(cloud_project):
     payload = json.loads(res.output[res.output.find("["):])
     created = [item.get("createdAt", "") for item in payload]
     assert created == sorted(created)
+
+
+@pytest.mark.skipif(
+    mode() != "live" or os.getenv("CU_TEST_REC_ALLOW_MUTATIONS") != "1",
+    reason="requires live mode and explicit permission to create and clean up temporary analyzers",
+)
+def test_generated_schema_custom_lifecycle_and_copy_live(cloud_project):
+    source_id = f"cu_cli_live_{uuid4().hex}"
+    target_id = f"{source_id}_copy"
+    sample = _copy_sample()
+    with use_cassette("generated_schema_custom_lifecycle_live"):
+        result = _run("defaults", "show")
+        assert result.exit_code == 0, result.output
+        original_defaults = json.loads(result.stdout)["modelDeployments"]
+        result = _run("analyzer", "list", "--json", "--kind", "custom")
+        assert result.exit_code == 0, result.output
+        existing_ids = {item["analyzerId"] for item in json.loads(result.stdout)}
+        assert not existing_ids.intersection((source_id, target_id))
+
+        result = _run(
+            "analyzer", "schema", "create", "--name", source_id,
+            "--from-sample", str(sample), "--output-file", "schema.json",
+        )
+        assert result.exit_code == 0, result.output
+        schema = json.loads(Path("schema.json").read_text(encoding="utf-8"))
+        assert schema["analyzerId"] == source_id
+        expected_fields = schema["fieldSchema"]["fields"]
+        assert expected_fields
+        result = _run("analyzer", "validate", "schema.json")
+        assert result.exit_code == 0, result.output
+
+        try:
+            result = _run("analyzer", "create", source_id, "--schema", "schema.json")
+            assert result.exit_code == 0, result.output
+            result = _run("analyzer", "show", source_id)
+            assert result.exit_code == 0, result.output
+            analyzer = json.loads(result.stdout)
+            assert analyzer["analyzerId"] == source_id
+            assert analyzer["fieldSchema"]["fields"].keys() == expected_fields.keys()
+
+            result = _run("analyzer", "test", source_id, str(sample), "--json")
+            assert result.exit_code == 0, result.output
+            evaluation = json.loads(result.stdout)
+            assert evaluation["samples"] and evaluation["summary"]["fields"]
+            result = _run("analyze", str(sample), "--analyzer", source_id, "--json")
+            assert result.exit_code == 0, result.output
+            analysis = json.loads(result.stdout)
+            assert analysis["status"] == "Succeeded"
+            assert analysis["result"]["analyzerId"] == source_id
+            assert analysis["result"]["contents"][0]["fields"]
+
+            result = _run("analyzer", "copy", source_id, target_id)
+            assert result.exit_code == 0, result.output
+            result = _run("analyzer", "show", target_id)
+            assert result.exit_code == 0, result.output
+            copied = json.loads(result.stdout)
+            assert copied["analyzerId"] == target_id
+            assert copied["fieldSchema"]["fields"].keys() == expected_fields.keys()
+            result = _run("analyze", str(sample), "--analyzer", target_id, "--json")
+            assert result.exit_code == 0, result.output
+            analysis = json.loads(result.stdout)
+            assert analysis["status"] == "Succeeded"
+            assert analysis["result"]["analyzerId"] == target_id
+            assert analysis["result"]["contents"][0]["fields"]
+        finally:
+            result = _run("analyzer", "list", "--json", "--kind", "custom")
+            assert result.exit_code == 0, f"Cannot verify cleanup for {source_id}, {target_id}: {result.output}"
+            present_ids = {item["analyzerId"] for item in json.loads(result.stdout)}
+            cleanup_errors = []
+            for analyzer_id in (target_id, source_id):
+                if analyzer_id in present_ids:
+                    result = _run("analyzer", "delete", analyzer_id, "--yes")
+                    if result.exit_code != 0:
+                        cleanup_errors.append(f"{analyzer_id}: {result.output}")
+            assert not cleanup_errors, "\n".join(cleanup_errors)
+            result = _run("analyzer", "list", "--json", "--kind", "custom")
+            assert result.exit_code == 0, result.output
+            remaining_ids = {item["analyzerId"] for item in json.loads(result.stdout)}
+            assert not remaining_ids.intersection((source_id, target_id))
+            result = _run("defaults", "show")
+            assert result.exit_code == 0, result.output
+            assert json.loads(result.stdout)["modelDeployments"] == original_defaults
 
 
 def test_scenario_3_analyzer_lifecycle_create_show_delete(cloud_project):

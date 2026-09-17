@@ -1,5 +1,12 @@
 # Release History
 
+## Unreleased
+
+### Bugs Fixed
+
+- Fixed replacement of service defaults to read existing mappings and send
+  explicit merge-patch deletions for mappings outside the replacement set.
+
 ## 0.1.0b2 (2026-09-11)
 
 ### Features Added

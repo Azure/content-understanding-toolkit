@@ -51,6 +51,7 @@ Documentation = "https://aka.ms/cu-doc"
 dev = [
     "pytest>=7.4",
     "pytest-cov>=4.1",
+    "markdown-it-py>=3.0",
     # Upper bounds pin the linter/type-checker rule sets that CI was validated
     # against (ruff 0.16 and mypy 2.0 changed defaults); bump deliberately.
     "mypy>=1.8,<2",
@@ -71,7 +72,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "tests", "../core/src"]
+pythonpath = ["src", "tests", "../core/src", "../azure-cli-extension"]
 addopts = "-q --import-mode=importlib"
 markers = [
     "unit: fast offline tests; no external services or network calls",

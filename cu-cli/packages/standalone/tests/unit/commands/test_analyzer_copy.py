@@ -20,10 +20,9 @@ clients. These CLI tests exercise the Click layer end-to-end via ``CliRunner``.
 from __future__ import annotations
 
 import pytest
-from click.testing import CliRunner
 
-from cu_cli.cli import main
 from cu_cli_core.command_spec import ANALYZER_COPY
+from support.command_catalog import invoke_cli
 
 pytestmark = pytest.mark.unit
 
@@ -66,8 +65,8 @@ def _resolve_profile_backed_resources(monkeypatch):
     monkeypatch.setattr(azure_resources, "resolve_resource", resolve)
 
 
-def _invoke(*args) -> object:
-    return CliRunner().invoke(main, list(args))
+def _invoke(*args, **kwargs) -> object:
+    return invoke_cli(args, **kwargs)
 
 
 # --- Same-ID guard ----------------------------------------------------------
@@ -119,11 +118,14 @@ def test_copy_allows_identical_ids_when_destination_is_different_resource(monkey
     calls: list[tuple] = []
     monkeypatch.setattr(analyzers_core, "copy_analyzer", lambda *a, **kw: calls.append((a, kw)))
 
+    # region Snippet:analyzer_copy_resources
     result = _invoke(
         "analyzer", "copy", "invoice_v1", "invoice_v1",
-        "--source-resource", "src",
-        "--destination-resource", "tgt",
+        "--source-resource", "<source-resource>",
+        "--destination-resource", "<destination-resource>",
+        placeholder_values={"source-resource": "src", "destination-resource": "tgt"},
     )
+    # endregion
     assert result.exit_code == 0, result.output
     assert len(calls) == 1
 
@@ -1029,6 +1031,37 @@ def test_copy_source_profile_routes_to_the_named_profile(monkeypatch):
     assert callable(copy_calls[0][1]["progress"])
     assert "Resolving source and destination resources for analyzer copy" in result.output
     assert "Checking source and destination analyzers" in result.output
+
+
+def test_documented_copy_uses_configured_dev_and_prod_profiles(monkeypatch):
+    from types import SimpleNamespace
+
+    from cu_cli.commands import analyzer as analyzer_cmd
+    from cu_cli.core import analyzers as analyzers_core
+
+    for name in ("dev", "prod"):
+        result = _invoke("profile", "create", name)
+        assert result.exit_code == 0, result.output
+        result = _invoke(
+            "profile", "set", "endpoint", f"https://{name}.services.ai.azure.com/", "--name", name,
+        )
+        assert result.exit_code == 0, result.output
+
+    monkeypatch.setattr(analyzer_cmd, "build_client", lambda *args, **kwargs: object())
+    monkeypatch.setattr(
+        analyzers_core, "get_copy_source_analyzer",
+        lambda *args, **kwargs: SimpleNamespace(config=SimpleNamespace(content_categories={})),
+    )
+    calls = []
+    monkeypatch.setattr(analyzers_core, "copy_analyzer", lambda *args, **kwargs: calls.append((args, kwargs)))
+    # region Snippet:analyzer_copy_profiles
+    result = _invoke(
+        "analyzer", "copy", "invoice_v1", "invoice_v1",
+        "--source-profile", "dev", "--destination-profile", "prod",
+    )
+    # endregion
+    assert result.exit_code == 0, result.output
+    assert len(calls) == 1
 
 
 def test_cross_resource_copy_rejects_mismatched_profile_api_versions_before_data_plane(
