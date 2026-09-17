@@ -17,6 +17,10 @@ Content Understanding defaults, and troubleshooting workflows.
 Content Understanding API version. Known versions: 2025-11-01 (GA) and
 2026-06-01-preview (preview); any YYYY-MM-DD-preview version is also accepted.
 
+For the local PDF examples, place
+[sample_invoice.pdf](../sample_files/sample_invoice.pdf) in your working
+directory. Replace placeholder values with your own resource settings.
+
 ## CU CLI profiles
 
 A CU CLI profile is local CLI configuration containing the settings used to
@@ -37,6 +41,30 @@ not require `cu profile create`; the first `cu profile set` command materializes
 that profile. Create named profiles only when you need separate settings for
 resources such as development and production.
 
+### Configure named profiles
+
+The profile examples below use `dev` and `prod`. Set them up once with distinct
+resource endpoints, then reuse them in the later sections. If either profile
+already exists, skip its `create` command and review its settings before
+changing the endpoint. Changing the working directory does not reset profiles.
+
+<!-- Snippet:profile_setup -->
+```bash
+cu profile create dev
+
+cu profile set endpoint https://<dev-resource>.services.ai.azure.com/ --name dev
+
+cu profile create prod
+
+cu profile set endpoint https://<prod-resource>.services.ai.azure.com/ --name prod
+
+cu profile set-active dev
+```
+
+This selects `dev` as the active profile. Commands without `--profile` use it
+until you select another profile. Configure authentication for each resource
+as described in [Authentication](#authentication).
+
 ### Resolution precedence
 
 For normal service commands, CU CLI resolves each setting independently from
@@ -54,51 +82,60 @@ example, an environment endpoint can override the selected profile's endpoint
 while the API version still comes from that profile. CU CLI doesn't write
 command or environment overrides back to the profile.
 
-Suppose `dev` is active and `prod` has a different endpoint. Create both
-profiles first so the commands below can run in sequence:
+With the profiles above configured, inspect the active `dev` resource:
 
+<!-- Snippet:analyzer_list_active -->
 ```bash
-# Create dev and prod, then set a distinct endpoint on each.
-cu profile create dev
-cu profile set endpoint https://<dev-resource>.services.ai.azure.com/ --name dev
-cu profile create prod
-cu profile set endpoint https://<prod-resource>.services.ai.azure.com/ --name prod
-cu profile set-active dev
-
-# Uses all effective settings from the active dev profile.
 cu analyzer list --info
-
-# Uses prod for this command only; dev remains active.
-cu analyzer list --profile prod
-
-# Uses prod's remaining settings, but this endpoint wins for this invocation.
-CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/ \
-  cu analyzer list --profile prod --info
-
-# The explicit option wins over both CU_ENDPOINT and the selected profile.
-CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/ \
-  cu analyzer list \
-  --profile prod \
-  --endpoint https://<one-time-resource>.services.ai.azure.com/ \
-  --info
 ```
 
 `--info` prints the resolved non-secret runtime context to standard error before
-the operation. Use it to verify precedence without exposing an API key.
+the operation. It does not make the command a dry run: these examples still
+list analyzers from the selected resource, which must be accessible to your
+configured identity. Use the context to verify precedence without exposing an
+API key.
 
-For example, `cu analyzer list --info` output begins with:
+The runtime context for this command begins with:
 
+<!-- Snippet:runtime_info -->
 ```text
-endpoint: https://my-foundry-resource.services.ai.azure.com/
+endpoint: https://<dev-resource>.services.ai.azure.com/
 auth mode: entra
 api-version: 2025-11-01
-CU CLI profile: default
+CU CLI profile: dev
 settings: ~/.azure/config
 ```
 
 Here, `~` represents the current user's home directory; the settings path is
 printed as an absolute path at runtime. It resolves to `$AZURE_CONFIG_DIR/config`
 when `AZURE_CONFIG_DIR` is set.
+
+Use `prod` for one command without changing the active profile:
+
+<!-- Snippet:analyzer_list_prod -->
+```bash
+cu analyzer list --profile prod
+```
+
+An environment endpoint overrides the endpoint from `prod`; the remaining
+settings still come from that profile:
+
+<!-- Snippet:analyzer_list_env -->
+```bash
+CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/ \
+  cu analyzer list --profile prod --info
+```
+
+An explicit endpoint overrides both the environment value and the profile:
+
+<!-- Snippet:analyzer_list_explicit -->
+```bash
+CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/ \
+  cu analyzer list \
+    --profile prod \
+    --endpoint https://<one-time-resource>.services.ai.azure.com/ \
+    --info
+```
 
 ### Storage
 
@@ -107,49 +144,48 @@ CU CLI profiles are stored in the Azure CLI configuration file:
 - `$AZURE_CONFIG_DIR/config` when `AZURE_CONFIG_DIR` is set.
 - `~/.azure/config` otherwise.
 
-CU CLI owns only the `[cu]` section. Writes are atomic, preserve unrelated
-Azure CLI sections and their settings, and set new configuration files to mode
-`0600`. Unknown `[cu]` keys are preserved for forward compatibility.
+CU CLI owns only the `[cu]` section. Writes are atomic and preserve unrelated
+Azure CLI sections and their settings. On POSIX systems, saved configuration
+files use mode `0600`. On Windows, access is controlled by filesystem ACLs,
+not POSIX mode bits. Unknown `[cu]` keys are preserved for forward compatibility.
 
 ### CU CLI profile commands
 
+Inspect the active profile, read its endpoint, list profiles, and inspect the
+existing `prod` profile. These commands do not change configuration:
+
+<!-- Snippet:profile_workflow -->
 ```bash
-# Show all effective values for the active profile.
 cu profile show
 
-# Print only the effective endpoint from the active profile.
 cu profile get endpoint
 
-# List saved profiles and identify the active profile.
 cu profile list
 
-# Save the endpoint on the active profile.
-cu profile set endpoint https://<resource-name>.services.ai.azure.com/
+cu profile show --name prod
+```
 
-# Create an empty dev profile.
-cu profile create dev
+To opt the `dev` profile into the preview API, change its saved version. This
+affects subsequent commands using `dev`; it is not needed for the GA examples:
 
-# Show dev without changing the active profile.
-cu profile show --name dev
-
-# Save an API version on dev without changing the active profile.
+<!-- Snippet:profile_preview -->
+```bash
 cu profile set api_version 2026-06-01-preview --name dev
+```
 
-# Save a key on dev, then remove it so the next lower precedence layer applies.
-cu profile set api_key <key> --name dev
-cu profile unset api_key --name dev
+For a disposable local configuration, copy `dev` to `test`, rename that copy to
+`staging`, and remove it when finished. Run this workflow only when `test` and
+`staging` do not already exist, or choose unused names. The final command skips
+confirmation and deletes only the newly copied local profile, not an Azure
+resource:
 
-# Create test as an independent copy of dev.
+<!-- Snippet:profile_copy_cleanup -->
+```bash
 cu profile copy dev test
 
-# Rename test and its saved values to prod.
-cu profile rename test prod
+cu profile rename test staging
 
-# Make dev the profile used when --profile is omitted.
-cu profile set-active dev
-
-# Delete the inactive prod profile; this doesn't delete an Azure resource.
-cu profile delete prod
+cu profile delete staging --yes
 ```
 
 `show --name` is view-only and never changes the active CU CLI profile. The
@@ -163,32 +199,41 @@ hyphens or underscores. The names `default` and `model_deployments` are reserved
 
 `api_key` is never printed. `get` and `show` display a redacted value.
 
+### Inspect deployments
+
+Deployment inspection requires Azure CLI login and permission to read the
+selected resource. It does not change the profile or deploy models:
+
+<!-- Snippet:profile_deployments -->
+```bash
+cu profile show --deployments --time
+```
+
 ### Authentication
 
 Login authentication is the recommended default:
 
+<!-- Snippet:login_authentication -->
 ```bash
-# Sign in for the default login authentication mode.
 az login
 
-# Login authentication is already the default; this profile command is optional.
-# cu profile set auth_mode login
+cu profile set auth_mode login
 ```
 
 `az login` authenticates Azure CLI and does not modify CU CLI profile settings.
 
 To use a resource key:
 
+<!-- Snippet:profile_key -->
 ```bash
-# Save a resource key on the active profile and select key authentication.
 cu profile set api_key <key>
 ```
 
 Setting an API key also selects key authentication. Unsetting the key returns
 the CU CLI profile to login authentication:
 
+<!-- Snippet:profile_unset_key -->
 ```bash
-# Remove the saved key and return this profile to login authentication.
 cu profile unset api_key
 ```
 
@@ -204,11 +249,10 @@ Use environment variables for temporary or automated overrides rather than
 rewriting a saved profile. List the exact variables supported by the installed
 version:
 
+<!-- Snippet:environment_inspection -->
 ```bash
-# List set, recognized environment overrides in a table.
 cu env-var list
 
-# Emit the same set of overrides as machine-readable JSON.
 cu env-var list --json
 ```
 
@@ -218,25 +262,31 @@ overrides without parsing a rendered table or exposing `CU_API_KEY`.
 
 For example:
 
+<!-- Snippet:env_override_bash -->
 ```bash
-# Temporarily override only the endpoint; other values still resolve normally.
-export CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/
-
-# Use dev's other settings and print the effective runtime context.
-cu analyzer list --profile dev --info
-
-# Remove the override when the task is complete.
-unset CU_ENDPOINT
+CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/ \
+  cu analyzer list --info
 ```
 
-Environment syntax differs by shell; in PowerShell, use
-`$env:CU_ENDPOINT = "..."` and remove it with
-`Remove-Item Env:CU_ENDPOINT`. Avoid persisting `CU_API_KEY` in shell startup
-files. `cu profile sync-defaults` intentionally uses the endpoint saved in the
+In PowerShell, preserve and restore the previous environment value:
+
+<!-- Snippet:env_override_powershell -->
+```powershell
+$previous_CU_ENDPOINT = $env:CU_ENDPOINT
+$env:CU_ENDPOINT = "https://<temporary-resource>.services.ai.azure.com/"
+try {
+  cu analyzer list --info
+} finally {
+  $env:CU_ENDPOINT = $previous_CU_ENDPOINT
+}
+```
+
+Avoid persisting `CU_API_KEY` in shell startup files.
+`cu profile sync-defaults` intentionally uses the endpoint saved in the
 selected profile rather than `CU_ENDPOINT`, because synchronization updates
 that profile's model mappings.
 
-### Content Understanding defaults
+### Save model deployment mappings
 
 Content Understanding operations that use generative AI require Foundry model
 deployments, including a large language model (LLM) for chat completion and an
@@ -244,36 +294,48 @@ embeddings model. Content Understanding defaults connect model names and
 prebuilt analyzer model aliases to deployment names so each analyze request
 doesn't need to provide the mappings.
 
-Import Content Understanding defaults into a CU CLI profile:
+Import remote Content Understanding defaults into the active CU CLI profile:
 
+<!-- Snippet:profile_sync -->
 ```bash
-# Import remote defaults into the active CU CLI profile.
 cu profile sync-defaults
+```
 
-# Import remote defaults into prod without changing the active profile.
-cu profile sync-defaults --name prod
+Alternatively, select an existing named profile explicitly:
+
+<!-- Snippet:profile_sync_named -->
+```bash
+cu profile sync-defaults --name dev
 ```
 
 Synchronization always uses the endpoint saved in the selected CU CLI profile.
 `CU_ENDPOINT` cannot redirect it to a different resource. Authentication can
 still be overridden with `--auth-mode` or `--api-key`.
 
-Set mappings manually in a CU CLI profile and apply them as Content
-Understanding defaults:
+For example, supply a resource key when synchronizing `dev`. The saved endpoint
+on `dev` remains authoritative. Replace `<key>` with that resource's key and
+observe the [key-handling precautions](#authentication):
 
+<!-- Snippet:profile_sync_auth -->
 ```bash
-# Replace my-gpt-52-deployment with the completion deployment name on your resource.
-cu profile set model_deployments.gpt-5.2 my-gpt-52-deployment
-
-# Replace my-embedding-deployment with your embeddings deployment name.
-cu profile set model_deployments.text-embedding-3-large my-embedding-deployment
-
-# Apply the active profile's local mappings as remote Content Understanding defaults.
-cu defaults set --from-profile
+cu profile sync-defaults --name dev --auth-mode key --api-key <key> --time
 ```
 
-When a profile contains supported model mappings, CU CLI also derives the
-service aliases used by prebuilt analyzers. For example,
+Instead of importing mappings, you can set them manually in the active profile.
+Replace the deployment names below with existing deployments on your resource.
+These commands change local configuration only:
+
+<!-- Snippet:configure_model_mappings -->
+```bash
+cu profile set model_deployments.gpt-5.2 my-gpt-52-deployment
+
+cu profile set model_deployments.text-embedding-3-large my-embedding-deployment
+```
+
+To apply saved mappings to the resource, use
+[Update remote mappings](#update-remote-mappings). When applying supported model
+mappings, CU CLI also derives the service aliases used by prebuilt analyzers.
+For example,
 `my-gpt-52-deployment` is also mapped to
 `prebuilt-analyzer-completion` and
 `prebuilt-analyzer-completion-mini`, while
@@ -302,6 +364,34 @@ For permissions, Azure CLI and azd sign-in, new and existing resource paths,
 model-free setup, manual defaults, and generated post-provision behavior, use
 the authoritative [Microsoft Foundry provisioning guide](provisioning.md).
 
+### Generate infrastructure
+
+Generate a local project using defaults:
+
+<!-- Snippet:infra_generate -->
+```bash
+cu infra generate
+```
+
+Alternatively, specify the environment, location, output directory, and models.
+Replace `Development` with your subscription name or ID and choose a supported
+region and your own resource prefix. The following example uses `--force`, which
+replaces generated files in the selected output directory. Review any existing
+files before using it:
+
+<!-- Snippet:infra_custom -->
+```bash
+cu infra generate --output-dir infra --environment dev-01 --location westus3 --subscription Development \
+  --api-version 2026-06-01-preview \
+  --models "gpt-5.2, text-embedding-3-large" \
+  --foundry-prefix contoso-cu \
+  --assign-roles false \
+  --force
+```
+
+These are alternative project-generation recipes. Neither provisions Azure
+resources; deployment is a separate step in the provisioning guide.
+
 ## Analyze
 
 ### Analyze a local file
@@ -309,9 +399,9 @@ the authoritative [Microsoft Foundry provisioning guide](provisioning.md).
 An analyzer defines how Content Understanding processes a file. Analyze one file
 with the `prebuilt-layout` content extraction analyzer:
 
+<!-- Snippet:analyze_layout -->
 ```bash
-# Analyze is a billed service call. Markdown is written to standard output.
-cu analyze ./document.pdf --analyzer prebuilt-layout
+cu analyze sample_invoice.pdf --analyzer prebuilt-layout
 ```
 
 By default, CU CLI formats the analyzer result as Markdown with the Content
@@ -321,13 +411,41 @@ explicitly.
 
 Use the CU CLI profile's default analyzer:
 
+<!-- Snippet:analyze_with_profile_default -->
 ```bash
-# Save the default analyzer on the active profile.
 cu profile set default_analyzer prebuilt-layout
 
-# Analyze one file using the saved default analyzer.
-cu analyze ./document.pdf
+cu analyze sample_invoice.pdf --json
 ```
+
+### Output formats
+
+Choose the output form you need. Each invocation submits the input for analysis.
+For the complete service response on standard output:
+
+<!-- Snippet:analyze_json -->
+```bash
+cu analyze sample_invoice.pdf --analyzer prebuilt-layout --json
+```
+
+To save the Markdown view instead of printing it:
+
+<!-- Snippet:analyze_markdown_file -->
+```bash
+cu analyze sample_invoice.pdf --analyzer prebuilt-layout --output-file results/invoice.md
+```
+
+To save the complete JSON response:
+
+<!-- Snippet:analyze_json_file -->
+```bash
+cu analyze sample_invoice.pdf --analyzer prebuilt-layout --json --output-file results/invoice.json
+```
+
+Parent directories are created as needed. Use an unused output path, or choose
+an explicit [existing-output policy](#existing-outputs-and-batch-reports).
+If analysis succeeds but the Markdown view has no displayable content, CU CLI
+recommends `--json`.
 
 ### Analyze an HTTPS or SAS URL
 
@@ -335,9 +453,11 @@ Pass an HTTPS URL with the named `--url` option. CU CLI sends
 the reference to Content Understanding and does not download or upload the file
 itself. This enables URL-based service limits, including large video workflows:
 
+<!-- Snippet:analyze_video_url -->
 ```bash
-cu analyze --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/videos/sdk_samples/FlightSimulator.mp4" \
-  --analyzer prebuilt-videoSearch
+cu analyze --url https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/videos/sdk_samples/FlightSimulator.mp4 \
+  --analyzer prebuilt-videoSearch \
+  --json
 ```
 
 Repeat `--url` for multiple URLs. It cannot be combined with positional inputs,
@@ -347,8 +467,10 @@ shortcut, including when mixing local and remote inputs. `--pattern` requires
 
 Azure Blob SAS query parameters are preserved exactly for the service request.
 Replace the placeholders below with your storage account, container, blob, and
-SAS token. Quote the complete URL so the shell does not interpret `&` characters:
+SAS token.
+Quote the complete URL so the shell does not interpret `&` characters:
 
+<!-- Snippet:analyze_sas_url -->
 ```bash
 cu analyze --url "https://<storage-account>.blob.core.windows.net/<container>/<blob>?<sas-token>" \
   --analyzer prebuilt-videoSearch \
@@ -393,82 +515,66 @@ For multiple inputs that include a URL, specify `--output-dir` because a remote
 result cannot be written next to its source. A dry run reports remote sizes as
 unavailable and does not probe or download remote content:
 
+<!-- Snippet:analyze_urls_preview -->
 ```bash
-cu analyze \
-  --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/invoice.pdf" \
-  --url "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/receipt.png" \
+cu analyze --url https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/invoice.pdf \
+  --url https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/receipt.png \
+  --output-dir results \
   --analyzer prebuilt-layout \
-  --output-dir ./results \
   --dry-run
 ```
 
 ### Analyze files in local directories
 
-Analyze immediate files in a directory:
+Place the input PDFs in `documents`; put files in subdirectories when trying
+recursive selection. To analyze only immediate files matching the PDF pattern:
 
+<!-- Snippet:analyze_pattern -->
 ```bash
-# Analyze only matching files directly inside ./documents.
-cu analyze --source ./documents --pattern "*.pdf" --output-dir ./results
+cu analyze --source documents --pattern "*.pdf" --analyzer prebuilt-layout --output-dir results \
+  --json
 ```
 
 Directory input selects immediate files only. Add `--recursive` to include
 nested directories:
 
+<!-- Snippet:analyze_recursive -->
 ```bash
-# Quote the pattern so CU CLI, rather than the shell, applies it.
-cu analyze --source ./documents \
-  --recursive \
-  --pattern "*.pdf" \
-  --analyzer prebuilt-layout \
-  --output-dir ./results
+cu analyze --source documents --pattern "*.pdf" --recursive --analyzer prebuilt-layout \
+  --output-dir recursive-results \
+  --json
 ```
 
 With `--output-dir`, CU CLI preserves each input path relative to the selected
 source directory. For example:
 
+<!-- Snippet:output_mapping -->
 ```text
-./documents/2026/invoice-01.pdf
-  -> ./results/2026/invoice-01.pdf.result.md
+documents/nested/sample_invoice.pdf
+  -> recursive-results/nested/sample_invoice.pdf.result.json
 ```
 
-JSON results use `.result.json` instead. With one input, omit `--output-dir` to
+Markdown results use `.result.md` instead. With one input, omit `--output-dir` to
 write the result to standard output or use `--output-file` to choose one file.
 `--output-file` is rejected when more than one input is selected.
 
-These single-file examples show the terminal and file-output forms:
+For the positional directory shortcut, place input files in `docs`. This form
+does not use a filename pattern and writes results under `out`:
 
+<!-- Snippet:analyze_directory -->
 ```bash
-# Print human-readable Markdown to the terminal.
-cu analyze ./invoice.pdf --analyzer prebuilt-layout
-
-# Print the complete structured result as JSON to the terminal.
-cu analyze ./invoice.pdf --analyzer prebuilt-layout --json
-
-# Save Markdown instead of printing it; parent directories are created.
-cu analyze ./invoice.pdf --analyzer prebuilt-layout \
-  --output-file ./results/invoice.md
-
-# Save structured JSON instead of printing it.
-cu analyze ./invoice.pdf --analyzer prebuilt-layout \
-  --json --output-file ./results/invoice.json
+cu analyze docs --analyzer prebuilt-layout --output-dir out --json
 ```
-
-Markdown is the default output view. Use `--json` when you need the complete
-service result. If analysis succeeds but the Markdown view has no displayable
-content, CU CLI recommends `--json`.
 
 ### Preview and run a batch safely
 
 Every non-dry-run analyze request is billed. Preview discovery, output paths,
 and existing-file actions before a batch:
 
+<!-- Snippet:analyze_dry_run -->
 ```bash
-# Preview the discovered files and output mappings without service calls.
-cu analyze --source ./documents \
-  --recursive \
-  --pattern "*.pdf" \
-  --analyzer prebuilt-layout \
-  --output-dir ./results \
+cu analyze --source documents --analyzer prebuilt-layout --json --output-dir results \
+  --report-file report.json \
   --dry-run
 ```
 
@@ -493,47 +599,66 @@ request confirmation.
 - `skip` leaves the existing result untouched and records it as skipped.
 - `reanalyze` submits the input again and replaces the existing result.
 
+If `result.json` already contains the result for this input, reuse it without
+another service call. This example assumes a configured default analyzer. If
+the output does not exist, `skip` still runs the analysis:
+
+<!-- Snippet:analyze_skip -->
+```bash
+cu analyze sample_invoice.pdf --json --output-file result.json --on-existing skip
+```
+
+Alternatively, deliberately submit the input again and replace that result.
+Reanalysis can incur additional charges:
+
+<!-- Snippet:analyze_reanalyze -->
+```bash
+cu analyze sample_invoice.pdf --json --output-file result.json --on-existing reanalyze
+```
+
 Use `--report-file ./run-report.json` for a machine-readable record of each
 input's status. A batch continues after an individual file failure, reports
 successful, failed, and skipped inputs, and exits with status `1` if any input
 failed. This lets automation keep good results while reporting files that need
 attention.
 
+The following noninteractive batch uses eight concurrent jobs and skips the
+large-batch confirmation with `--yes`. It writes to `batch-results`, separately
+from the earlier directory examples. Use an unused result directory and report
+path; if reusing paths, choose an existing-output policy and a new report path:
+
+<!-- Snippet:analyze_recursive_report -->
 ```bash
-# Analyze recursively, save one result per input, and record all statuses in JSON.
-cu analyze ./documents \
-  --recursive \
-  --analyzer prebuilt-layout \
-  --output-dir ./results \
-  --report-file ./run-report.json \
-  --yes
+cu analyze --source documents --pattern "*.pdf" --recursive --analyzer prebuilt-layout \
+  --output-dir batch-results \
+  --json \
+  --report-file run-report.json \
+  --yes \
+  --concurrency 8
 ```
 
-Useful options include:
+`--concurrency` or `-j` controls concurrent batch **jobs**. The default is `4`;
+the supported range is `1` through `32`.
 
-- `--json` for the complete analyzer result as JSON.
-- `--concurrency` or `-j` for the number of concurrent batch **jobs**. The
-  default is `4`; the supported range is `1` through `32`.
-- `--time` to print CU service and total command elapsed time.
+### Track elapsed time
 
-For example:
+Use `--time` to print CU service and total command elapsed time. This example
+explicitly selects the default Markdown view with `--llm-input`:
 
+<!-- Snippet:analyze_llm_input -->
 ```bash
-# Process up to eight batch jobs concurrently instead of the default four.
-cu analyze ./documents --analyzer prebuilt-layout --output-dir ./results -j 8
-
-# Print service-call and total elapsed time after the analysis result.
-cu analyze ./invoice.pdf --analyzer prebuilt-layout --time
+cu analyze sample_invoice.pdf --analyzer prebuilt-layout --llm-input --time
 ```
 
 `--time` output resembles:
 
+<!-- Snippet:analysis_timing -->
 ```text
-CU service calling time: 1.428s
-Total command time: 1.612s
+CU service calling time: <seconds>s
+Total command time: <seconds>s
 ```
 
-Timings vary by machine and request.
+`<seconds>` represents a dynamic duration. Timings vary by machine and request.
 
 Run `cu analyze --help` for the complete input-selection and output contract.
 
@@ -546,57 +671,63 @@ structured fields your application needs.
 Custom analyzer IDs contain 1-64 ASCII letters, numbers, or underscores.
 Hyphens are reserved for service-provided prebuilt analyzer IDs.
 
-### Inspect and manage
-
-```bash
-# List analyzers available on the selected resource.
-cu analyzer list
-
-# Print one analyzer definition.
-cu analyzer show invoice_v1
-
-# Delete a custom analyzer after confirmation.
-cu analyzer delete invoice_v1
-```
-
 ### Create a schema
 
-Generate a starter schema:
+Choose one approach below to prepare `schema.json`: a starter template, sample
+generation, or an explicit base analyzer. They are alternatives, not consecutive
+steps. Schema generation refuses to replace an existing output. Choose another
+path, or use `--force` only after reviewing the file you intend to replace.
 
+The first command writes a document extraction template. The other two create
+optional image extraction and document classification templates with separate
+output names:
+
+<!-- Snippet:schema_templates -->
 ```bash
-# Defaults to a document field-extraction schema.
 cu analyzer schema create --output-file schema.json
 
-# Generate an image field-extraction schema instead of the document default.
 cu analyzer schema create --modality image --output-file image-schema.json
 
-# Generate a classification schema instead of a field-extraction schema.
-cu analyzer schema create \
-  --type classification \
-  --output-file classification-schema.json
+cu analyzer schema create --output-file classify.json --type classification
 ```
 
-Generate from a representative sample:
+Alternatively, generate `schema.json` from a representative sample. This calls
+the CU service; existing output paths are checked before the request is sent:
 
+<!-- Snippet:schema_from_sample -->
 ```bash
-# Ask the service to draft a schema from one representative invoice.
-cu analyzer schema create \
-  --from-sample ./invoice.pdf \
-  --output-file schema.json
+cu analyzer schema create --name invoice_v1 --from-sample sample_invoice.pdf --output-file schema.json
 ```
 
-Schema generation refuses to replace an existing output file. Choose another
-path or pass `--force` when you intentionally want to overwrite it. Existing
-outputs are checked before sample-derived generation calls the CU service.
+As another alternative to the default template, specify the base analyzer and
+custom analyzer ID explicitly:
 
-Review generated schemas before deployment. Validate offline:
-
+<!-- Snippet:schema_base -->
 ```bash
-# Validate the local schema shape.
-cu analyzer validate ./schema.json
+cu analyzer schema create --base prebuilt-document --name invoice_v1 --output-file schema.json
+```
 
-# Also validate rules from the selected Content Understanding API specification.
-cu analyzer validate ./schema.json --spec
+For modality-specific templates, choose the relevant command below. These use
+separate filenames so they do not replace the schema selected above:
+
+<!-- Snippet:schema_modalities -->
+```bash
+cu analyzer schema create --modality document --output-file document-schema.json
+
+cu analyzer schema create --modality audio --output-file audio-schema.json
+
+cu analyzer schema create --modality video --output-file video-schema.json
+```
+
+Review and edit the selected schema before deployment. The first validation
+command checks its structure; the second also checks the service API
+specification and returns JSON. Both are offline:
+
+<!-- Snippet:schema_validation -->
+```bash
+cu analyzer validate schema.json
+
+cu analyzer validate --schema schema.json --spec --json
 ```
 
 A successful validation prints an `ok` result and makes no service call. Invalid
@@ -605,17 +736,37 @@ status with the failing location.
 
 ### Create and test
 
+Use the reviewed `schema.json` from the previous section. The ID `invoice_v1`
+must not already exist on the selected resource. Create the analyzer, then
+evaluate the local invoice:
+
+<!-- Snippet:analyzer_evaluation -->
 ```bash
-# Create a remote custom analyzer from the reviewed local schema.
-cu analyzer create --name invoice_v1 --schema ./schema.json
+cu analyzer create --name invoice_v1 --schema schema.json
 
-# Test one sample and print the summary.
-cu analyzer test invoice_v1 ./invoice.pdf
+cu analyzer test invoice_v1 sample_invoice.pdf
+```
 
-# Test every supported sample in a directory and save one aggregate JSON report.
-cu analyzer test invoice_v1 ./samples \
+For directory evaluation, place representative input PDFs in `samples`. Preview
+the matching files, including nested PDFs, without making analyzer service calls:
+
+<!-- Snippet:analyzer_test_preview -->
+```bash
+cu analyzer test --name invoice_v1 --source samples --pattern "*.pdf" --recursive \
+  --dry-run
+```
+
+Run the same selection and save one aggregate report with this noninteractive
+command. `--yes` skips batch confirmation; ensure the
+selected samples are the ones you intend to submit:
+
+<!-- Snippet:analyzer_test_batch -->
+```bash
+cu analyzer test --name invoice_v1 --source samples --pattern "*.pdf" --recursive \
+  --concurrency 2 \
+  --yes \
   --json \
-  --output-file ./test-report.json
+  --output-file test-report.json
 ```
 
 Analyzer test reports preserve existing files by default and are checked before
@@ -627,37 +778,52 @@ returned. It isn't an accuracy benchmark and doesn't compare results with
 labeled ground truth. Use `cu analyze --analyzer invoice_v1 --json` when you
 need the complete analyzer result.
 
-### Copy across resources
+### Inspect and manage
 
-Use CU CLI profile selectors for resources already configured in CU CLI:
+After creating `invoice_v1`, list available analyzers and read its definition.
+These commands do not change or delete an analyzer:
 
+<!-- Snippet:analyzer_management -->
 ```bash
-# Copy one analyzer between resources represented by saved CU CLI profiles.
-# --source is the existing analyzer ID on the dev resource.
-# --destination is the analyzer ID to create on the prod resource.
-# --source-profile supplies the source endpoint and authentication.
-# --destination-profile supplies the destination endpoint and authentication.
-cu analyzer copy \
-  --source invoice_v1 \
-  --destination invoice_v1 \
-  --source-profile dev \
-  --destination-profile prod
+cu analyzer list
+
+cu analyzer show invoice_v1
 ```
 
-Use direct Azure resource selectors for discovery-based, login-authenticated
-copy:
+To list only custom analyzers as sorted JSON:
 
+<!-- Snippet:analyzer_list_custom -->
 ```bash
-# Copy one analyzer using Azure resource discovery instead of saved profiles.
-# --source is the existing analyzer ID on the source resource.
-# --destination is the analyzer ID to create on the destination resource.
-# --source-resource selects the source by name, endpoint, or ARM resource ID.
-# --destination-resource selects the destination using the same identifier forms.
-cu analyzer copy \
-  --source invoice_v1 \
-  --destination invoice_v1 \
-  --source-resource <endpoint-resource-name-or-arm-id> \
-  --destination-resource <endpoint-resource-name-or-arm-id>
+cu analyzer list --json --kind custom --sort-by analyzerId
+```
+
+### Copy across resources
+
+Use the existing `dev` and `prod` profiles from
+[Configure named profiles](#configure-named-profiles). They must point to distinct
+resources and use the same API version. The source `invoice_v1` must exist on
+`dev`, and the destination ID must not already exist on `prod`. This copies the
+analyzer definition, not its analysis results:
+
+<!-- Snippet:analyzer_copy_profiles -->
+```bash
+cu analyzer copy invoice_v1 invoice_v1 --source-profile dev --destination-profile prod
+```
+
+If you previously opted `dev` into the preview API, align the profiles' API
+versions before copying, or use `--api-version` to select a shared version for
+this copy. The override applies to both sides without changing either saved
+profile.
+
+Alternatively, select resources directly for login-authenticated discovery.
+Replace each placeholder with a resource name, a Foundry endpoint URL, or a full
+`Microsoft.CognitiveServices/accounts` ARM ID. The same source-exists and
+destination-unused requirements apply; do not run both recipes against an
+already copied destination:
+
+<!-- Snippet:analyzer_copy_resources -->
+```bash
+cu analyzer copy invoice_v1 invoice_v1 --source-resource <source-resource> --destination-resource <destination-resource>
 ```
 
 Resource selectors support side-specific subscription and resource-group
@@ -672,48 +838,134 @@ Azure resource discovery requires Reader access on each selected subscription
 or resource group. Profile-backed data-plane calls continue to use the
 CU CLI profile's configured authentication.
 
-## Content Understanding defaults
+### Delete an analyzer
 
+Delete `invoice_v1` only when it is no longer needed on the selected resource.
+Verify the active profile and endpoint first. This command asks for confirmation;
+declining leaves the analyzer unchanged. It does not delete a copy on another
+resource:
+
+<!-- Snippet:analyzer_delete -->
 ```bash
-# Show remote model-to-deployment mappings as JSON.
-cu defaults show
-
-# Show the same remote mappings as a human-readable table.
-cu defaults show --table
-
-# Replace my-gpt-52-deployment with a deployment name and set that mapping.
-cu defaults set --model gpt-5.2=my-gpt-52-deployment
-
-# Apply model mappings from the active CU CLI profile to the remote resource.
-cu defaults set --from-profile
+cu analyzer delete invoice_v1
 ```
+
+`--yes` skips confirmation and is intended for deliberate noninteractive
+cleanup, not routine inspection.
+
+## Content Understanding defaults
 
 Content Understanding defaults map model names and prebuilt analyzer aliases to
 deployment names on the Microsoft Foundry resource. `cu defaults` changes those
 remote mappings; `cu profile` changes local connection and mapping settings.
+
+### Show remote mappings
+
+Read the selected resource's defaults as JSON without changing them:
+
+<!-- Snippet:defaults_show -->
+```bash
+cu defaults show
+```
+
+The response contains model-to-deployment mappings like the following.
+Deployment names depend on the selected resource:
+
+<!-- Snippet:defaults_json_output -->
+```json
+{
+  "modelDeployments": {
+    "gpt-5.2": "gpt-5.2-225597",
+    "text-embedding-3-large": "text-embedding-3-large-438217",
+    "prebuilt-analyzer-completion": "gpt-5.2-225597",
+    "prebuilt-analyzer-completion-mini": "gpt-5.2-225597",
+    "prebuilt-analyzer-embedding": "text-embedding-3-large-438217"
+  }
+}
+```
+
+For the same read-only operation in table form:
+
+<!-- Snippet:defaults_table -->
+```bash
+cu defaults show --table
+```
+
+### Update remote mappings
+
+The following commands modify the selected resource's defaults and can affect
+other analyzers using those mappings. Verify the target resource and use
+existing deployment names. To add or update one mapping:
+
+<!-- Snippet:defaults_model -->
+```bash
+cu defaults set --model gpt-5.2=custom-completion
+```
+
+Alternatively, apply the mappings saved in the active CU CLI profile. Review
+them with `cu profile show` before running this command:
+
+<!-- Snippet:defaults_from_profile -->
+```bash
+cu defaults set --from-profile
+```
+
 `cu defaults set` requires an explicit source:
 `--from-profile`, one or more `--model MODEL=DEPLOYMENT` options, or both. A
 bare `cu defaults set` command fails before contacting the service.
 
+### Replace remote defaults
+
+Updates normally merge with existing defaults. Use `--replace` only when you
+intend to replace the mapping set. Review the current defaults first and
+replace the example deployment names with your own.
+
+The replacement keeps the supplied mappings plus automatically derived prebuilt
+analyzer aliases. CU CLI reads the current defaults, then removes mappings
+outside that set, so both read and update permissions are required. Unexpected
+read failures prevent the update. Avoid concurrent defaults updates: the read
+and PATCH are separate operations, not an atomic read-modify-write operation.
+
+`--json` returns the update result:
+
+<!-- Snippet:defaults_replace -->
+```bash
+cu defaults set --model gpt-5.2=custom-completion --model text-embedding-3-large=custom-embedding \
+  --replace \
+  --json
+```
+
 ## Diagnostics and environment
 
-Run diagnostics after initial setup or when changing resources:
+### Check readiness
 
+Run diagnostics after initial setup or when changing resources. These checks
+read the service configuration without changing it. The second command uses
+the existing `prod` profile without changing the active profile:
+
+<!-- Snippet:diagnose_configuration -->
 ```bash
-# Check the active profile.
 cu doctor
 
-# Check prod without changing the active profile.
 cu doctor --profile prod
-
-# Apply reviewed local model mappings as remote Content Understanding defaults.
-cu doctor --fix-defaults
 ```
 
 `cu doctor` checks the API version, endpoint, authentication, service
 connectivity, and Content Understanding defaults. It exits nonzero when a
-required check fails, so scripts can use it as a readiness gate. Review local
-mappings with `cu profile show` before using `--fix-defaults`.
+required check fails, so scripts can use it as a readiness gate.
+
+### Apply reviewed model mappings
+
+`--fix-defaults` updates remote defaults on the selected Microsoft Foundry
+resource. This can affect other analyzers using those mappings. Before running
+it, check the target with `cu doctor` and review the local model mappings with
+`cu profile show`. Use this repair command only when you intend to apply those
+mappings to the resource:
+
+<!-- Snippet:doctor_fix_defaults -->
+```bash
+cu doctor --fix-defaults
+```
 
 See [Environment overrides](#environment-overrides) for temporary configuration
 and cleanup. Use `--info` on supported service commands when you need to inspect
@@ -723,14 +975,12 @@ their effective non-secret settings.
 
 Every command has examples and supported-version information:
 
+<!-- Snippet:cli_help_overview -->
 ```bash
-# List top-level command groups and global options.
 cu --help
 
-# Show how to save profile values, including supported keys and examples.
-cu profile set --help
+cu profile --help
 
-# Show profile-based and Azure-discovery analyzer copy options.
 cu analyzer copy --help
 ```
 
@@ -738,3 +988,21 @@ Command-line usage errors return status `2`. Operational and validation
 failures return a nonzero status with an actionable CU CLI error rather than a
 Python traceback. Batch analyze returns status `1` after reporting any
 per-input failures. Successful commands return status `0`.
+
+## Upgrade
+
+Check the available package version without installing it:
+
+<!-- Snippet:upgrade_check -->
+```bash
+cu upgrade --check
+```
+
+When you are ready to upgrade, the following command installs the update and
+skips confirmation with `--yes`. On Windows, the CLI starts a detached upgrade
+helper:
+
+<!-- Snippet:upgrade_apply -->
+```bash
+cu upgrade --yes
+```

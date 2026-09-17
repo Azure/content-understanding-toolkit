@@ -25,9 +25,11 @@ secret / real hostname scrubbed, so they are safe to commit and replay anywhere.
 
 from __future__ import annotations
 
+from contextlib import contextmanager, nullcontext
 import json
 import os
 import re
+import shutil
 from pathlib import Path
 from urllib.parse import parse_qs, parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -69,6 +71,17 @@ _SENSITIVE_QUERY = [
     "si",
     "sip",
 ]
+
+
+def copy_sample_invoice(destination: str | Path = "sample_invoice.pdf") -> Path:
+    from support.command_catalog import record_sample
+
+    source = RECORDINGS_DIR.parent / "fixtures" / "sample_invoice.pdf"
+    target = Path(destination)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    record_sample(source)
+    return target
 
 
 def mode() -> str:
@@ -203,6 +216,7 @@ def cassette_path(name: str) -> Path:
     return RECORDINGS_DIR / f"{name}.yaml"
 
 
+@contextmanager
 def use_cassette(name: str):
     """Return the VCR cassette context manager for *name*.
 
@@ -210,12 +224,15 @@ def use_cassette(name: str):
     In ``playback`` mode a missing cassette skips the test so CI stays green
     until recordings are generated.
     """
-    if mode() == "live":
-        import contextlib
-        return contextlib.nullcontext()
-    if mode() == "playback" and not cassette_path(name).exists():
+    from support.command_catalog import recording_evidence
+
+    current_mode = mode()
+    path = cassette_path(name)
+    if current_mode == "playback" and not path.exists():
         pytest.skip(f"no cassette {name}.yaml (run with CU_TEST_REC_MODE=record to create)")
-    return build_vcr().use_cassette(str(cassette_path(name)))
+    manager = nullcontext() if current_mode == "live" else build_vcr().use_cassette(str(path))
+    with manager as cassette, recording_evidence(path, current_mode, cassette):
+        yield cassette
 
 
 def write_cloud_profile(_root: Path) -> None:

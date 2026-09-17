@@ -59,6 +59,10 @@ cd "${product_dir}"
 python scripts/check_headers.py
 end_section
 
+section "Documentation snippets"
+python scripts/update-snippet.py check --report .pytest_cache/snippet-verification.json
+end_section
+
 section "Frontend CU SDK boundary"
 python scripts/validate_frontend_sdk_boundary.py
 end_section
@@ -192,7 +196,10 @@ python -m pytest -q -m unit tests/unit/core/
 end_section
 
 section "Unit tests - remaining standalone modules"
-python -m pytest -q -m unit --ignore=tests/unit/core/ tests/unit/
+python -m pytest -q -m unit --ignore=tests/unit/core/ tests/unit/ \
+    --command-catalog "${product_dir}/.pytest_cache/command-catalog.json" \
+    --command-matrix "${product_dir}/.pytest_cache/command-test-matrix.md" \
+    --require-command-coverage
 end_section
 
 export CU_TEST_REC_MODE=playback

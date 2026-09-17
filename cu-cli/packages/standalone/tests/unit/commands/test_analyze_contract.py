@@ -9,16 +9,20 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from click.testing import CliRunner
+from click import unstyle
 import pytest
 
-from cu_cli.cli import main
+from support.command_catalog import invoke_cli
+from support.recording import copy_sample_invoice
 
 pytestmark = pytest.mark.unit
 
 
-def _run(*args: str):
-    return CliRunner().invoke(main, list(args))
+def _run(
+    *args: str,
+    placeholder_values: dict[str, str] | None = None,
+):
+    return invoke_cli(args, placeholder_values=placeholder_values)
 
 
 @pytest.fixture
@@ -929,7 +933,11 @@ def test_source_pattern_is_nonrecursive_and_accepts_unknown_extensions(
     assert not Path("results/nested/nested.new.result.json").exists()
 
 
-def test_recursive_source_preserves_relative_output_path(analyze_runtime):
+@pytest.mark.parametrize("recursive_option", ["--recursive", "-r"])
+@pytest.mark.parametrize("output_option", ["--output-dir", "-d"])
+def test_recursive_source_preserves_relative_output_path(
+    analyze_runtime, recursive_option, output_option,
+):
     nested = Path("documents/nested")
     nested.mkdir(parents=True)
     (nested / "input.pdf").write_text("input")
@@ -938,15 +946,44 @@ def test_recursive_source_preserves_relative_output_path(analyze_runtime):
         "analyze",
         "--source",
         "documents",
-        "--recursive",
+        recursive_option,
         "--json",
-        "--output-dir",
+        output_option,
         "results",
         "--yes",
     )
 
     assert result.exit_code == 0, result.output
     assert Path("results/nested/input.pdf.result.json").exists()
+
+
+def test_explicit_llm_input_uses_markdown_renderer(analyze_runtime, monkeypatch):
+    Path("input.pdf").write_text("input")
+    markdown = "# Extracted content\n"
+    analysis = {"contents": [{
+        "kind": "document", "mimeType": "application/pdf", "path": "input1",
+        "markdown": markdown,
+        "pages": [{"pageNumber": 1, "spans": [{"offset": 0, "length": len(markdown)}]}],
+    }]}
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze._run_one", lambda _client, job: (job, analysis),
+    )
+    result = _run("analyze", "input.pdf", "--llm-input")
+    assert result.exit_code == 0, result.output
+    assert markdown in result.stdout
+    default = _run("analyze", "input.pdf")
+    assert default.exit_code == 0, default.output
+    assert result.stdout == default.stdout
+
+
+def test_llm_input_and_json_are_mutually_exclusive_before_service(monkeypatch):
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze.build_client",
+        lambda *_args, **_kwargs: pytest.fail("client must not be built"),
+    )
+    result = _run("analyze", "input.pdf", "--llm-input", "--json")
+    assert result.exit_code == 2
+    assert "--llm-input and --json cannot be combined" in result.output
 
 
 def test_output_file_writes_single_primary_payload(analyze_runtime):
@@ -963,6 +1000,88 @@ def test_output_file_writes_single_primary_payload(analyze_runtime):
 
     assert result.exit_code == 0, result.output
     assert json.loads(Path("custom.json").read_text())["status"] == "Succeeded"
+
+
+@pytest.mark.parametrize("input_mode", ["positional", "file", "source", "url"])
+@pytest.mark.parametrize("view", ["markdown", "json"])
+@pytest.mark.parametrize("destination", ["stdout", "file", "directory"])
+def test_input_view_and_destination_combinations(
+    analyze_runtime, monkeypatch, input_mode, view, destination,
+):
+    from cu_cli.output import render_markdown
+
+    copy_sample_invoice("documents/sample_invoice.pdf")
+    url = "https://storage.example.test/sample_invoice.pdf"
+    inputs = {
+        "positional": ("documents/sample_invoice.pdf",),
+        "file": ("--file", "documents/sample_invoice.pdf"),
+        "source": ("--source", "documents", "--pattern", "*.pdf"),
+        "url": ("--url", url),
+    }[input_mode]
+    markdown = "# Controlled contract result\n"
+    analysis = {"analyzerId": "prebuilt-layout", "contents": [{
+        "kind": "document", "mimeType": "application/pdf", "path": "input1", "markdown": markdown,
+        "pages": [{"pageNumber": 1, "spans": [{"offset": 0, "length": len(markdown)}]}],
+    }]}
+    response = {"status": "Succeeded", "result": analysis}
+    jobs = []
+
+    def run_one(_client, job):
+        jobs.append(job)
+        return job, response if view == "json" else analysis
+
+    monkeypatch.setattr("cu_cli.commands.analyze._run_one", run_one)
+    suffix = "json" if view == "json" else "md"
+    path = Path(f"results/custom.{suffix}" if destination == "file" else f"results/sample_invoice.pdf.result.{suffix}")
+    output_arguments = {
+        "stdout": (), "file": ("--output-file", str(path)), "directory": ("--output-dir", "results"),
+    }[destination]
+    result = _run("analyze", *inputs, "--json" if view == "json" else "--llm-input", *output_arguments)
+
+    assert result.exit_code == 0, result.output
+    assert len(jobs) == 1
+    assert jobs[0].analyzer_id == "prebuilt-layout"
+    if input_mode == "url":
+        assert jobs[0].input_url == url
+    else:
+        assert Path(jobs[0].input_ref).read_bytes() == Path("documents/sample_invoice.pdf").read_bytes()
+    text = result.stdout if destination == "stdout" else path.read_text(encoding="utf-8")
+    if view == "json":
+        assert json.loads(text) == response
+    else:
+        assert text.rstrip("\n") == render_markdown(analysis).rstrip("\n")
+    if destination == "stdout":
+        assert not Path("results").exists()
+    else:
+        assert result.stdout == ""
+        assert list(Path("results").rglob("*.*")) == [path]
+
+
+@pytest.mark.parametrize("input_mode", ["positional", "file", "source", "url"])
+@pytest.mark.parametrize("view", ["--json", "--llm-input"])
+def test_multiple_inputs_with_single_output_fail_before_service(monkeypatch, input_mode, view):
+    copy_sample_invoice("documents/first.pdf")
+    copy_sample_invoice("documents/second.pdf")
+    inputs = {
+        "positional": ("documents/first.pdf", "documents/second.pdf"),
+        "file": ("--file", "documents/first.pdf", "--file", "documents/second.pdf"),
+        "source": ("--source", "documents", "--pattern", "*.pdf"),
+        "url": ("--url", "https://storage.example.test/first.pdf", "--url", "https://storage.example.test/second.pdf"),
+    }[input_mode]
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze.build_client",
+        lambda *_args, **_kwargs: pytest.fail("invalid output combination must not create a client"),
+    )
+
+    result = _run(
+        "analyze", *inputs, view, "--analyzer", "prebuilt-layout", "--output-file", "result.json",
+        "--report-file", "report.json",
+    )
+
+    assert result.exit_code == 2, result.output
+    assert "exactly one file" in result.output
+    assert not Path("result.json").exists()
+    assert not Path("report.json").exists()
 
 
 @pytest.mark.parametrize(
@@ -1076,7 +1195,7 @@ def test_output_file_rejects_multiple_inputs_before_client(monkeypatch):
 def test_dry_run_makes_no_client_call_or_file_write(monkeypatch):
     source = Path("documents")
     source.mkdir()
-    (source / "input.pdf").write_text("input")
+    copy_sample_invoice(source / "sample_invoice.pdf")
     (source / ".DS_Store").write_text("metadata")
     monkeypatch.setattr(
         "cu_cli.commands.analyze.Profile.load",
@@ -1090,10 +1209,13 @@ def test_dry_run_makes_no_client_call_or_file_write(monkeypatch):
         lambda *_args, **_kwargs: pytest.fail("client must not build"),
     )
 
+    # region Snippet:analyze_dry_run
     result = _run(
         "analyze",
         "--source",
         str(source),
+        "--analyzer",
+        "prebuilt-layout",
         "--json",
         "--output-dir",
         "results",
@@ -1101,6 +1223,7 @@ def test_dry_run_makes_no_client_call_or_file_write(monkeypatch):
         "report.json",
         "--dry-run",
     )
+    # endregion
 
     assert result.exit_code == 0, result.output
     assert "Dry run" in result.output
@@ -1158,7 +1281,7 @@ def test_dry_run_and_yes_are_mutually_exclusive():
     [("error", 0, 2), ("skip", 0, 0), ("reanalyze", 1, 0)],
 )
 def test_on_existing_policy(analyze_runtime, monkeypatch, policy, expected_calls, expected_code):
-    Path("input.pdf").write_text("input")
+    copy_sample_invoice("input.pdf")
     output = Path("result.json")
     output.write_text("existing")
     calls = {"count": 0}
@@ -1230,3 +1353,135 @@ def test_auth_mode_is_forwarded_to_client_builder(monkeypatch):
 
     assert result.exit_code == 0, result.output
     assert captured["auth_mode_override"] == "login"
+
+
+def test_batch_pattern_example_requires_source_and_writes_selected_outputs(analyze_runtime):
+    source = Path("documents")
+    source.mkdir()
+    copy_sample_invoice(source / "sample_invoice.pdf")
+    (source / "ignored.txt").write_text("ignored")
+    nested = source / "nested"
+    nested.mkdir()
+    copy_sample_invoice(nested / "sample_invoice.pdf")
+
+    _run(
+        "analyze", "--source", "documents", "--pattern", "*.pdf",
+        "--analyzer", "prebuilt-layout", "--output-dir", "results", "--json",
+    )
+    assert {path.name for path in Path("results").iterdir()} == {"sample_invoice.pdf.result.json"}
+    _run(
+        "analyze", "--source", "documents", "--pattern", "*.pdf", "--recursive",
+        "--analyzer", "prebuilt-layout", "--output-dir", "recursive-results", "--json",
+        "--report-file", "run-report.json", "--yes", "--concurrency", "8",
+    )
+    assert Path("recursive-results/nested/sample_invoice.pdf.result.json").is_file()
+    report = json.loads(Path("run-report.json").read_text())
+    assert report["counts"]["succeeded"] == 2
+    assert report["counts"]["failed"] == 0
+
+
+@pytest.mark.parametrize("concurrency", ["1", "4", "32"])
+@pytest.mark.parametrize("option", ["--concurrency", "-j"])
+def test_analyze_concurrency_boundaries_reach_runner(analyze_runtime, monkeypatch, concurrency, option):
+    copy_sample_invoice("input.pdf")
+    jobs = []
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze._run_one",
+        lambda _client, job: (jobs.append(job) or (job, {"status": "Succeeded"})),
+    )
+    result = _run("analyze", "input.pdf", "--json", option, concurrency)
+    assert result.exit_code == 0, result.output
+    assert len(jobs) == 1
+
+
+@pytest.mark.parametrize("concurrency", ["0", "33", "invalid"])
+def test_analyze_concurrency_invalid_values_fail_before_client(monkeypatch, concurrency):
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze.build_client",
+        lambda *_args, **_kwargs: pytest.fail("client must not be built"),
+    )
+    result = _run("analyze", "input.pdf", "--concurrency", concurrency)
+    assert result.exit_code == 2
+
+
+@pytest.mark.parametrize("source", ["documents", "./documents"])
+def test_documented_pattern_without_source_is_rejected_before_client(monkeypatch, source):
+    Path("documents").mkdir()
+    Path("documents/input.pdf").write_text("input")
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze.build_client",
+        lambda *_args, **_kwargs: pytest.fail("invalid example must not call service"),
+    )
+    result = _run("analyze", source, "--pattern", "*.pdf")
+    assert result.exit_code == 2
+    assert "--source" in result.output
+
+
+def test_url_documentation_preserves_sas_and_rejects_download(analyze_runtime, monkeypatch):
+    url = "https://storage.example.net/container/video.mp4?sv=<version>&sp=r&sig=<signature>"
+    bound_url = "https://storage.example.net/container/video.mp4?sv=2026-01-01&sp=r&sig=example"
+    received = []
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze._run_one",
+        lambda _client, job: (received.append(job.input_url) or (job, {"status": "Succeeded"})),
+    )
+    # region Snippet:analyze_url
+    result = _run(
+        "analyze", "--url", url, "--analyzer", "prebuilt-videoSearch", "--json",
+        placeholder_values={"version": "2026-01-01", "signature": "example"},
+    )
+    # endregion
+    assert received == [bound_url]
+    assert "sig=example" not in result.output
+    video_url = (
+        "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/"
+        "raw/refs/heads/main/videos/sdk_samples/FlightSimulator.mp4"
+    )
+    _run(
+        "analyze", "--url", video_url, "--analyzer", "prebuilt-videoSearch", "--json",
+    )
+    assert received == [bound_url, video_url]
+    sas_url = "https://<storage-account>.blob.core.windows.net/<container>/<blob>?<sas-token>"
+    sas_token = "sv=2026-01-01&sp=r&sig=a%2Bb%2Fc%3D"
+    bound_sas_url = "https://cuclitest.blob.core.windows.net/samples/video.mp4?" + sas_token
+    # region Snippet:analyze_sas_url
+    result = _run(
+        "analyze", "--url", sas_url, "--analyzer", "prebuilt-videoSearch", "--json",
+        placeholder_values={
+            "storage-account": "cuclitest", "container": "samples", "blob": "video.mp4",
+            "sas-token": sas_token,
+        },
+    )
+    # endregion
+    assert received == [bound_url, video_url, bound_sas_url]
+    assert "a%2Bb%2Fc%3D" not in result.output
+    # region Snippet:analyze_urls_preview
+    result = _run(
+        "analyze", "--url",
+        "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/"
+        "raw/refs/heads/main/document/invoice.pdf",
+        "--url", "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/"
+        "raw/refs/heads/main/document/receipt.png", "--output-dir", "results",
+        "--analyzer", "prebuilt-layout", "--dry-run",
+    )
+    # endregion
+    assert received == [bound_url, video_url, bound_sas_url]
+    assert "2 remote size(s) unavailable" in unstyle(result.output)
+    assert not Path("results").exists()
+
+
+def test_analyze_uses_saved_default_analyzer(monkeypatch):
+    invoke_cli(["profile", "set", "default_analyzer", "prebuilt-layout"])
+    copy_sample_invoice()
+    jobs = []
+    monkeypatch.setattr("cu_cli.commands.analyze.build_client", lambda *_args, **_kwargs: object())
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze._run_one",
+        lambda _client, job: (jobs.append(job) or (job, {"status": "Succeeded"})),
+    )
+    _run("analyze", "sample_invoice.pdf", "--json")
+    assert jobs[0].analyzer_id == "prebuilt-layout"
+    _run(
+        "analyze", "sample_invoice.pdf", "--analyzer", "invoice_v1", "--json",
+    )
+    assert jobs[-1].analyzer_id == "invoice_v1"
