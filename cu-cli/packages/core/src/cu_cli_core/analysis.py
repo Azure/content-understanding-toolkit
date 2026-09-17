@@ -191,7 +191,7 @@ def disambiguate_collisions(jobs: list[AnalyzeJob]) -> int:
     for j in jobs:
         if j.out_path is None or j.out_path not in collided:
             continue
-        digest = hashlib.sha1(j.input_ref.encode("utf-8")).hexdigest()[:8]
+        digest = hashlib.sha256(j.input_ref.encode("utf-8")).hexdigest()[:8]
         name = j.out_path.name
         for suffix in RESULT_SUFFIXES:
             if name.endswith(suffix):

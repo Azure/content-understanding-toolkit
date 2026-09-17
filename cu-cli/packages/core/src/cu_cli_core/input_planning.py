@@ -496,7 +496,7 @@ def plan_outputs(
         item = input_plan.inputs[index]
         if item.is_remote:
             continue
-        digest = hashlib.sha1(item.reference.encode("utf-8")).hexdigest()
+        digest = hashlib.sha256(item.reference.encode("utf-8")).hexdigest()
         suffix = _RESULT_SUFFIX[view]
         assert destination is not None
         base = destination.with_name(destination.name[: -len(suffix)])

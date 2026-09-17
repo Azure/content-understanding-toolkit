@@ -1,5 +1,12 @@
 # Release History
 
+## 0.1.0b4 (2026-09-17)
+
+### Bugs Fixed
+
+- Replaced SHA-1 with SHA-256 for deterministic output filename collision
+  suffixes.
+
 ## 0.1.0b3 (2026-09-14)
 
 ### Features Added
