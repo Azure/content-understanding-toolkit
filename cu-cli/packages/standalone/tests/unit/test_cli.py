@@ -1384,6 +1384,39 @@ def test_validate_strict_fails_on_warnings():
     assert "warning" in res.output.lower()
 
 
+def test_validate_strict_spec_json_documentation_example(monkeypatch):
+    monkeypatch.setattr(
+        "cu_cli.commands.analyzer._client",
+        lambda *_args, **_kwargs: pytest.fail("local validation must not create a service client"),
+    )
+    body = {
+        "analyzerId": "invoice_v1",
+        "baseAnalyzerId": "prebuilt-document",
+        "models": {"completion": "gpt-5.2"},
+        "fieldSchema": {
+            "fields": {
+                "InvoiceNumber": {
+                    "type": "string",
+                    "method": "extract",
+                    "description": "Invoice number printed on the document.",
+                }
+            }
+        },
+    }
+    Path("schema.json").write_text(json.dumps(body), encoding="utf-8")
+
+    # region Snippet:schema_validate_strict
+    result = _run("analyzer", "validate", "schema.json", "--strict", "--spec", "--json")
+    # endregion
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["strict"] is True
+    assert payload["errors"] == []
+    assert payload["warnings"] == []
+
+
 def test_validate_strict_json_reports_failure_for_warnings():
     body = {
         "analyzerId": "a1",
@@ -1401,14 +1434,21 @@ def test_validate_strict_json_reports_failure_for_warnings():
     }
     Path("warn-strict.json").write_text(json.dumps(body), encoding="utf-8")
 
-    res = _run("analyzer", "validate", "warn-strict.json", "--strict", "--json")
+    normal = _run("analyzer", "validate", "warn-strict.json", "--spec", "--json")
+    assert normal.exit_code == 0, normal.output
+    normal_payload = json.loads(normal.stdout)
+    assert normal_payload["ok"] is True
+    assert normal_payload["errors"] == []
+    assert normal_payload["warnings"]
+
+    res = _run("analyzer", "validate", "warn-strict.json", "--strict", "--spec", "--json")
 
     assert res.exit_code == 2
     payload = json.loads(res.output)
     assert payload["ok"] is False
     assert payload["strict"] is True
     assert payload["errors"] == []
-    assert payload["warnings"]
+    assert payload["warnings"] == normal_payload["warnings"]
 
 
 def test_validate_json_output_contains_errors_and_warnings():
@@ -2526,6 +2566,20 @@ def test_analyzer_list_kind_prebuilt_json(monkeypatch):
     assert res.exit_code == 0, res.output
     payload = json.loads(res.output)
     assert [a["analyzerId"] for a in payload] == ["prebuilt-document", "prebuilt-invoice"]
+
+
+def test_analyzer_list_kind_prebuilt_markdown_count(monkeypatch):
+    monkeypatch.setattr(
+        "cu_cli.commands.analyzer._client", lambda *_args, **_kwargs: _FakeListAnalyzerClient(),
+    )
+    # region Snippet:analyzer_list_prebuilt
+    result = _run("analyzer", "list", "--kind", "prebuilt")
+    # endregion
+    assert result.exit_code == 0, result.output
+    assert "2 analyzer(s)" in result.output
+    assert "prebuilt-document" in result.output
+    assert "prebuilt-invoice" in result.output
+    assert "my_custom_v1" not in result.output
 
 
 def test_analyzer_list_kind_all_is_default(monkeypatch):

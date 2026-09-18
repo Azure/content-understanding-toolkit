@@ -211,6 +211,7 @@ def test_usage_guide_separates_read_only_examples_from_mutations():
     inspection = guide.split("### Inspect and manage\n", 1)[1].split("\n### ", 1)[0]
     assert "--fix-defaults" not in readiness
     assert "analyzer delete" not in inspection
+    assert "analyzer copy" not in inspection
     assert "cu analyzer delete invoice_v1 --yes" not in guide
     assert "<!-- Snippet:doctor_fix_defaults -->" in guide
     assert "<!-- Snippet:analyzer_delete -->" in guide
@@ -256,3 +257,23 @@ def test_usage_guide_places_examples_and_outputs_in_their_owning_sections():
     assert "## Additional workflows" not in guide
     assert "generated from passing command tests" not in guide
     assert "sanitized service recording" not in guide
+
+
+def test_new_command_examples_have_distinct_sources_and_owning_sections():
+    readme = _README.read_text(encoding="utf-8")
+    prebuilt = readme.split("## Use prebuilt analyzers\n", 1)[1].split("\n## ", 1)[0]
+    assert "<!-- Snippet:analyzer_list_prebuilt -->" in prebuilt
+    assert "<!-- Snippet:analyzer_list -->" not in prebuilt
+    assert "analyzer_list" in DOC_SCENARIOS["analyzer_management"]
+
+    guide = _USAGE_GUIDE.read_text(encoding="utf-8")
+    sections = {
+        "Select multiple local inputs": ("analyze_files_preview", "analyze_sources_preview"),
+        "Inspect service usage": ("analyze_usage",),
+        "Create a schema": ("schema_validate_strict",),
+        "Copy within a resource": ("analyzer_copy_same_resource",),
+    }
+    for heading, identifiers in sections.items():
+        section = guide.split(f"### {heading}\n", 1)[1].split("\n### ", 1)[0]
+        assert all(f"<!-- Snippet:{identifier} -->" in section for identifier in identifiers)
+    assert "../README.md#supported-content-understanding-api-versions" in guide

@@ -126,7 +126,7 @@ def test_public_video_url_uses_real_sdk(cloud_project):
     assert any(content["endTimeMs"] > content["startTimeMs"] for content in contents)
 
 
-@pytest.mark.parametrize("view", ["markdown_file", "json_file", "json_stdout", "llm_input"])
+@pytest.mark.parametrize("view", ["markdown_file", "json_file", "json_stdout", "llm_input", "usage"])
 def test_analysis_output_views_use_real_sdk_and_recordings(cloud_project, view):
     _copy_sample()
     options = {
@@ -134,9 +134,10 @@ def test_analysis_output_views_use_real_sdk_and_recordings(cloud_project, view):
         "json_file": ("--json", "--output-file", "results/invoice.json"),
         "json_stdout": ("--json",),
         "llm_input": ("--llm-input", "--time"),
+        "usage": ("--json", "--usage", "--time"),
     }[view]
     arguments = ("analyze", "sample_invoice.pdf", "--analyzer", "prebuilt-layout", *options)
-    with use_cassette("analyze_single"):
+    with use_cassette("analyze_single") as cassette:
         if view == "markdown_file":
             # region Snippet:analyze_markdown_file
             result = _run(*arguments)
@@ -149,12 +150,18 @@ def test_analysis_output_views_use_real_sdk_and_recordings(cloud_project, view):
             # region Snippet:analyze_json
             result = _run(*arguments)
             # endregion
+        elif view == "usage":
+            # region Snippet:analyze_usage
+            result = _run(*arguments)
+            # endregion
         else:
             # region Snippet:analyze_llm_input
             result = _run(*arguments)
             # endregion
     assert result.exit_code == 0, result.output
-    if view in {"json_file", "json_stdout"}:
+    if mode() == "playback":
+        assert cassette.play_count > 0
+    if view in {"json_file", "json_stdout", "usage"}:
         text = Path("results/invoice.json").read_text(encoding="utf-8") if view == "json_file" else result.stdout
         payload = json.loads(text)
         assert payload["status"] == "Succeeded"
@@ -163,12 +170,19 @@ def test_analysis_output_views_use_real_sdk_and_recordings(cloud_project, view):
     else:
         text = Path("results/invoice.md").read_text(encoding="utf-8") if view == "markdown_file" else result.stdout
         assert "mimeType:" in text and "<!-- InputPageNumber:" in text
-    if view == "llm_input":
+    if view == "usage":
+        usage_text = result.stderr.split("Usage:", 1)[1]
+        assert "sample_invoice.pdf" in usage_text
+        reported_usage, _end = json.JSONDecoder().raw_decode(usage_text[usage_text.index("{"):])
+        assert reported_usage == payload["usage"]
+        assert reported_usage
+    if view in {"llm_input", "usage"}:
         timings = [line for line in result.stderr.splitlines() if "time:" in line]
         assert len(timings) == 2
-        # region Snippet:analysis_timing
-        record_output(re.sub(r"\d+\.\d+s", "<seconds>s", "\n".join(timings)))
-        # endregion
+        if view == "llm_input":
+            # region Snippet:analysis_timing
+            record_output(re.sub(r"\d+\.\d+s", "<seconds>s", "\n".join(timings)))
+            # endregion
 
 
 def test_configure_profile_then_analyze_without_preseeded_settings(monkeypatch):

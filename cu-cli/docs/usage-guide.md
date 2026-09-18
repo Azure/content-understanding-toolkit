@@ -409,6 +409,9 @@ Understanding SDK's `to_llm_input()` helper. Use `--json` for the complete
 analyzer result as JSON or `--llm-input` to select the default Markdown view
 explicitly.
 
+For synchronous analysis with the preview API, see the
+[inline analysis example](../README.md#supported-content-understanding-api-versions).
+
 Use the CU CLI profile's default analyzer:
 
 <!-- Snippet:analyze_with_profile_default -->
@@ -523,6 +526,38 @@ cu analyze --url https://github.com/Azure-Samples/azure-ai-content-understanding
   --analyzer prebuilt-layout \
   --dry-run
 ```
+
+### Select multiple local inputs
+
+To select specific files, repeat `--file`. Place PDFs named `invoice one.pdf`
+and `invoice two.pdf` in the working directory, or replace these paths with
+your own existing files. Quote paths that contain spaces:
+
+<!-- Snippet:analyze_files_preview -->
+```bash
+cu analyze --file "invoice one.pdf" --file "invoice two.pdf" --analyzer prebuilt-layout \
+  --output-dir selected-results \
+  --json \
+  --dry-run
+```
+
+To select files from multiple directories, repeat `--source`. Prepare the
+`incoming` and `archive` directories with PDFs. The same `--pattern` applies
+to both directories; only immediate matching files are selected unless you
+add `--recursive`:
+
+<!-- Snippet:analyze_sources_preview -->
+```bash
+cu analyze --source incoming --source archive --pattern "*.pdf" --analyzer prebuilt-layout \
+  --output-dir combined-results \
+  --json \
+  --dry-run
+```
+
+These commands preview the selection without contacting Content Understanding
+or writing result files. After reviewing the plan, remove `--dry-run` to submit
+the files. Do not combine `--file` with `--source`, or mix either named
+selection mode with positional inputs.
 
 ### Analyze files in local directories
 
@@ -660,6 +695,22 @@ Total command time: <seconds>s
 
 `<seconds>` represents a dynamic duration. Timings vary by machine and request.
 
+### Inspect service usage
+
+Add `--usage` to print the usage returned by the service, and `--time` to include
+CU service and total command duration. This submits a new analysis request;
+it does not inspect a saved result:
+
+<!-- Snippet:analyze_usage -->
+```bash
+cu analyze sample_invoice.pdf --analyzer prebuilt-layout --json --usage --time
+```
+
+The primary JSON result goes to standard output. Usage and timing go to
+standard error, so scripts can consume the result without those messages.
+Usage fields depend on the analyzer and API response and are not a cost
+estimate. CU CLI reports when the service does not return usage details.
+
 Run `cu analyze --help` for the complete input-selection and output contract.
 
 ## Analyzers
@@ -734,6 +785,18 @@ A successful validation prints an `ok` result and makes no service call. Invalid
 JSON, unsupported properties, and incompatible schema options return a nonzero
 status with the failing location.
 
+For CI or other workflows that must also reject warnings, add `--strict`.
+This command validates locally against the bundled service contract and
+prints a JSON report:
+
+<!-- Snippet:schema_validate_strict -->
+```bash
+cu analyzer validate schema.json --strict --spec --json
+```
+
+With `--strict`, a warnings-only result exits with status `2` instead of `0`.
+Without `--strict`, warnings alone do not fail validation.
+
 ### Create and test
 
 Use the reviewed `schema.json` from the previous section. The ID `invoice_v1`
@@ -796,6 +859,24 @@ To list only custom analyzers as sorted JSON:
 ```bash
 cu analyzer list --json --kind custom --sort-by analyzerId
 ```
+
+### Copy within a resource
+
+To create a separately named copy on the selected resource, use different
+source and destination IDs. The source `invoice_v1` must exist, and the
+destination `invoice_v2` must not already exist. This creates a new analyzer
+definition; it does not copy analysis results:
+
+<!-- Snippet:analyzer_copy_same_resource -->
+```bash
+cu analyzer copy invoice_v1 invoice_v2
+```
+
+Copying still requires Azure CLI sign-in and the
+[resource-discovery permissions](#copy-across-resources) described below.
+CU service calls use the selected profile's configured authentication. When
+the copy is no longer needed, follow [Delete an analyzer](#delete-an-analyzer)
+with `invoice_v2`, after verifying the selected profile and endpoint.
 
 ### Copy across resources
 

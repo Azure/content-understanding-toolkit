@@ -1235,6 +1235,59 @@ def test_dry_run_makes_no_client_call_or_file_write(monkeypatch):
     assert not Path("report.json").exists()
 
 
+@pytest.mark.parametrize("selection_mode", ["files", "sources"])
+def test_explicit_multi_input_previews_preserve_selection(monkeypatch, selection_mode):
+    from cu_cli_core import input_planning
+
+    if selection_mode == "files":
+        sample_paths = ("invoice one.pdf", "invoice two.pdf")
+        selection = ("--file", sample_paths[0], "--file", sample_paths[1])
+        output_dir = "selected-results"
+    else:
+        sample_paths = ("incoming/first.pdf", "archive/second.pdf")
+        selection = ("--source", "incoming", "--source", "archive", "--pattern", "*.pdf")
+        output_dir = "combined-results"
+    for sample in sample_paths:
+        copy_sample_invoice(sample)
+    copy_sample_invoice("unselected.pdf")
+    if selection_mode == "sources":
+        copy_sample_invoice("incoming/nested/excluded.pdf")
+        Path("incoming/excluded.txt").write_text("not a PDF", encoding="utf-8")
+
+    selections = []
+    original_plan_inputs = input_planning.plan_inputs
+
+    def capture_selection(**kwargs):
+        plan = original_plan_inputs(**kwargs)
+        selections.append({item.path for item in plan.inputs})
+        return plan
+
+    monkeypatch.setattr(input_planning, "plan_inputs", capture_selection)
+    monkeypatch.setattr(
+        "cu_cli.commands.analyze.build_client",
+        lambda *_args, **_kwargs: pytest.fail("dry-run must not create a service client"),
+    )
+    arguments = (
+        "analyze", *selection, "--analyzer", "prebuilt-layout", "--output-dir", output_dir,
+        "--json", "--dry-run",
+    )
+    if selection_mode == "files":
+        # region Snippet:analyze_files_preview
+        result = _run(*arguments)
+        # endregion
+    else:
+        # region Snippet:analyze_sources_preview
+        result = _run(*arguments)
+        # endregion
+
+    assert result.exit_code == 0, result.output
+    assert selections == [{Path(sample).resolve() for sample in sample_paths}]
+    assert "Selected: 2 input(s)" in result.output
+    assert "No service calls or files were written" in result.output
+    assert not Path(output_dir).exists()
+    assert list(Path.cwd().rglob("*.result.*")) == []
+
+
 def test_discovery_skips_are_in_batch_report(analyze_runtime):
     source = Path("documents")
     source.mkdir()

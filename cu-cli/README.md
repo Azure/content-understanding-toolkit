@@ -191,9 +191,9 @@ Further reading:
 
 List the prebuilt analyzers available to the configured resource:
 
-<!-- Snippet:analyzer_list -->
+<!-- Snippet:analyzer_list_prebuilt -->
 ```bash
-cu analyzer list
+cu analyzer list --kind prebuilt
 ```
 
 Start with the `prebuilt-layout` content extraction analyzer. It extracts text,

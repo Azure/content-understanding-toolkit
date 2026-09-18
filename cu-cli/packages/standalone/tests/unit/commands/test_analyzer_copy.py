@@ -309,22 +309,26 @@ def test_copy_named_object_selectors_match_positionals(monkeypatch):
             api_version="2025-11-01",
         ),
     )
-    monkeypatch.setattr(
-        analyzers_core,
-        "copy_analyzer",
-        lambda _client, source, destination, **_kwargs: calls.append(
-            (source, destination)
-        ),
-    )
 
-    positional = _invoke("analyzer", "copy", "src", "dst")
+    def copy_analyzer(client, source, destination, **kwargs):
+        assert client is sentinel
+        assert kwargs["target_client"] is None
+        assert kwargs["source_azure_resource_id"] is None
+        assert kwargs["target_azure_resource_id"] is None
+        calls.append((source, destination))
+
+    monkeypatch.setattr(analyzers_core, "copy_analyzer", copy_analyzer)
+
+    # region Snippet:analyzer_copy_same_resource
+    positional = _invoke("analyzer", "copy", "invoice_v1", "invoice_v2")
+    # endregion
     named = _invoke(
-        "analyzer", "copy", "--source", "src", "--destination", "dst"
+        "analyzer", "copy", "--source", "invoice_v1", "--destination", "invoice_v2"
     )
 
     assert positional.exit_code == 0, positional.output
     assert named.exit_code == 0, named.output
-    assert calls == [("src", "dst"), ("src", "dst")]
+    assert calls == [("invoice_v1", "invoice_v2"), ("invoice_v1", "invoice_v2")]
 
 
 def test_copy_rejects_mixed_positional_and_named_objects_before_service(monkeypatch):
