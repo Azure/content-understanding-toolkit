@@ -20,10 +20,15 @@
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 16px rgba(16, 24, 40, 0.06);
   --shadow-lg: 0 2px 6px rgba(16, 24, 40, 0.08), 0 12px 40px rgba(16, 24, 40, 0.1);
 
-  --font: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --mono: 'Cascadia Code', 'SF Mono', 'Consolas', monospace;
+  /* The stack Microsoft Learn computes to. All system fonts: nothing to download. */
+  --font: 'Segoe UI', 'Segoe UI Variable Text', -apple-system, BlinkMacSystemFont,
+    'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --mono: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, Courier, monospace;
 
   --page: 1120px;
+  /* One measure for every block of body copy. `none` lets copy run the full
+     content column, stopping at the page gutter. */
+  --measure: none;
   --dial-bar: 92px;
 }
 
@@ -83,7 +88,6 @@ a {
 }
 
 .section__head {
-  max-width: 760px;
   margin-bottom: 36px;
 }
 
@@ -115,6 +119,7 @@ a {
   margin-top: 14px;
   font-size: 18px;
   color: var(--ink-2);
+  max-width: var(--measure);
 }
 
 .stack {
@@ -191,7 +196,7 @@ a {
   margin-top: 22px;
   font-size: 20px;
   color: var(--ink-2);
-  max-width: 62ch;
+  max-width: var(--measure);
 }
 
 .hero__meta {
@@ -614,7 +619,7 @@ a {
   margin-top: 16px;
   color: rgba(255, 255, 255, 0.82);
   font-size: 17px;
-  max-width: 60ch;
+  max-width: var(--measure);
 }
 
 .cta__steps {

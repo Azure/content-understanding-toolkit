@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-standalone/
+.single-file-build/
 .vite/
 *.tsbuildinfo
 *.local
