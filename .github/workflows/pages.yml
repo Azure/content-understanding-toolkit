@@ -1,0 +1,99 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "dynamic_hitl/web_app/**"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "dynamic_hitl/web_app/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Let an in-flight deploy finish rather than cancelling it half-published.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: dynamic_hitl/web_app/package-lock.json
+
+      - name: Install explainer dependencies
+        working-directory: dynamic_hitl/web_app
+        run: npm ci
+
+      - name: Build explainer
+        working-directory: dynamic_hitl/web_app
+        run: |
+          npm run build
+          npm run build:single
+
+      - name: Assemble site
+        run: |
+          set -euo pipefail
+          mkdir -p _site/dynamic-hitl
+          cp -r site/. _site/
+          cp -r dynamic_hitl/web_app/dist/. _site/dynamic-hitl/
+          cp dynamic_hitl/web_app/dist-standalone/dynamic-hitl-explainer.html _site/
+          # Pages artifacts are served as-is, but this keeps any future
+          # underscore-prefixed path from being swallowed by Jekyll.
+          touch _site/.nojekyll
+
+      - name: Check every local link resolves
+        run: |
+          set -euo pipefail
+          status=0
+          while IFS= read -r file; do
+            while IFS= read -r href; do
+              target="${href%%#*}"
+              target="${target%%\?*}"
+              [[ -z "${target}" ]] && continue
+              resolved="$(dirname "${file}")/${target}"
+              if [[ "${resolved}" == */ ]]; then
+                resolved="${resolved}index.html"
+              fi
+              if [[ ! -e "${resolved}" ]]; then
+                echo "::error file=${file}::broken local link ${href}"
+                status=1
+              fi
+            done < <(grep -oE '(href|src)="\./[^"]*"' "${file}" | sed -E 's/^[a-z]+="//; s/"$//')
+          done < <(find _site -name '*.html')
+          exit "${status}"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: deploy to github pages
+    # Pull requests build and link-check only; main is what gets published.
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
