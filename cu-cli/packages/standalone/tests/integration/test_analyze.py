@@ -31,18 +31,22 @@ def _run(*args, **kwargs):
     return invoke_cli(args, **kwargs)
 
 
-def test_scenario_1_analyze_single_file_markdown(cloud_project):
+@pytest.mark.parametrize("analyzer_option", ["--analyzer", "-a"], ids=["long", "short"])
+def test_scenario_1_analyze_single_file_markdown(cloud_project, analyzer_option):
     _copy_sample()
-    with use_cassette("analyze_single"):
-        # region Snippet:analyze_layout
-        res = _run(
-            "analyze",
-            "sample_invoice.pdf",
-            "--analyzer",
-            "prebuilt-layout",
-        )
-        # endregion
+    arguments = ["analyze", "sample_invoice.pdf", analyzer_option, "prebuilt-layout"]
+    with use_cassette("analyze_single") as cassette:
+        if analyzer_option == "--analyzer":
+            # region Snippet:analyze_layout
+            res = _run(*arguments)
+            # endregion
+        else:
+            # region Snippet:analyze_layout_short
+            res = _run(*arguments, comment="`-a` is the short form of `--analyzer`.")
+            # endregion
     assert res.exit_code == 0, res.output
+    if mode() == "playback":
+        assert cassette.play_count > 0
     assert res.output.startswith("---")
     assert "mimeType:" in res.output
     assert "pages:" in res.output

@@ -51,13 +51,9 @@ changing the endpoint. Changing the working directory does not reset profiles.
 <!-- Snippet:profile_setup -->
 ```bash
 cu profile create dev
-
 cu profile set endpoint https://<dev-resource>.services.ai.azure.com/ --name dev
-
 cu profile create prod
-
 cu profile set endpoint https://<prod-resource>.services.ai.azure.com/ --name prod
-
 cu profile set-active dev
 ```
 
@@ -157,11 +153,8 @@ existing `prod` profile. These commands do not change configuration:
 <!-- Snippet:profile_workflow -->
 ```bash
 cu profile show
-
 cu profile get endpoint
-
 cu profile list
-
 cu profile show --name prod
 ```
 
@@ -182,9 +175,7 @@ resource:
 <!-- Snippet:profile_copy_cleanup -->
 ```bash
 cu profile copy dev test
-
 cu profile rename test staging
-
 cu profile delete staging --yes
 ```
 
@@ -216,7 +207,6 @@ Login authentication is the recommended default:
 <!-- Snippet:login_authentication -->
 ```bash
 az login
-
 cu profile set auth_mode login
 ```
 
@@ -252,7 +242,6 @@ version:
 <!-- Snippet:environment_inspection -->
 ```bash
 cu env-var list
-
 cu env-var list --json
 ```
 
@@ -328,7 +317,6 @@ These commands change local configuration only:
 <!-- Snippet:configure_model_mappings -->
 ```bash
 cu profile set model_deployments.gpt-5.2 my-gpt-52-deployment
-
 cu profile set model_deployments.text-embedding-3-large my-embedding-deployment
 ```
 
@@ -417,7 +405,6 @@ Use the CU CLI profile's default analyzer:
 <!-- Snippet:analyze_with_profile_default -->
 ```bash
 cu profile set default_analyzer prebuilt-layout
-
 cu analyze sample_invoice.pdf --json
 ```
 
@@ -736,9 +723,7 @@ output names:
 <!-- Snippet:schema_templates -->
 ```bash
 cu analyzer schema create --output-file schema.json
-
 cu analyzer schema create --modality image --output-file image-schema.json
-
 cu analyzer schema create --output-file classify.json --type classification
 ```
 
@@ -764,9 +749,7 @@ separate filenames so they do not replace the schema selected above:
 <!-- Snippet:schema_modalities -->
 ```bash
 cu analyzer schema create --modality document --output-file document-schema.json
-
 cu analyzer schema create --modality audio --output-file audio-schema.json
-
 cu analyzer schema create --modality video --output-file video-schema.json
 ```
 
@@ -777,7 +760,6 @@ specification and returns JSON. Both are offline:
 <!-- Snippet:schema_validation -->
 ```bash
 cu analyzer validate schema.json
-
 cu analyzer validate --schema schema.json --spec --json
 ```
 
@@ -806,7 +788,6 @@ evaluate the local invoice:
 <!-- Snippet:analyzer_evaluation -->
 ```bash
 cu analyzer create --name invoice_v1 --schema schema.json
-
 cu analyzer test invoice_v1 sample_invoice.pdf
 ```
 
@@ -849,7 +830,6 @@ These commands do not change or delete an analyzer:
 <!-- Snippet:analyzer_management -->
 ```bash
 cu analyzer list
-
 cu analyzer show invoice_v1
 ```
 
@@ -1027,7 +1007,6 @@ the existing `prod` profile without changing the active profile:
 <!-- Snippet:diagnose_configuration -->
 ```bash
 cu doctor
-
 cu doctor --profile prod
 ```
 
@@ -1059,9 +1038,7 @@ Every command has examples and supported-version information:
 <!-- Snippet:cli_help_overview -->
 ```bash
 cu --help
-
 cu profile --help
-
 cu analyzer copy --help
 ```
 

@@ -542,7 +542,7 @@ def test_environment_overrides_saved_profile_in_generated_shell_example(language
     options = {
         "env": {"CU_ENDPOINT": "https://<temporary-resource>.services.ai.azure.com/"},
         "placeholder_values": {"temporary-resource": "temporary"},
-        "example_language": language,
+        "language": language,
     }
     if language == "bash":
         # region Snippet:env_override_bash

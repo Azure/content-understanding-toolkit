@@ -168,7 +168,7 @@ def compose_scenarios(
             "workflow_test": sources[0].test if continuous else None,
         }
         composed[name] = Snippet(
-            name, "\n\n".join(source.content for source in sources), path, line,
+            name, "\n".join(source.content for source in sources), path, line,
             sources[0].language, members, verification=verification,
         )
     return composed

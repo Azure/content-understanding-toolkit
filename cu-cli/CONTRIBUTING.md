@@ -157,8 +157,9 @@ Unmarked calls still run normally but do not create documentation snippets.
 Do not add a second command string just for documentation.
 
 A region can contain several command calls, which are exported in execution
-order with blank lines between them. Regions may be nested when a complete
-workflow and an individual command both need public names. In parameterized
+order with a single newline between them. Blank lines, comments, and line
+continuations inside each captured snippet are preserved. Regions may be nested
+when a complete workflow and an individual command both need public names. In parameterized
 tests, put each distinct region in its corresponding branch and share the
 argument construction. A region must execute in exactly one selected test case;
 repeated call sites, duplicate exports from other cases, and mixed output
@@ -212,7 +213,8 @@ from independent tests into a documentation section, use the test-side
 For example, `configure_login` groups the existing `profile_endpoint`,
 `profile_login`, `azure_login`, and `doctor` sources; its document marker is simply
 `<!-- Snippet:configure_login -->`. Scenarios preserve source order and combine
-already tested commands of the same language without duplicating their text.
+already tested commands of the same language with a single newline between
+sources, without duplicating their text or changing their internal formatting.
 They do not replace end-to-end workflow tests. A single command uses its own
 name directly. Missing members and duplicate source or scenario names fail.
 Exported sources must be referenced directly or by a referenced scenario.

@@ -102,7 +102,7 @@ def test_region_capture_exports_only_calls_inside_the_named_block(tmp_path):
     assert exported["json_output"]["content"] == "{}"
     assert exported["json_output"]["verification"]["output_validation"] == "json"
     assert exported["login"]["verification"]["mode"] == "external"
-    assert exported["cli_help"]["content"] == "cu --help\n\ncu --version"
+    assert exported["cli_help"]["content"] == "cu --help\ncu --version"
     assert exported["cli_help"]["verification"]["consecutive"] is True
     assert exported["cli_help"]["last_step"] == exported["cli_help"]["step"] + 1
 
@@ -531,12 +531,28 @@ def test_named_scenario_comes_from_test_sources_and_preserves_command_order(tmp_
 
     snippets = _MODULE.compose_scenarios(sources, _MODULE.discover_scenarios(tests))
 
-    assert snippets["cli_setup"].content == "cu --version\n\ncu --help"
+    assert snippets["cli_setup"].content == "cu --version\ncu --help"
     assert snippets["cli_setup"].members == ("version", "help")
     document = tmp_path / "README.md"
     document.write_text("<!-- Snippet:cli_setup -->\n```bash\nold\n```\n")
     assert _MODULE.synchronize_documents((document,), snippets, update=True) == []
     assert _MODULE.synchronize_documents((document,), snippets, update=False) == []
+
+
+@pytest.mark.parametrize("language,continuation", [("bash", "\\"), ("powershell", "`")])
+def test_named_scenario_preserves_source_formatting(language, continuation):
+    path = Path("test_workflows.py")
+    content = f"cu profile {continuation}\n  --help\n\n# Inspect the version.\ncu --version"
+    sources = {
+        "inspect": _MODULE.Snippet("inspect", content, path, 1, language),
+        "help": _MODULE.Snippet("help", "cu --help", path, 2, language),
+    }
+
+    snippets = _MODULE.compose_scenarios(
+        sources, {"cli_setup": (path, 1, ("inspect", "help"))},
+    )
+
+    assert snippets["cli_setup"].content == f"{content}\ncu --help"
 
 
 @pytest.mark.parametrize("relationship", ["consecutive", "gap", "reordered", "different-test", "unrecorded"])

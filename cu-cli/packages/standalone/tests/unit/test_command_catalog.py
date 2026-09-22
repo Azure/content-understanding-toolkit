@@ -14,7 +14,7 @@ import pytest
 
 from cu_cli.cli import main
 from support.command_catalog import CommandCatalog, _ACTIVE, _REGIONS, command_inventory, invoke_cli, render_command
-from support.command_catalog import record_output, recording_evidence, verification_for
+from support.command_catalog import invoke_azure, record_output, recording_evidence, verification_for
 
 
 pytestmark = pytest.mark.unit
@@ -392,7 +392,7 @@ def test_resource_placeholder_executes_bound_value_and_exports_template(
     token = _ACTIVE.set((catalog, catalog_region))
     try:
         result = invoke_cli(
-            arguments, example_language=language,
+            arguments, language=language,
             placeholder_values=values,
         )
     finally:
@@ -452,7 +452,7 @@ def test_environment_placeholder_binds_at_execution_and_preserves_template(
     try:
         result = invoke_cli(
             ["env-var", "list", "--json"], env=environment,
-            example_language=language,
+            language=language,
             placeholder_values=values,
         )
     finally:
@@ -516,7 +516,7 @@ def test_expected_failure_and_comments_are_explicit_in_exported_example(catalog_
         result = invoke_cli(
             ["analyze", "documents", "--pattern", "*.pdf"],
             expected_exit_code=2,
-            example_description="Incorrect selection mode.",
+            comment="Incorrect selection mode.",
         )
     finally:
         _ACTIVE.reset(token)
@@ -524,6 +524,64 @@ def test_expected_failure_and_comments_are_explicit_in_exported_example(catalog_
     assert catalog.examples[catalog_region]["content"].startswith(
         "# Incorrect selection mode.\n# Expected exit code: 2\ncu analyze"
     )
+
+
+@pytest.mark.parametrize(
+    "description,expected",
+    [
+        (None, "az cu profile list --output json"),
+        (
+            "Read the shared profile.\nKeep the same Azure CLI configuration.",
+            "# Read the shared profile.\n# Keep the same Azure CLI configuration.\n"
+            "az cu profile list --output json",
+        ),
+    ],
+    ids=["plain", "multiline-description"],
+)
+def test_azure_invocation_preserves_optional_description(
+    catalog_region, monkeypatch, description, expected,
+):
+    monkeypatch.setattr("azure.cli.core.util.handle_version_update", lambda: None)
+    catalog = CommandCatalog(main)
+    token = _ACTIVE.set((catalog, catalog_region))
+    try:
+        invoke_azure(["cu", "profile", "list", "--output", "json"], comment=description)
+    finally:
+        _ACTIVE.reset(token)
+
+    assert catalog.examples[catalog_region]["content"] == expected
+
+
+@pytest.mark.parametrize("language", ["bash", "powershell"])
+def test_region_commands_are_compact_and_keep_descriptions(catalog_region, language):
+    catalog = CommandCatalog(main)
+    token = _ACTIVE.set((catalog, catalog_region))
+    try:
+        version = invoke_cli(["--version"], language=language)
+        help_result = invoke_cli(
+            ["--help"], language=language,
+            comment="Inspect available commands.",
+        )
+    finally:
+        _ACTIVE.reset(token)
+
+    assert version.exit_code == 0, version.output
+    assert help_result.exit_code == 0, help_result.output
+    assert catalog.examples[catalog_region]["content"] == (
+        "cu --version\n# Inspect available commands.\ncu --help"
+    )
+    assert catalog.examples[catalog_region]["verification"]["consecutive"] is True
+
+
+@pytest.mark.parametrize("language,continuation", [("bash", "\\"), ("powershell", "`")])
+def test_region_preserves_source_formatting(language, continuation):
+    catalog = CommandCatalog(main)
+    content = f"cu profile {continuation}\n  --help\n\n# Inspect the version.\ncu --version"
+
+    catalog.record_region("workflow", 1, "test_workflow", content, language, {"mode": "local"})
+    catalog.record_region("workflow", 2, "test_workflow", "cu --help\n", language, {"mode": "local"})
+
+    assert catalog.examples["workflow"]["content"] == f"{content}\ncu --help"
 
 
 def test_invocation_gate_requires_each_alias_and_ignores_help_only_calls():

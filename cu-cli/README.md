@@ -62,9 +62,7 @@ prerequisites, not operations performed by the offline documentation tests.
 <!-- Snippet:cli_installation -->
 ```bash
 python -m pip install cu-cli
-
 cu --version
-
 cu --help
 ```
 
@@ -92,11 +90,8 @@ ID authentication:
 <!-- Snippet:configure_login -->
 ```bash
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
-
 cu profile set auth_mode login
-
 az login
-
 cu doctor
 ```
 
@@ -105,9 +100,7 @@ Alternatively, use a resource key:
 <!-- Snippet:configure_key -->
 ```bash
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
-
 cu profile set api_key <key>
-
 cu doctor
 ```
 
@@ -131,12 +124,13 @@ the other. For example:
 
 <!-- Snippet:shared_frontend_profile -->
 ```bash
+# Save the endpoint with the standalone frontend.
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
-
+# Use the same default profile with the Azure CLI extension.
 az cu analyzer list --output table
-
+# Change the default analyzer with the Azure CLI extension.
 az cu profile set --key default_analyzer --value prebuilt-layout
-
+# Use that setting with the standalone frontend.
 cu analyze sample_invoice.pdf --json
 ```
 
@@ -200,9 +194,11 @@ Start with the `prebuilt-layout` content extraction analyzer. It extracts text,
 paragraphs, tables, figures, and document structure without requiring a language
 model or embeddings model:
 
-<!-- Snippet:analyze_layout -->
+<!-- Snippet:analyze_layout_options -->
 ```bash
 cu analyze sample_invoice.pdf --analyzer prebuilt-layout
+# `-a` is the short form of `--analyzer`.
+cu analyze sample_invoice.pdf -a prebuilt-layout
 ```
 
 `-a` is the short form of `--analyzer`.
@@ -290,11 +286,8 @@ file:
 <!-- Snippet:custom_analyzer_workflow -->
 ```bash
 cu analyzer schema create --name invoice_v1 --from-sample sample_invoice.pdf --output-file schema.json
-
 cu analyzer create --name invoice_v1 --schema schema.json
-
 cu analyzer test invoice_v1 sample_invoice.pdf
-
 cu analyze sample_invoice.pdf --analyzer invoice_v1 --json
 ```
 
@@ -328,9 +321,7 @@ Every command provides examples:
 <!-- Snippet:setup_help -->
 ```bash
 cu profile --help
-
 cu analyzer copy --help
-
 cu infra generate --help
 ```
 
@@ -379,19 +370,12 @@ one or select it per command:
 <!-- Snippet:multiple_profiles -->
 ```bash
 cu profile create dev
-
 cu profile set endpoint https://<dev-resource>.services.ai.azure.com/ --name dev
-
 cu profile create prod
-
 cu profile set endpoint https://<prod-resource>.services.ai.azure.com/ --name prod
-
 cu profile set-active dev
-
 cu analyzer list --info
-
 cu analyzer list --profile prod
-
 cu doctor --profile prod
 ```
 

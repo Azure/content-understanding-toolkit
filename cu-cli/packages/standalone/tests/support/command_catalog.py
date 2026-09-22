@@ -266,7 +266,7 @@ class CommandCatalog:
             self.record_example(identifier, test, content, language, verification=verification, reason=reason)
         else:
             entry = self.examples[identifier]
-            entry["content"] = "\n\n".join(part["content"].rstrip("\n") for part in parts)
+            entry["content"] = "\n".join(part["content"].rstrip("\n") for part in parts)
             modes = {part["verification"].get("mode", "unclassified") for part in parts}
             steps = [part["step"] for part in parts]
             entry["verification"] = {
@@ -454,9 +454,9 @@ def render_command(arguments: list[str], *, executable: str, language: str, envi
 
 
 def invoke_cli(
-    arguments, *, example_executable: str = "cu",
-    example_language: str = "bash", expected_exit_code: int = 0,
-    example_description: str | None = None, placeholder_values: dict[str, str] | None = None,
+    arguments, *, executable: str = "cu",
+    language: str = "bash", expected_exit_code: int = 0,
+    comment: str | None = None, placeholder_values: dict[str, str] | None = None,
     **kwargs,
 ) -> Result:
     from cu_cli.cli import main
@@ -498,20 +498,20 @@ def invoke_cli(
         active[0].record_execution(active[1], verification)
     if regions:
         assert result.exit_code == expected_exit_code, result.output
-        assert example_executable in {"cu", "cu-cli"}
+        assert executable in {"cu", "cu-cli"}
         active = _ACTIVE.get()
         if active is not None:
             catalog, test = active
             content = render_command(
-                document_arguments, executable=example_executable, language=example_language,
+                document_arguments, executable=executable, language=language,
                 environment=document_environment,
             )
-            comments = [f"# {line}" for line in (example_description or "").splitlines()]
+            comments = [f"# {line}" for line in (comment or "").splitlines()]
             if expected_exit_code:
                 comments.append(f"# Expected exit code: {expected_exit_code}")
             content = "\n".join([*comments, content])
             for identifier, line in regions:
-                catalog.record_region(identifier, line, test, content, example_language, verification)
+                catalog.record_region(identifier, line, test, content, language, verification)
     return result
 
 
@@ -551,7 +551,7 @@ def record_external(arguments: list[str], *, reason: str) -> None:
             catalog.record_region(identifier, line, test, content, "bash", verification, reason=reason)
 
 
-def invoke_azure(arguments: list[str]):
+def invoke_azure(arguments: list[str], *, comment: str | None = None):
     regions = _matching_regions()
     from azure.cli.core import AzCli, MainCommandsLoader
     from azure.cli.core.commands import AzCliCommandInvoker
@@ -586,7 +586,8 @@ def invoke_azure(arguments: list[str]):
         catalog, test = active
         verification = verification_for(arguments, 0)
         catalog.record_execution(test, verification)
-        content = shlex.join(["az", *arguments])
+        comments = [f"# {line}" for line in (comment or "").splitlines()]
+        content = "\n".join([*comments, shlex.join(["az", *arguments])])
         for identifier, line in regions:
             catalog.record_region(identifier, line, test, content, "bash", verification)
     return cli.result.result

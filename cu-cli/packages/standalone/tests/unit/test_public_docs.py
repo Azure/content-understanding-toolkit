@@ -31,9 +31,7 @@ _REGION_SUPPORT_URL = (
 DOC_SCENARIOS = {
     "cli_installation": ("cli_install", "cli_version", "cli_help"),
     "configure_login": ("profile_endpoint", "profile_login", "azure_login", "doctor"),
-    "shared_frontend_profile": (
-        "profile_endpoint", "azure_analyzer_list", "azure_profile_set", "analyze_default",
-    ),
+    "analyze_layout_options": ("analyze_layout", "analyze_layout_short"),
     "custom_analyzer_workflow": (
         "schema_from_sample", "analyzer_create", "analyzer_test_single", "analyze_custom",
     ),
@@ -68,7 +66,7 @@ DOC_SCENARIOS = {
 def test_readme_cli_help_snippet_executes():
     # region Snippet:cu_cli_help
     result = invoke_cli(
-        ["--help"], example_executable="cu-cli",
+        ["--help"], executable="cu-cli",
     )
     # endregion
     assert result.exit_code == 0, result.output
@@ -106,7 +104,8 @@ def test_frontend_interchange_uses_real_azure_cli_parser_and_shared_profile(monk
     monkeypatch.setenv("CU_TEST_REC_MODE", "playback")
     monkeypatch.setattr("time.sleep", lambda *_args, **_kwargs: None)
     copy_sample_invoice()
-    invoke_cli(["profile", "set", "endpoint", "https://example.services.ai.azure.com/"])
+    setup = invoke_cli(["profile", "set", "api_key", "playback-dummy-key"])
+    assert setup.exit_code == 0, setup.output
     analyzer = SimpleNamespace(
         analyzer_id="prebuilt-layout", created_at=None, last_modified_at=None,
         as_dict=lambda: {"analyzerId": "prebuilt-layout"},
@@ -115,28 +114,46 @@ def test_frontend_interchange_uses_real_azure_cli_parser_and_shared_profile(monk
         _analyzers, "create_content_understanding_client",
         lambda *_args, **_kwargs: SimpleNamespace(list_analyzers=lambda: [analyzer]),
     )
-    # region Snippet:azure_analyzer_list
+    # region Snippet:shared_frontend_profile
+    invoke_cli(
+        ["profile", "set", "endpoint", "https://<resource-name>.services.ai.azure.com/"],
+        placeholder_values={"resource-name": "example"},
+        comment="Save the endpoint with the standalone frontend.",
+    )
     result = invoke_azure(
         ["cu", "analyzer", "list", "--output", "table"],
+        comment="Use the same default profile with the Azure CLI extension.",
     )
-    # endregion
     assert result == [{"analyzerId": "prebuilt-layout"}]
-    # region Snippet:azure_profile_set
     invoke_azure(
         ["cu", "profile", "set", "--key", "default_analyzer", "--value", "prebuilt-layout"],
+        comment="Change the default analyzer with the Azure CLI extension.",
     )
-    # endregion
     assert ProfileStore.load().get("default_analyzer") == "prebuilt-layout"
-    result = invoke_cli(["profile", "get", "default_analyzer"])
-    assert result.stdout.strip() == "prebuilt-layout"
-    setup = invoke_cli(["profile", "set", "api_key", "playback-dummy-key"])
-    assert setup.exit_code == 0, setup.output
     with use_cassette("analyze_single"):
-        result = invoke_cli(["analyze", "sample_invoice.pdf", "--json"])
+        result = invoke_cli(
+            ["analyze", "sample_invoice.pdf", "--json"],
+            comment="Use that setting with the standalone frontend.",
+        )
+    # endregion
     assert result.exit_code == 0, result.output
     payload = json.loads(result.stdout)
     assert payload["result"]["analyzerId"] == "prebuilt-layout"
     assert payload["result"]["contents"][0]["markdown"]
+    result = invoke_cli(["profile", "get", "default_analyzer"])
+    assert result.stdout.strip() == "prebuilt-layout"
+
+
+def test_readme_frontend_interchange_preserves_step_comments():
+    readme = _README.read_text(encoding="utf-8")
+    snippet = readme.split("<!-- Snippet:shared_frontend_profile -->", 1)[1].split("```", 2)[1]
+
+    assert [line for line in snippet.splitlines() if line.startswith("# ")] == [
+        "# Save the endpoint with the standalone frontend.",
+        "# Use the same default profile with the Azure CLI extension.",
+        "# Change the default analyzer with the Azure CLI extension.",
+        "# Use that setting with the standalone frontend.",
+    ]
 
 
 def test_recording_invoice_fixture_matches_public_sample():
@@ -186,8 +203,13 @@ def test_documented_provision_region_and_support_link_are_current():
 
 def test_readme_documents_analyzer_short_option():
     readme = _README.read_text(encoding="utf-8")
+    prebuilt = readme.split("## Use prebuilt analyzers\n", 1)[1].split("\n## ", 1)[0]
 
-    assert "`-a` is the short form of `--analyzer`" in readme
+    assert (
+        "cu analyze sample_invoice.pdf --analyzer prebuilt-layout\n"
+        "# `-a` is the short form of `--analyzer`.\n"
+        "cu analyze sample_invoice.pdf -a prebuilt-layout\n"
+    ) in prebuilt
 
 
 def test_api_version_description_matches_cli_help():
