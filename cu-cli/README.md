@@ -201,8 +201,6 @@ cu analyze sample_invoice.pdf --analyzer prebuilt-layout
 cu analyze sample_invoice.pdf -a prebuilt-layout
 ```
 
-`-a` is the short form of `--analyzer`.
-
 Analyze a remote file with `--url` without downloading it through the CLI.
 Quote URLs that contain SAS query parameters so the shell preserves `&` characters:
 
