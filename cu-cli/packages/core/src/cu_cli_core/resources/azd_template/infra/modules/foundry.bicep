@@ -109,6 +109,16 @@ resource roleCogUserOnNew 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   }
 }
 
+resource roleCogUserOnExisting 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (useExistingFoundry && assignRolesToPrincipal && !empty(principalId)) {
+  name: guid(accountExisting.id, principalId, roleDefinitions.cognitiveServicesUser)
+  scope: accountExisting
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.cognitiveServicesUser)
+    principalId: principalId
+    principalType: principalType
+  }
+}
+
 output accountName     string = accountName
 output projectName     string = useExistingFoundry ? '' : project.name
 output accountEndpoint string = 'https://${accountName}.services.ai.azure.com/'

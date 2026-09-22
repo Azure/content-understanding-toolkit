@@ -83,15 +83,40 @@ def test_canonical_template_matches_golden_hashes() -> None:
         relative: hashlib.sha256(content.replace(b"\r\n", b"\n")).hexdigest()
         for relative, content in iter_template_files(template_root())
     } == {
-        "README.md": "5d938cba77d7747e01874b5ae47c2182d4f592dd30f685b8635ae0931bad235d",
+        "README.md": "da8a1bcda46bc030fd2ac6c64a97bd593945c924d152b249a9937174d83cd69c",
         "azure.yaml": "7bdbc6f8cf42fc1485ba52c04d7ed0c3ab78cd517d4892b1275a7b806ac31667",
         "hooks/postprovision.ps1": "37cc8f390b0201c7396046889d5e7c3fb7a61c27ca1f2486cf9ddc5344ccdd62",
         "hooks/postprovision.sh": "43ca49582fbde6c571b5fd67fdd16e0a0c3c5c5c1fc1c2da13c6c81f919d3157",
         "infra/main.bicep": "1103b1b3fdb28dba7fa6c2f3423257694eb07aefbea529d68213fb94c9f0998b",
         "infra/main.parameters.json": "c6a46f4caa1468b7c04a14f4ad15fabeda362dc16043be9f94a4b4e7b91bcf79",
         "infra/models.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
-        "infra/modules/foundry.bicep": "18fd2b5d1ca12e75946ae317a08857f61fc5cdb05b329337036345521630c212",
+        "infra/modules/foundry.bicep": "e958cdffbccfde12ee140b752b838ee83654de82d338b67d0b3a4d81dc460f09",
     }
+
+
+@pytest.mark.parametrize(
+    ("suffix", "condition", "account"),
+    [("New", "!useExistingFoundry", "accountNew"),
+     ("Existing", "useExistingFoundry", "accountExisting")],
+    ids=["new", "existing"],
+)
+def test_role_assignments_are_opt_in_and_account_scoped(suffix, condition, account) -> None:
+    foundry = (template_root() / "infra/modules/foundry.bicep").read_text(encoding="utf-8")
+
+    assert "param assignRolesToPrincipal bool = false" in foundry
+    assert (
+        f"resource roleCogUserOn{suffix} 'Microsoft.Authorization/roleAssignments@2022-04-01' "
+        f"= if ({condition} && assignRolesToPrincipal && !empty(principalId)) {{\n"
+        f"  name: guid({account}.id, principalId, roleDefinitions.cognitiveServicesUser)\n"
+        f"  scope: {account}\n"
+        "  properties: {\n"
+        "    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', "
+        "roleDefinitions.cognitiveServicesUser)\n"
+        "    principalId: principalId\n"
+        "    principalType: principalType\n"
+        "  }\n"
+        "}"
+    ) in foundry
 
 
 def test_built_wheel_contains_canonical_assets() -> None:

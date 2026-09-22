@@ -168,10 +168,12 @@ def _resolve_choices(
 
     model_selection = _resolve_model_selection(models, interactive=interactive)
 
-    resolved_assign_roles = False if use_existing_foundry else (
-        assign_roles if assign_roles is not None
-        else (_prompt_assign_roles() if interactive else False)
-    )
+    if assign_roles is not None:
+        resolved_assign_roles = assign_roles
+    elif interactive and not use_existing_foundry:
+        resolved_assign_roles = _prompt_assign_roles()
+    else:
+        resolved_assign_roles = False
     return InfraChoices(
         env=resolved_env,
         location=resolved_location.strip(),
