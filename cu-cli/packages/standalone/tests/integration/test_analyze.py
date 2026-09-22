@@ -77,13 +77,13 @@ def test_scenario_1_analyze_directory_writes_result_files(cloud_project):
 
 
 def test_scenario_3_analyze_prebuilt_invoice_json(cloud_project):
-    """`cu analyze --analyzer prebuilt-invoice --json`."""
+    """`cu analyze -a prebuilt-invoice --json`."""
     import json
     _copy_sample()
     with use_cassette("analyze_prebuilt_invoice_json"):
         # region Snippet:analyze_invoice
         res = _run("analyze", "sample_invoice.pdf",
-                   "--analyzer", "prebuilt-invoice", "--json")
+                   "-a", "prebuilt-invoice", "--json")
         # endregion
     assert res.exit_code == 0, res.output
     payload = json.loads(res.output[res.output.find("{"):])
@@ -283,7 +283,8 @@ def test_directory_examples_use_recorded_invoice_content(cloud_project, recursiv
     arguments = ["analyze", "--source", "documents", "--pattern", "*.pdf"]
     if recursive:
         arguments.append("--recursive")
-    arguments.extend(["--analyzer", "prebuilt-layout", "--output-dir", str(destination), "--json"])
+    analyzer_option = "--analyzer" if recursive else "-a"
+    arguments.extend([analyzer_option, "prebuilt-layout", "--output-dir", str(destination), "--json"])
     if with_report:
         arguments.extend(["--report-file", "run-report.json", "--yes", "--concurrency", "8"])
 

@@ -553,7 +553,7 @@ recursive selection. To analyze only immediate files matching the PDF pattern:
 
 <!-- Snippet:analyze_pattern -->
 ```bash
-cu analyze --source documents --pattern "*.pdf" --analyzer prebuilt-layout --output-dir results \
+cu analyze --source documents --pattern "*.pdf" -a prebuilt-layout --output-dir results \
   --json
 ```
 

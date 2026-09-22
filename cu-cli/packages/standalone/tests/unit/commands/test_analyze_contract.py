@@ -1480,7 +1480,7 @@ def test_url_documentation_preserves_sas_and_rejects_download(analyze_runtime, m
     )
     # region Snippet:analyze_url
     result = _run(
-        "analyze", "--url", url, "--analyzer", "prebuilt-videoSearch", "--json",
+        "analyze", "--url", url, "-a", "prebuilt-videoSearch", "--json",
         placeholder_values={"version": "2026-01-01", "signature": "example"},
     )
     # endregion

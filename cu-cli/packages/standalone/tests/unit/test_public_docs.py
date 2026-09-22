@@ -210,6 +210,8 @@ def test_readme_documents_analyzer_short_option():
         "# `-a` is the short form of `--analyzer`.\n"
         "cu analyze sample_invoice.pdf -a prebuilt-layout\n"
     ) in prebuilt
+    remaining_content = readme.split("cu analyze sample_invoice.pdf -a prebuilt-layout\n", 1)[1]
+    assert "--analyzer" not in remaining_content
 
 
 def test_api_version_description_matches_cli_help():

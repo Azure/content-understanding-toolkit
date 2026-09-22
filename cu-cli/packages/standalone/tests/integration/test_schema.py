@@ -154,7 +154,7 @@ def test_scenario_2_schema_create_from_sample(cloud_project, monkeypatch):
     # endregion
     # region Snippet:analyze_custom
     result = _run(
-        "analyze", "sample_invoice.pdf", "--analyzer", "invoice_v1", "--json",
+        "analyze", "sample_invoice.pdf", "-a", "invoice_v1", "--json",
     )
     # endregion
     assert analyzed == ["invoice_v1", "invoice_v1"]

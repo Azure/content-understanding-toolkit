@@ -206,8 +206,7 @@ Quote URLs that contain SAS query parameters so the shell preserves `&` characte
 
 <!-- Snippet:analyze_url -->
 ```bash
-cu analyze --url "https://storage.example.net/container/video.mp4?sv=<version>&sp=r&sig=<signature>" \
-  --analyzer prebuilt-videoSearch \
+cu analyze --url "https://storage.example.net/container/video.mp4?sv=<version>&sp=r&sig=<signature>" -a prebuilt-videoSearch \
   --json
 ```
 
@@ -233,7 +232,7 @@ defined set of structured fields. They require the model setup described in
 
 <!-- Snippet:analyze_invoice -->
 ```bash
-cu analyze sample_invoice.pdf --analyzer prebuilt-invoice --json
+cu analyze sample_invoice.pdf -a prebuilt-invoice --json
 ```
 
 The command returns an analyzer result. Use `--json` when you want the
@@ -245,7 +244,7 @@ Analyze several files into one output directory. `--pattern` requires
 
 <!-- Snippet:analyze_pattern -->
 ```bash
-cu analyze --source documents --pattern "*.pdf" --analyzer prebuilt-layout --output-dir results \
+cu analyze --source documents --pattern "*.pdf" -a prebuilt-layout --output-dir results \
   --json
 ```
 
@@ -286,7 +285,7 @@ file:
 cu analyzer schema create --name invoice_v1 --from-sample sample_invoice.pdf --output-file schema.json
 cu analyzer create --name invoice_v1 --schema schema.json
 cu analyzer test invoice_v1 sample_invoice.pdf
-cu analyze sample_invoice.pdf --analyzer invoice_v1 --json
+cu analyze sample_invoice.pdf -a invoice_v1 --json
 ```
 
 Schema generation preserves existing files by default. Pass `--force` only when
