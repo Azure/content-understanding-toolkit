@@ -206,8 +206,7 @@ Quote URLs that contain SAS query parameters so the shell preserves `&` characte
 
 <!-- Snippet:analyze_url -->
 ```bash
-cu analyze --url "https://storage.example.net/container/video.mp4?sv=<version>&sp=r&sig=<signature>" -a prebuilt-videoSearch \
-  --json
+cu analyze --url "https://storage.example.net/container/video.mp4?sv=<version>&sp=r&sig=<signature>" -a prebuilt-videoSearch
 ```
 
 Repeat `--url` for multiple URLs and specify `--output-dir` for their results.

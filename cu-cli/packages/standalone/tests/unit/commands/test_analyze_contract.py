@@ -11,9 +11,10 @@ from types import SimpleNamespace
 
 from click import unstyle
 import pytest
+import yaml
 
-from support.command_catalog import invoke_cli
-from support.recording import copy_sample_invoice
+from support.command_catalog import invoke_cli, record_sample
+from support.recording import cassette_path, copy_sample_invoice
 
 pytestmark = pytest.mark.unit
 
@@ -1473,18 +1474,29 @@ def test_documented_pattern_without_source_is_rejected_before_client(monkeypatch
 def test_url_documentation_preserves_sas_and_rejects_download(analyze_runtime, monkeypatch):
     url = "https://storage.example.net/container/video.mp4?sv=<version>&sp=r&sig=<signature>"
     bound_url = "https://storage.example.net/container/video.mp4?sv=2026-01-01&sp=r&sig=example"
+    recording_path = cassette_path("analyze_public_video_url")
+    record_sample(recording_path)
+    recording = yaml.safe_load(recording_path.read_text(encoding="utf-8"))
+    response = json.loads(recording["interactions"][-1]["response"]["body"]["string"])
+    assert response["status"] == "Succeeded"
+    assert response["result"]["analyzerId"] == "prebuilt-videoSearch"
     received = []
-    monkeypatch.setattr(
-        "cu_cli.commands.analyze._run_one",
-        lambda _client, job: (received.append(job.input_url) or (job, {"status": "Succeeded"})),
-    )
+
+    def run_one(_client, job):
+        received.append(job.input_url)
+        result = response if job.output_format == "json" else response["result"]
+        return job, copy.deepcopy(result)
+
+    monkeypatch.setattr("cu_cli.commands.analyze._run_one", run_one)
     # region Snippet:analyze_url
     result = _run(
-        "analyze", "--url", url, "-a", "prebuilt-videoSearch", "--json",
+        "analyze", "--url", url, "-a", "prebuilt-videoSearch",
         placeholder_values={"version": "2026-01-01", "signature": "example"},
     )
     # endregion
     assert received == [bound_url]
+    assert "# Video:" in result.stdout
+    assert "\nWEBVTT\n" in result.stdout
     assert "sig=example" not in result.output
     video_url = (
         "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/"

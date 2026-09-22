@@ -214,6 +214,14 @@ def test_readme_documents_analyzer_short_option():
     assert "--analyzer" not in remaining_content
 
 
+def test_readme_video_url_uses_default_markdown_output():
+    readme = _README.read_text(encoding="utf-8")
+    snippet = readme.split("<!-- Snippet:analyze_url -->", 1)[1].split("```", 2)[1]
+
+    assert "-a prebuilt-videoSearch" in snippet
+    assert "--json" not in snippet
+
+
 def test_api_version_description_matches_cli_help():
     for path in (_README, _USAGE_GUIDE):
         normalized = " ".join(path.read_text(encoding="utf-8").split())
