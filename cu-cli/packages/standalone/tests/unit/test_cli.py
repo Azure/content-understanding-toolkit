@@ -500,15 +500,21 @@ def test_version():
 
 def test_documentation_help_commands():
     # region Snippet:cli_help
-    result = _run("--help")
+    result = _run("--help", comment="List top-level command groups and global options.")
     # endregion
     assert "Usage:" in result.output
     # region Snippet:profile_help
-    result = _run("profile", "--help")
+    result = _run(
+        "profile", "--help",
+        comment="Show how to save profile values, including supported keys and examples.",
+    )
     # endregion
     assert "set-active" in result.output
     # region Snippet:copy_help
-    result = _run("analyzer", "copy", "--help")
+    result = _run(
+        "analyzer", "copy", "--help",
+        comment="Show profile-based and Azure-discovery analyzer copy options.",
+    )
     # endregion
     assert "--destination-profile" in result.output
     # region Snippet:infra_help
@@ -521,11 +527,14 @@ def test_environment_list_examples_export_redacted_output(monkeypatch):
     monkeypatch.setenv("CU_ENDPOINT", "https://example.services.ai.azure.com/")
     monkeypatch.setenv("CU_API_KEY", "example-key")
     # region Snippet:env_list
-    result = _run("env-var", "list")
+    result = _run("env-var", "list", comment="List set, recognized environment overrides in a table.")
     # endregion
     assert "example-key" not in result.output
     # region Snippet:env_json
-    result = _run("env-var", "list", "--json")
+    result = _run(
+        "env-var", "list", "--json",
+        comment="Emit the same set of overrides as machine-readable JSON.",
+    )
     # endregion
     payload = json.loads(result.stdout)
     assert any(item["name"] == "CU_ENDPOINT" for item in payload)
@@ -543,6 +552,11 @@ def test_environment_overrides_saved_profile_in_generated_shell_example(language
         "env": {"CU_ENDPOINT": "https://<temporary-resource>.services.ai.azure.com/"},
         "placeholder_values": {"temporary-resource": "temporary"},
         "language": language,
+        "comment": (
+            "Temporarily override only the endpoint; other values still resolve normally.\n"
+            "Use the active profile's other settings and print the effective runtime context.\n"
+            "Preserve the previous environment after the command."
+        ),
     }
     if language == "bash":
         # region Snippet:env_override_bash
@@ -575,7 +589,10 @@ def test_analyzer_profile_environment_and_explicit_endpoint_precedence(monkeypat
     _run("profile", "set", "endpoint", "https://prod.services.ai.azure.com/", "--name", "prod")
     _run("profile", "set-active", "dev")
     # region Snippet:analyzer_list_active
-    result = _run("analyzer", "list", "--info")
+    result = _run(
+        "analyzer", "list", "--info",
+        comment="Use all effective settings from the active dev profile.",
+    )
     # endregion
     assert endpoints[-1] == "https://dev.services.ai.azure.com/"
     context = "\n".join(result.stderr.splitlines()[:5])
@@ -589,7 +606,10 @@ def test_analyzer_profile_environment_and_explicit_endpoint_precedence(monkeypat
     record_output(context)
     # endregion
     # region Snippet:analyzer_list_prod
-    _run("analyzer", "list", "--profile", "prod")
+    _run(
+        "analyzer", "list", "--profile", "prod",
+        comment="Use prod for this command only; dev remains active.",
+    )
     # endregion
     assert endpoints[-1] == "https://prod.services.ai.azure.com/"
     # region Snippet:analyzer_list_env
@@ -597,6 +617,7 @@ def test_analyzer_profile_environment_and_explicit_endpoint_precedence(monkeypat
         "analyzer", "list", "--profile", "prod", "--info",
         env={"CU_ENDPOINT": "https://<temporary-resource>.services.ai.azure.com/"},
         placeholder_values={"temporary-resource": "temporary"},
+        comment="Use prod's remaining settings, but this endpoint wins for this invocation.",
     )
     # endregion
     assert endpoints[-1] == "https://temporary.services.ai.azure.com/"
@@ -606,6 +627,7 @@ def test_analyzer_profile_environment_and_explicit_endpoint_precedence(monkeypat
         "https://<one-time-resource>.services.ai.azure.com/", "--info",
         env={"CU_ENDPOINT": "https://<temporary-resource>.services.ai.azure.com/"},
         placeholder_values={"one-time-resource": "one-time", "temporary-resource": "temporary"},
+        comment="The explicit option wins over both CU_ENDPOINT and the selected profile.",
     )
     # endregion
     assert endpoints[-1] == "https://one-time.services.ai.azure.com/"
@@ -625,7 +647,9 @@ def test_schema_modality_templates_validate(modality):
         # endregion
     elif modality == "image":
         # region Snippet:schema_image
-        result = _run(*arguments)
+        result = _run(
+            *arguments, comment="Generate an image field-extraction schema instead of the document default.",
+        )
         # endregion
     elif modality == "audio":
         # region Snippet:schema_audio
@@ -706,11 +730,12 @@ def test_schema_base_override_and_named_validation():
     # endregion
     assert json.loads(Path("schema.json").read_text())["baseAnalyzerId"] == "prebuilt-document"
     # region Snippet:schema_validate
-    _run("analyzer", "validate", "schema.json")
+    _run("analyzer", "validate", "schema.json", comment="Validate the local schema shape.")
     # endregion
     # region Snippet:schema_validate_spec
     result = _run(
         "analyzer", "validate", "--schema", "schema.json", "--spec", "--json",
+        comment="Also validate rules from the selected Content Understanding API specification.",
     )
     # endregion
     assert json.loads(result.stdout)["ok"] is True
@@ -723,21 +748,27 @@ def test_defaults_documented_merge_replace_and_profile_sources(monkeypatch):
     # region Snippet:profile_completion_model
     _run(
         "profile", "set", "model_deployments.gpt-5.2", "my-gpt-52-deployment",
+        comment="Replace my-gpt-52-deployment with the completion deployment name on your resource.",
     )
     # endregion
     # region Snippet:profile_embedding_model
     _run(
         "profile", "set", "model_deployments.text-embedding-3-large", "my-embedding-deployment",
+        comment="Replace my-embedding-deployment with your embeddings deployment name.",
     )
     # endregion
     # region Snippet:defaults_from_profile
-    _run("defaults", "set", "--from-profile")
+    _run(
+        "defaults", "set", "--from-profile",
+        comment="Apply model mappings from the active CU CLI profile to the remote resource.",
+    )
     # endregion
     assert fake.updated["unrelated"] == "keep"
     assert fake.updated["prebuilt-analyzer-completion"] == "my-gpt-52-deployment"
     # region Snippet:defaults_model
     _run(
         "defaults", "set", "--model", "gpt-5.2=custom-completion",
+        comment="Replace custom-completion with a deployment name and set that remote mapping.",
     )
     # endregion
     assert fake.updated["gpt-5.2"] == "custom-completion"
@@ -760,6 +791,7 @@ def test_schema_template_stamps_default_version():
     # region Snippet:schema_template
     res = _run(
         "analyzer", "schema", "create", "--output-file", "schema.json",
+        comment="Default to a document field-extraction schema.",
     )
     # endregion
     assert res.exit_code == 0
@@ -833,6 +865,7 @@ def test_schema_template_classification_type_has_creatable_categories():
     res = _run(
         "analyzer", "schema", "create", "--output-file", "classify.json",
         "--type", "classification",
+        comment="Generate a classification schema instead of a field-extraction schema.",
     )
     # endregion
     assert res.exit_code == 0, res.output

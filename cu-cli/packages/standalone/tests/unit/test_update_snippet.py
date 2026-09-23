@@ -540,19 +540,31 @@ def test_named_scenario_comes_from_test_sources_and_preserves_command_order(tmp_
 
 
 @pytest.mark.parametrize("language,continuation", [("bash", "\\"), ("powershell", "`")])
-def test_named_scenario_preserves_source_formatting(language, continuation):
+def test_named_scenario_preserves_source_formatting(tmp_path, language, continuation):
     path = Path("test_workflows.py")
     content = f"cu profile {continuation}\n  --help\n\n# Inspect the version.\ncu --version"
+    help_content = "# List available commands.\ncu --help"
     sources = {
         "inspect": _MODULE.Snippet("inspect", content, path, 1, language),
-        "help": _MODULE.Snippet("help", "cu --help", path, 2, language),
+        "help": _MODULE.Snippet("help", help_content, path, 2, language),
     }
 
     snippets = _MODULE.compose_scenarios(
         sources, {"cli_setup": (path, 1, ("inspect", "help"))},
     )
 
-    assert snippets["cli_setup"].content == f"{content}\ncu --help"
+    expected = f"{content}\n{help_content}"
+    assert snippets["cli_setup"].content == expected
+    documents = (tmp_path / "README.md", tmp_path / "usage-guide.md")
+    for document in documents:
+        document.write_text(f"<!-- Snippet:cli_setup -->\n```{language}\nold\n```\n", encoding="utf-8")
+    assert _MODULE.synchronize_documents(documents, snippets, update=True) == []
+    assert _MODULE.synchronize_documents(documents, snippets, update=True) == []
+    assert _MODULE.synchronize_documents(documents, snippets, update=False) == []
+    for document in documents:
+        assert document.read_text(encoding="utf-8") == (
+            f"<!-- Snippet:cli_setup -->\n```{language}\n{expected}\n```\n"
+        )
 
 
 @pytest.mark.parametrize("relationship", ["consecutive", "gap", "reordered", "different-test", "unrecorded"])

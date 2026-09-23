@@ -29,8 +29,8 @@ from support.recording import mode, use_cassette
 pytestmark = pytest.mark.integration
 
 
-def _run(*args):
-    return invoke_cli(args)
+def _run(*args, **kwargs):
+    return invoke_cli(args, **kwargs)
 
 
 def _resolved_completion_model() -> str:
@@ -134,7 +134,7 @@ def test_scenario_3_analyzer_list_json(cloud_project, json_output):
             res = _run("analyzer", "list", "--json")
         else:
             # region Snippet:analyzer_list
-            res = _run("analyzer", "list")
+            res = _run("analyzer", "list", comment="List analyzers available on the selected resource.")
             # endregion
     assert res.exit_code == 0, res.output
     if json_output:

@@ -22,8 +22,9 @@ pytestmark = pytest.mark.unit
 def _run(
     *args: str,
     placeholder_values: dict[str, str] | None = None,
+    comment: str | None = None,
 ):
-    return invoke_cli(args, placeholder_values=placeholder_values)
+    return invoke_cli(args, placeholder_values=placeholder_values, comment=comment)
 
 
 @pytest.fixture
@@ -1222,6 +1223,7 @@ def test_dry_run_makes_no_client_call_or_file_write(monkeypatch):
         "--report-file",
         "report.json",
         "--dry-run",
+        comment="Preview the discovered files and output mappings without service calls.",
     )
     # endregion
 

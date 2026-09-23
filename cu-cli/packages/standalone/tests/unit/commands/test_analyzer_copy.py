@@ -124,6 +124,13 @@ def test_copy_allows_identical_ids_when_destination_is_different_resource(monkey
         "--source-resource", "<source-resource>",
         "--destination-resource", "<destination-resource>",
         placeholder_values={"source-resource": "src", "destination-resource": "tgt"},
+        comment=(
+            "Copy one analyzer using Azure resource discovery instead of saved profiles.\n"
+            "The first positional ID is the existing analyzer on the source resource.\n"
+            "The second positional ID is the analyzer to create on the destination resource.\n"
+            "--source-resource selects the source by name, endpoint, or ARM resource ID.\n"
+            "--destination-resource selects the destination using the same identifier forms."
+        ),
     )
     # endregion
     assert result.exit_code == 0, result.output
@@ -1062,6 +1069,13 @@ def test_documented_copy_uses_configured_dev_and_prod_profiles(monkeypatch):
     result = _invoke(
         "analyzer", "copy", "invoice_v1", "invoice_v1",
         "--source-profile", "dev", "--destination-profile", "prod",
+        comment=(
+            "Copy one analyzer between resources represented by saved CU CLI profiles.\n"
+            "The first positional ID is the existing analyzer on the dev resource.\n"
+            "The second positional ID is the analyzer to create on the prod resource.\n"
+            "--source-profile supplies the source endpoint and authentication.\n"
+            "--destination-profile supplies the destination endpoint and authentication."
+        ),
     )
     # endregion
     assert result.exit_code == 0, result.output

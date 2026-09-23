@@ -63,6 +63,7 @@ prerequisites, not operations performed by the offline documentation tests.
 ```bash
 python -m pip install cu-cli
 cu --version
+# List top-level command groups and global options.
 cu --help
 ```
 
@@ -89,9 +90,13 @@ ID authentication:
 
 <!-- Snippet:configure_login -->
 ```bash
+# Save the endpoint on the active profile.
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
+# Login authentication is the default; this command selects it explicitly.
 cu profile set auth_mode login
+# Sign in for the default login authentication mode.
 az login
+# Check the active profile.
 cu doctor
 ```
 
@@ -99,8 +104,11 @@ Alternatively, use a resource key:
 
 <!-- Snippet:configure_key -->
 ```bash
+# Save the endpoint on the active profile.
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
+# Save a resource key on the active profile and select key authentication.
 cu profile set api_key <key>
+# Check the active profile.
 cu doctor
 ```
 
@@ -196,6 +204,8 @@ model or embeddings model:
 
 <!-- Snippet:analyze_layout_options -->
 ```bash
+# Generate Markdown from the analyzer result with the CU SDK's to_llm_input().
+# This is a billed service call; Markdown is written to standard output.
 cu analyze sample_invoice.pdf --analyzer prebuilt-layout
 # `-a` is the short form of `--analyzer`.
 cu analyze sample_invoice.pdf -a prebuilt-layout
@@ -243,6 +253,7 @@ Analyze several files into one output directory. `--pattern` requires
 
 <!-- Snippet:analyze_pattern -->
 ```bash
+# Analyze only matching files directly inside my_document_dir.
 cu analyze --source my_document_dir --pattern "*.pdf" -a prebuilt-layout --output-dir results
 ```
 
@@ -270,6 +281,7 @@ the analyzer:
 
 <!-- Snippet:defaults_show -->
 ```bash
+# Show the Content Understanding defaults configured on the resource.
 cu defaults show
 ```
 
@@ -280,8 +292,14 @@ file:
 
 <!-- Snippet:custom_analyzer_workflow -->
 ```bash
+# Generate a schema from a representative document.
 cu analyzer schema create --name invoice_v1 --from-sample sample_invoice.pdf --output-file schema.json
+# Review and update the generated schema for your extraction requirements,
+# then create the analyzer.
 cu analyzer create --name invoice_v1 --schema schema.json
+# Run the analyzer against the sample and summarize whether fields were returned
+# and any confidence values supplied by the service. This is not an accuracy
+# benchmark and does not compare the result with labeled ground truth.
 cu analyzer test invoice_v1 sample_invoice.pdf
 cu analyze sample_invoice.pdf -a invoice_v1 --json
 ```
@@ -315,7 +333,9 @@ Every command provides examples:
 
 <!-- Snippet:setup_help -->
 ```bash
+# Show how to save profile values, including supported keys and examples.
 cu profile --help
+# Show profile-based and Azure-discovery analyzer copy options.
 cu analyzer copy --help
 cu infra generate --help
 ```
@@ -364,13 +384,21 @@ one or select it per command:
 
 <!-- Snippet:multiple_profiles -->
 ```bash
+# Create an empty dev profile.
 cu profile create dev
+# Save the dev resource endpoint without changing the active profile.
 cu profile set endpoint https://<dev-resource>.services.ai.azure.com/ --name dev
+# Create an empty prod profile.
 cu profile create prod
+# Save a distinct resource endpoint on prod.
 cu profile set endpoint https://<prod-resource>.services.ai.azure.com/ --name prod
+# Make dev the profile used when --profile is omitted.
 cu profile set-active dev
+# Use all effective settings from the active dev profile.
 cu analyzer list --info
+# Use prod for this command only; dev remains active.
 cu analyzer list --profile prod
+# Check prod without changing the active profile.
 cu doctor --profile prod
 ```
 

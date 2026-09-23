@@ -17,8 +17,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-def _run(*args):
-    return invoke_cli(args)
+def _run(*args, **kwargs):
+    return invoke_cli(args, **kwargs)
 
 
 # --- helper: _is_defaults_not_set ------------------------------------------
@@ -201,7 +201,10 @@ def test_doctor_fix_defaults_calls_update(monkeypatch):
     fake = _FakeClient({})
     monkeypatch.setattr("cu_cli.commands.doctor.build_client", lambda *a, **k: fake)
     # region Snippet:doctor_fix_defaults
-    res = _run("doctor", "--fix-defaults")
+    res = _run(
+        "doctor", "--fix-defaults",
+        comment="Apply reviewed local model mappings as remote Content Understanding defaults.",
+    )
     # endregion
     assert res.exit_code == 0, res.output
     assert "Content Understanding defaults updated" in res.output
@@ -282,7 +285,7 @@ def test_doctor_loads_named_profile_without_changing_active_profile(monkeypatch)
     )
 
     # region Snippet:doctor_named
-    res = _run("doctor", "--profile", "prod")
+    res = _run("doctor", "--profile", "prod", comment="Check prod without changing the active profile.")
     # endregion
 
     assert res.exit_code == 0, res.output

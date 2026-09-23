@@ -92,6 +92,7 @@ def test_external_install_and_login_commands_have_safe_local_validation():
     record_external(
         login,
         reason="External interactive prerequisite: Azure CLI sign-in is classified explicitly and never executed by CU tests.",
+        comment="Sign in for the default login authentication mode.",
     )
     # endregion
 
@@ -154,6 +155,54 @@ def test_readme_frontend_interchange_preserves_step_comments():
         "# Change the default analyzer with the Azure CLI extension.",
         "# Use that setting with the standalone frontend.",
     ]
+
+
+@pytest.mark.parametrize("path", [_README, _USAGE_GUIDE], ids=["readme", "usage-guide"])
+def test_defaults_show_preserves_step_comment(path):
+    content = path.read_text(encoding="utf-8")
+    snippet = content.split("<!-- Snippet:defaults_show -->", 1)[1].split("```", 2)[1]
+
+    assert (
+        "# Show the Content Understanding defaults configured on the resource.\n"
+        "cu defaults show\n"
+    ) in snippet
+
+
+@pytest.mark.parametrize(
+    "path,minimum_groups",
+    [
+        (_README, {
+            "configure_login": 4, "configure_key": 3, "analyze_layout_options": 2,
+            "custom_analyzer_workflow": 3, "setup_help": 2, "multiple_profiles": 8,
+        }),
+        (_USAGE_GUIDE, {
+            "profile_setup": 5, "analyzer_list_active": 1, "analyzer_list_prod": 1,
+            "analyzer_list_env": 1, "analyzer_list_explicit": 1, "profile_workflow": 4,
+            "profile_preview": 1, "profile_copy_cleanup": 3, "login_authentication": 2,
+            "profile_key": 1, "profile_unset_key": 1, "environment_inspection": 2,
+            "env_override_bash": 1, "env_override_powershell": 1, "profile_sync": 1,
+            "profile_sync_named": 1, "configure_model_mappings": 2, "analyze_layout": 1,
+            "analyze_with_profile_default": 2, "analyze_json": 1, "analyze_markdown_file": 1,
+            "analyze_json_file": 1, "analyze_pattern": 1, "analyze_recursive": 1,
+            "analyze_dry_run": 1, "analyze_recursive_report": 1, "analyze_llm_input": 1,
+            "schema_templates": 3, "schema_from_sample": 1, "schema_validation": 2,
+            "analyzer_evaluation": 2, "analyzer_management": 2, "analyzer_test_preview": 1,
+            "analyzer_test_batch": 1, "analyzer_copy_profiles": 1, "analyzer_copy_resources": 1,
+            "analyzer_delete": 1, "defaults_table": 1, "defaults_model": 1,
+            "defaults_from_profile": 1, "diagnose_configuration": 2, "doctor_fix_defaults": 1,
+            "cli_help_overview": 3,
+        }),
+    ],
+    ids=["readme", "usage-guide"],
+)
+def test_documented_workflows_keep_step_comments(path, minimum_groups):
+    content = path.read_text(encoding="utf-8")
+    for identifier, minimum in minimum_groups.items():
+        snippet = content.split(f"<!-- Snippet:{identifier} -->", 1)[1].split("```", 2)[1]
+        groups = re.findall(r"(?m)^#[^\n]+(?:\n#[^\n]+)*", snippet)
+        assert len(groups) >= minimum, f"{path.name}: {identifier} lost step comments"
+        if identifier in {"custom_analyzer_workflow", "analyzer_evaluation"}:
+            assert "# benchmark and does not compare the result with labeled ground truth." in snippet
 
 
 def test_recording_invoice_fixture_matches_public_sample():

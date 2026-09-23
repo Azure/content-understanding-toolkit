@@ -23,8 +23,8 @@ def _clear_resolved_operations():
     resolve_identifier.cache_clear()
 
 
-def _run(*args: str):
-    return invoke_cli(args)
+def _run(*args: str, comment: str | None = None):
+    return invoke_cli(args, comment=comment)
 
 
 def test_analyzer_create_help_describes_valid_custom_id():
@@ -372,7 +372,9 @@ def test_analyzer_test_file_and_recursive_report_options(monkeypatch, short_opti
         preview = _run(*selection, "--dry-run")
     else:
         # region Snippet:analyzer_test_preview
-        preview = _run(*selection, "--dry-run")
+        preview = _run(
+            *selection, "--dry-run", comment="Preview the matching samples without making service calls.",
+        )
         # endregion
     assert preview.exit_code == 0, preview.output
     assert "Found 2 inputs:" in preview.output
@@ -390,7 +392,13 @@ def test_analyzer_test_file_and_recursive_report_options(monkeypatch, short_opti
         _run(*arguments)
     else:
         # region Snippet:analyzer_test_batch
-        _run(*arguments)
+        _run(
+            *arguments,
+            comment=(
+                "Test every matching sample in my_sample_dir, including nested PDFs,\n"
+                "and save one aggregate JSON report."
+            ),
+        )
         # endregion
     assert set(seen) == {"my_sample_dir/sample_invoice.pdf", "my_sample_dir/nested/sample_invoice.pdf"}
     assert selected_inputs[-2] == selected_inputs[-1] == {Path(name).resolve() for name in seen}

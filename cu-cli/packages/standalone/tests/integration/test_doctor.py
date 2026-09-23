@@ -22,8 +22,8 @@ from support.recording import use_cassette
 pytestmark = pytest.mark.integration
 
 
-def _run(*args):
-    return invoke_cli(args)
+def _run(*args, **kwargs):
+    return invoke_cli(args, **kwargs)
 
 
 def test_scenario_4_doctor_connectivity(cloud_project):
@@ -39,11 +39,17 @@ def test_scenario_4_defaults_show_json(cloud_project, table_output):
     with use_cassette("defaults_get"):
         if table_output:
             # region Snippet:defaults_table
-            res = _run("defaults", "show", "--table")
+            res = _run(
+                "defaults", "show", "--table",
+                comment="Show the same remote mappings as a human-readable table.",
+            )
             # endregion
         else:
             # region Snippet:defaults_show
-            res = _run("defaults", "show")
+            res = _run(
+                "defaults", "show",
+                comment="Show the Content Understanding defaults configured on the resource.",
+            )
             # endregion
     assert res.exit_code == 0, res.output
     if table_output:

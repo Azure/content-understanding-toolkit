@@ -24,8 +24,8 @@ from support.recording import copy_sample_invoice, mode, use_cassette
 pytestmark = pytest.mark.integration
 
 
-def _run(*args):
-    return invoke_cli(args)
+def _run(*args, **kwargs):
+    return invoke_cli(args, **kwargs)
 
 
 def _resolved_completion_model() -> str:
@@ -111,6 +111,7 @@ def test_scenario_2_schema_create_from_sample(cloud_project, monkeypatch):
             "--name", "invoice_v1",
             "--from-sample", "sample_invoice.pdf",
             "--output-file", "schema.json",
+            comment="Generate a schema from a representative document.",
         )
         # endregion
     assert res.exit_code == 0, res.output
@@ -146,11 +147,24 @@ def test_scenario_2_schema_create_from_sample(cloud_project, monkeypatch):
 
     monkeypatch.setattr("cu_cli.commands.analyze._run_one", analyze)
     # region Snippet:analyzer_create
-    _run("analyzer", "create", "--name", "invoice_v1", "--schema", "schema.json")
+    _run(
+        "analyzer", "create", "--name", "invoice_v1", "--schema", "schema.json",
+        comment=(
+            "Review and update the generated schema for your extraction requirements,\n"
+            "then create the analyzer."
+        ),
+    )
     # endregion
     assert remote["invoice_v1"]["fieldSchema"] == body["fieldSchema"]
     # region Snippet:analyzer_test_single
-    _run("analyzer", "test", "invoice_v1", "sample_invoice.pdf")
+    _run(
+        "analyzer", "test", "invoice_v1", "sample_invoice.pdf",
+        comment=(
+            "Run the analyzer against the sample and summarize whether fields were returned\n"
+            "and any confidence values supplied by the service. This is not an accuracy\n"
+            "benchmark and does not compare the result with labeled ground truth."
+        ),
+    )
     # endregion
     # region Snippet:analyze_custom
     result = _run(
@@ -160,7 +174,7 @@ def test_scenario_2_schema_create_from_sample(cloud_project, monkeypatch):
     assert analyzed == ["invoice_v1", "invoice_v1"]
     assert json.loads(result.stdout)["analyzerId"] == "invoice_v1"
     # region Snippet:analyzer_show
-    result = _run("analyzer", "show", "invoice_v1")
+    result = _run("analyzer", "show", "invoice_v1", comment="Print one analyzer definition.")
     # endregion
     assert json.loads(result.stdout)["fieldSchema"] == body["fieldSchema"]
     result = invoke_cli(("analyzer", "delete", "invoice_v1"), input="n\n")
@@ -169,6 +183,7 @@ def test_scenario_2_schema_create_from_sample(cloud_project, monkeypatch):
     # region Snippet:analyzer_delete
     result = invoke_cli(
         ("analyzer", "delete", "invoice_v1"), input="y\n",
+        comment="Delete a custom analyzer after confirmation.",
     )
     # endregion
     assert "Delete analyzer 'invoice_v1'?" in result.output

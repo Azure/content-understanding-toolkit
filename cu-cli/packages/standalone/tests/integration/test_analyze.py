@@ -38,7 +38,13 @@ def test_scenario_1_analyze_single_file_markdown(cloud_project, analyzer_option)
     with use_cassette("analyze_single") as cassette:
         if analyzer_option == "--analyzer":
             # region Snippet:analyze_layout
-            res = _run(*arguments)
+            res = _run(
+                *arguments,
+                comment=(
+                    "Generate Markdown from the analyzer result with the CU SDK's to_llm_input().\n"
+                    "This is a billed service call; Markdown is written to standard output."
+                ),
+            )
             # endregion
         else:
             # region Snippet:analyze_layout_short
@@ -150,15 +156,17 @@ def test_analysis_output_views_use_real_sdk_and_recordings(cloud_project, view):
     with use_cassette("analyze_single") as cassette:
         if view == "markdown_file":
             # region Snippet:analyze_markdown_file
-            result = _run(*arguments)
+            result = _run(
+                *arguments, comment="Save Markdown instead of printing it; parent directories are created.",
+            )
             # endregion
         elif view == "json_file":
             # region Snippet:analyze_json_file
-            result = _run(*arguments)
+            result = _run(*arguments, comment="Save structured JSON instead of printing it.")
             # endregion
         elif view == "json_stdout":
             # region Snippet:analyze_json
-            result = _run(*arguments)
+            result = _run(*arguments, comment="Print the complete structured result as JSON to the terminal.")
             # endregion
         elif view == "usage":
             # region Snippet:analyze_usage
@@ -166,7 +174,7 @@ def test_analysis_output_views_use_real_sdk_and_recordings(cloud_project, view):
             # endregion
         else:
             # region Snippet:analyze_llm_input
-            result = _run(*arguments)
+            result = _run(*arguments, comment="Print service-call and total elapsed time for the analysis.")
             # endregion
     assert result.exit_code == 0, result.output
     if mode() == "playback":
@@ -207,12 +215,14 @@ def test_configure_profile_then_analyze_without_preseeded_settings(monkeypatch):
     _run(
         "profile", "set", "endpoint", "https://<resource-name>.services.ai.azure.com/",
         placeholder_values={"resource-name": "sanitized"},
+        comment="Save the endpoint on the active profile.",
     )
     # endregion
     # region Snippet:profile_key
     _run(
         "profile", "set", "api_key", "<key>",
         placeholder_values={"key": "playback-dummy-key"},
+        comment="Save a resource key on the active profile and select key authentication.",
     )
     # endregion
     store = ProfileStore.load()
@@ -220,18 +230,22 @@ def test_configure_profile_then_analyze_without_preseeded_settings(monkeypatch):
     assert store.get("auth_mode") == "key"
     with use_cassette("doctor"):
         # region Snippet:doctor
-        result = _run("doctor")
+        result = _run("doctor", comment="Check the active profile.")
         # endregion
     assert result.exit_code == 0, result.output
     # endregion
     # region Snippet:profile_default_analyzer
     _run(
         "profile", "set", "default_analyzer", "prebuilt-layout",
+        comment="Save the default analyzer on the active profile.",
     )
     # endregion
     with use_cassette("analyze_single"):
         # region Snippet:analyze_default
-        result = _run("analyze", "sample_invoice.pdf", "--json")
+        result = _run(
+            "analyze", "sample_invoice.pdf", "--json",
+            comment="Analyze one file using the saved default analyzer.",
+        )
         # endregion
     assert result.exit_code == 0, result.output
     payload = json.loads(result.stdout)
@@ -297,15 +311,23 @@ def test_directory_examples_use_recorded_invoice_content(cloud_project, recursiv
     with use_cassette("analyze_batch") as cassette:
         if with_report:
             # region Snippet:analyze_recursive_report
-            result = _run(*arguments)
+            result = _run(
+                *arguments,
+                comment=(
+                    "Analyze recursively, save one Markdown result per input, and record all statuses in JSON.\n"
+                    "Process up to eight batch jobs concurrently instead of the default four."
+                ),
+            )
             # endregion
         elif recursive:
             # region Snippet:analyze_recursive
-            result = _run(*arguments)
+            result = _run(
+                *arguments, comment="Quote the pattern so CU CLI, rather than the shell, applies it.",
+            )
             # endregion
         else:
             # region Snippet:analyze_pattern
-            result = _run(*arguments)
+            result = _run(*arguments, comment="Analyze only matching files directly inside my_document_dir.")
             # endregion
 
     assert result.exit_code == 0, result.output

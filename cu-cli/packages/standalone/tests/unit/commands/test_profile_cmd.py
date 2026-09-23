@@ -16,10 +16,11 @@ pytestmark = pytest.mark.unit
 def _run(
     *args: str, input: str | None = None,
     placeholder_values: dict[str, str] | None = None,
+    comment: str | None = None,
 ):
     return invoke_cli(
         args, color=False, input=input,
-        placeholder_values=placeholder_values,
+        placeholder_values=placeholder_values, comment=comment,
     )
 
 
@@ -89,7 +90,10 @@ def test_profile_workflow_exports_commands_and_preserves_independent_profiles():
         placeholder_values={"resource-name": "cu-docs-resource"},
     )
     # region Snippet:profile_login
-    _run("profile", "set", "auth_mode", "login")
+    _run(
+        "profile", "set", "auth_mode", "login",
+        comment="Login authentication is the default; this command selects it explicitly.",
+    )
     # endregion
     _run(
         "profile", "set", "api_key", "<key>",
@@ -98,58 +102,73 @@ def test_profile_workflow_exports_commands_and_preserves_independent_profiles():
     assert ProfileStore.load().get("api_key") == "offline-test-key"
     assert ProfileStore.load().get("auth_mode") == "key"
     # region Snippet:profile_unset_key
-    _run("profile", "unset", "api_key")
+    _run(
+        "profile", "unset", "api_key",
+        comment="Remove the saved key and return this profile to login authentication.",
+    )
     # endregion
     assert ProfileStore.load().get("api_key") is None
     assert ProfileStore.load().get("auth_mode") == "login"
     # region Snippet:profile_show
-    _run("profile", "show")
+    _run("profile", "show", comment="Show all effective values for the active profile.")
     # endregion
     # region Snippet:profile_get_endpoint
-    result = _run("profile", "get", "endpoint")
+    result = _run(
+        "profile", "get", "endpoint",
+        comment="Print only the effective endpoint from the active profile.",
+    )
     # endregion
     assert result.stdout.strip() == endpoint
     # region Snippet:profile_create_dev
-    _run("profile", "create", "dev")
+    _run("profile", "create", "dev", comment="Create an empty dev profile.")
     # endregion
     # region Snippet:profile_dev_endpoint
     _run(
         "profile", "set", "endpoint", "https://<dev-resource>.services.ai.azure.com/", "--name", "dev",
         placeholder_values={"dev-resource": "dev"},
+        comment="Save the dev resource endpoint without changing the active profile.",
     )
     # endregion
     assert ProfileStore.load().get("endpoint", name="dev") == "https://dev.services.ai.azure.com/"
     # region Snippet:profile_create_prod
-    _run("profile", "create", "prod")
+    _run("profile", "create", "prod", comment="Create an empty prod profile.")
     # endregion
     # region Snippet:profile_prod_endpoint
     _run(
         "profile", "set", "endpoint", "https://<prod-resource>.services.ai.azure.com/", "--name", "prod",
         placeholder_values={"prod-resource": "prod"},
+        comment="Save a distinct resource endpoint on prod.",
     )
     # endregion
     assert ProfileStore.load().get("endpoint", name="prod") == "https://prod.services.ai.azure.com/"
     # region Snippet:profile_activate_dev
-    _run("profile", "set-active", "dev")
+    _run(
+        "profile", "set-active", "dev",
+        comment="Make dev the profile used when --profile is omitted.",
+    )
     # endregion
     # region Snippet:profile_show_prod
-    _run("profile", "show", "--name", "prod")
+    _run("profile", "show", "--name", "prod", comment="Show prod without changing the active profile.")
     # endregion
     assert ProfileStore.load().get_active_name() == "dev"
     # region Snippet:profile_copy_cleanup
-    _run("profile", "copy", "dev", "test")
-    _run("profile", "rename", "test", "staging")
-    _run("profile", "delete", "staging", "--yes")
+    _run("profile", "copy", "dev", "test", comment="Create test as an independent copy of dev.")
+    _run("profile", "rename", "test", "staging", comment="Rename test and its saved values to staging.")
+    _run(
+        "profile", "delete", "staging", "--yes",
+        comment="Delete the inactive staging profile; this does not delete an Azure resource.",
+    )
     # endregion
     assert not ProfileStore.load().has_name("staging")
     # region Snippet:profile_list
-    result = _run("profile", "list")
+    result = _run("profile", "list", comment="List saved profiles and identify the active profile.")
     # endregion
     assert "dev" in result.stdout and "prod" in result.stdout
     assert ProfileStore.load().get("endpoint", name="prod") != endpoint
     # region Snippet:profile_preview
     _run(
         "profile", "set", "api_version", "2026-06-01-preview", "--name", "dev",
+        comment="Save a preview API version on dev without changing the active profile.",
     )
     # endregion
     _run(
@@ -405,7 +424,10 @@ def test_sync_defaults_uses_saved_endpoint_not_environment(
     monkeypatch.setattr("cu_cli.commands.profile_cmd.build_client", _build_client)
 
     # region Snippet:profile_sync_named
-    result = _run("profile", "sync-defaults", "--name", "dev")
+    result = _run(
+        "profile", "sync-defaults", "--name", "dev",
+        comment="Import remote defaults into dev without changing the active profile.",
+    )
     # endregion
 
     assert result.exit_code == 0, result.output
@@ -419,7 +441,7 @@ def test_sync_defaults_uses_saved_endpoint_not_environment(
     ) == "embedding-prod"
     assert _run("profile", "set-active", "dev").exit_code == 0
     # region Snippet:profile_sync
-    _run("profile", "sync-defaults")
+    _run("profile", "sync-defaults", comment="Import remote defaults into the active CU CLI profile.")
     # endregion
     # region Snippet:profile_sync_auth
     result = _run(

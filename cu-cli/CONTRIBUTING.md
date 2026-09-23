@@ -231,10 +231,17 @@ creation, sample testing, analysis, inspection, and deletion using a stateful
 service double after schema generation. Its missing live recordings remain
 explicit in the report and recording data notes.
 
-Write headings and command descriptions outside the marked code block. An
+Write headings and longer command descriptions outside the marked code block. An
 initial description may be drafted automatically, then edited by hand; later
 updates only replace the block's contents. They preserve all surrounding prose
 and whitespace and do not compare handwritten descriptions with test wording.
+
+For step comments inside a generated code block, pass `comment="..."` to
+`invoke_cli`, `invoke_azure`, or `record_external`; separate multiple lines with
+`\n`. Local `_run` wrappers must forward this parameter. Each line is rendered
+as a shell comment before the command, never passed to the CLI or executed.
+Preserve existing step comments in these test sources rather than editing the
+generated blocks. Python comments inside a region are not copied automatically.
 
 Use `invoke_azure` for actual Azure CLI extension parsing. `record_output` validates
 JSON/YAML or publishes an asserted, normalized output snapshot. Installation and

@@ -536,7 +536,7 @@ def record_output(content: str, *, language: str = "text") -> None:
             catalog.record_region(name, line, test, content, language, verification)
 
 
-def record_external(arguments: list[str], *, reason: str) -> None:
+def record_external(arguments: list[str], *, reason: str, comment: str | None = None) -> None:
     regions = _matching_regions()
     assert reason.strip()
     assert arguments == ["az", "login"] or arguments[:4] == ["python", "-m", "pip", "install"], (
@@ -546,7 +546,8 @@ def record_external(arguments: list[str], *, reason: str) -> None:
     if active is not None:
         catalog, test = active
         verification = {"mode": "external", "reason": reason}
-        content = shlex.join(arguments)
+        comments = [f"# {line}" for line in (comment or "").splitlines()]
+        content = "\n".join([*comments, shlex.join(arguments)])
         for identifier, line in regions:
             catalog.record_region(identifier, line, test, content, "bash", verification, reason=reason)
 

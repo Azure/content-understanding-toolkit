@@ -14,7 +14,7 @@ import pytest
 
 from cu_cli.cli import main
 from support.command_catalog import CommandCatalog, _ACTIVE, _REGIONS, command_inventory, invoke_cli, render_command
-from support.command_catalog import invoke_azure, record_output, recording_evidence, verification_for
+from support.command_catalog import invoke_azure, record_external, record_output, recording_evidence, verification_for
 
 
 pytestmark = pytest.mark.unit
@@ -582,6 +582,33 @@ def test_region_preserves_source_formatting(language, continuation):
     catalog.record_region("workflow", 2, "test_workflow", "cu --help\n", language, {"mode": "local"})
 
     assert catalog.examples["workflow"]["content"] == f"{content}\ncu --help"
+
+
+@pytest.mark.parametrize(
+    "comment,expected",
+    [
+        (None, "az login"),
+        ("", "az login"),
+        ("Sign in.\nUse the intended account.", "# Sign in.\n# Use the intended account.\naz login"),
+    ],
+    ids=["plain", "empty", "multiline-comment"],
+)
+def test_external_command_preserves_optional_comment(catalog_region, monkeypatch, comment, expected):
+    monkeypatch.setattr(
+        subprocess, "run", lambda *_args, **_kwargs: pytest.fail("external commands must not execute"),
+    )
+    catalog = CommandCatalog(main)
+    token = _ACTIVE.set((catalog, catalog_region))
+    reason = "Interactive sign-in prerequisite."
+    try:
+        record_external(["az", "login"], reason=reason, comment=comment)
+    finally:
+        _ACTIVE.reset(token)
+
+    entry = catalog.examples[catalog_region]
+    assert entry["content"] == expected
+    assert entry["reason"] == reason
+    assert entry["verification"] == {"mode": "external", "reason": reason}
 
 
 def test_invocation_gate_requires_each_alias_and_ignores_help_only_calls():
