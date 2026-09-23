@@ -567,6 +567,8 @@ def test_environment_overrides_saved_profile_in_generated_shell_example(language
         result = _run("analyzer", "list", "--info", **options)
         # endregion
     assert "https://temporary.services.ai.azure.com/" in result.stderr
+    assert "endpoint:" not in result.stdout
+    assert "Analyzers" in _plain(result.stderr)
     assert _run("profile", "get", "endpoint").stdout.strip() == (
         "https://saved.services.ai.azure.com/"
     )
@@ -591,10 +593,16 @@ def test_analyzer_profile_environment_and_explicit_endpoint_precedence(monkeypat
     # region Snippet:analyzer_list_active
     result = _run(
         "analyzer", "list", "--info",
-        comment="Use all effective settings from the active dev profile.",
+        comment=(
+            "Use all effective settings from the active dev profile.\n"
+            "--info prints resolved, non-secret runtime settings to stderr before the request.\n"
+            "It is not a dry run; the analyzer list request still runs."
+        ),
     )
     # endregion
     assert endpoints[-1] == "https://dev.services.ai.azure.com/"
+    assert "endpoint:" not in result.stdout
+    assert "Analyzers" in _plain(result.stderr)
     context = "\n".join(result.stderr.splitlines()[:5])
     context = context.replace(str(Profile.load().path), "~/.azure/config")
     assert "endpoint: https://dev.services.ai.azure.com/" in context

@@ -205,6 +205,26 @@ def test_documented_workflows_keep_step_comments(path, minimum_groups):
             assert "# benchmark and does not compare the result with labeled ground truth." in snippet
 
 
+@pytest.mark.parametrize(
+    "path,identifier",
+    [
+        (_README, "multiple_profiles"),
+        (_USAGE_GUIDE, "analyzer_list_active"),
+    ],
+    ids=["readme", "usage-guide"],
+)
+def test_info_commands_explain_runtime_settings_once(path, identifier):
+    content = path.read_text(encoding="utf-8")
+    snippet = content.split(f"<!-- Snippet:{identifier} -->", 1)[1].split("```", 2)[1]
+
+    explanation = (
+        "# --info prints resolved, non-secret runtime settings to stderr before the request.\n"
+        "# It is not a dry run; the analyzer list request still runs.\n"
+    )
+    assert explanation in snippet
+    assert content.count(explanation) == 1
+
+
 def test_recording_invoice_fixture_matches_public_sample():
     public_sample = _PRODUCT_ROOT / "sample_files" / "sample_invoice.pdf"
     sample = copy_sample_invoice("documents/sample_invoice.pdf")

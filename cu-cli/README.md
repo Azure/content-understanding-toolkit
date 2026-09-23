@@ -395,6 +395,8 @@ cu profile set endpoint https://<prod-resource>.services.ai.azure.com/ --name pr
 # Make dev the profile used when --profile is omitted.
 cu profile set-active dev
 # Use all effective settings from the active dev profile.
+# --info prints resolved, non-secret runtime settings to stderr before the request.
+# It is not a dry run; the analyzer list request still runs.
 cu analyzer list --info
 # Use prod for this command only; dev remains active.
 cu analyzer list --profile prod

@@ -88,14 +88,13 @@ With the profiles above configured, inspect the active `dev` resource:
 <!-- Snippet:analyzer_list_active -->
 ```bash
 # Use all effective settings from the active dev profile.
+# --info prints resolved, non-secret runtime settings to stderr before the request.
+# It is not a dry run; the analyzer list request still runs.
 cu analyzer list --info
 ```
 
-`--info` prints the resolved non-secret runtime context to standard error before
-the operation. It does not make the command a dry run: these examples still
-list analyzers from the selected resource, which must be accessible to your
-configured identity. Use the context to verify precedence without exposing an
-API key.
+The selected resource must be accessible to your configured identity. Use the
+reported values to verify profile and environment-variable precedence.
 
 The runtime context for this command begins with:
 
