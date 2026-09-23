@@ -243,12 +243,12 @@ Analyze several files into one output directory. `--pattern` requires
 
 <!-- Snippet:analyze_pattern -->
 ```bash
-cu analyze --source documents --pattern "*.pdf" -a prebuilt-layout --output-dir results \
+cu analyze --source my_document_dir --pattern "*.pdf" -a prebuilt-layout --output-dir results \
   --json
 ```
 
 Each result is written under `./results` and keeps the input path relative to
-`./documents`. For example, `./documents/invoice-01.pdf` produces
+`./my_document_dir`. For example, `./my_document_dir/invoice-01.pdf` produces
 `./results/invoice-01.pdf.result.json` with `--json`. Markdown results use the
 `.result.md` suffix when `--json` is omitted.
 

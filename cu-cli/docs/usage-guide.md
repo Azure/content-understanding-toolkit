@@ -548,12 +548,12 @@ selection mode with positional inputs.
 
 ### Analyze files in local directories
 
-Place the input PDFs in `documents`; put files in subdirectories when trying
+Place the input PDFs in `my_document_dir`; put files in subdirectories when trying
 recursive selection. To analyze only immediate files matching the PDF pattern:
 
 <!-- Snippet:analyze_pattern -->
 ```bash
-cu analyze --source documents --pattern "*.pdf" -a prebuilt-layout --output-dir results \
+cu analyze --source my_document_dir --pattern "*.pdf" -a prebuilt-layout --output-dir results \
   --json
 ```
 
@@ -562,7 +562,7 @@ nested directories:
 
 <!-- Snippet:analyze_recursive -->
 ```bash
-cu analyze --source documents --pattern "*.pdf" --recursive --analyzer prebuilt-layout \
+cu analyze --source my_document_dir --pattern "*.pdf" --recursive --analyzer prebuilt-layout \
   --output-dir recursive-results \
   --json
 ```
@@ -572,7 +572,7 @@ source directory. For example:
 
 <!-- Snippet:output_mapping -->
 ```text
-documents/nested/sample_invoice.pdf
+my_document_dir/nested/sample_invoice.pdf
   -> recursive-results/nested/sample_invoice.pdf.result.json
 ```
 
@@ -651,7 +651,7 @@ path; if reusing paths, choose an existing-output policy and a new report path:
 
 <!-- Snippet:analyze_recursive_report -->
 ```bash
-cu analyze --source documents --pattern "*.pdf" --recursive --analyzer prebuilt-layout \
+cu analyze --source my_document_dir --pattern "*.pdf" --recursive --analyzer prebuilt-layout \
   --output-dir batch-results \
   --json \
   --report-file run-report.json \

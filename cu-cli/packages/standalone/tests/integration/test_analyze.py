@@ -275,12 +275,12 @@ def test_existing_recorded_result_is_skipped_or_reanalyzed(cloud_project, policy
     ids=["immediate", "recursive", "nested-report"],
 )
 def test_directory_examples_use_recorded_invoice_content(cloud_project, recursive, with_report):
-    source = Path("documents")
+    source = Path("my_document_dir")
     sample = source / "nested/sample_invoice.pdf" if recursive else source / "sample_invoice.pdf"
     _copy_sample(sample)
     (source / "excluded.txt").write_text("excluded by the PDF filename pattern", encoding="utf-8")
     destination = Path("batch-results" if with_report else "recursive-results" if recursive else "results")
-    arguments = ["analyze", "--source", "documents", "--pattern", "*.pdf"]
+    arguments = ["analyze", "--source", str(source), "--pattern", "*.pdf"]
     if recursive:
         arguments.append("--recursive")
     analyzer_option = "--analyzer" if recursive else "-a"

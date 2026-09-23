@@ -222,6 +222,23 @@ def test_readme_video_url_uses_default_markdown_output():
     assert "--json" not in snippet
 
 
+def test_directory_workflow_uses_explicit_input_directory():
+    for path, identifiers in (
+        (_README, ("analyze_pattern",)),
+        (_USAGE_GUIDE, ("analyze_pattern", "analyze_recursive", "analyze_recursive_report")),
+    ):
+        content = path.read_text(encoding="utf-8")
+        for identifier in identifiers:
+            snippet = content.split(f"<!-- Snippet:{identifier} -->", 1)[1].split("```", 2)[1]
+            assert "--source my_document_dir" in snippet
+
+    readme = _README.read_text(encoding="utf-8")
+    guide = _USAGE_GUIDE.read_text(encoding="utf-8")
+    assert "`./my_document_dir/invoice-01.pdf`" in readme
+    assert "Place the input PDFs in `my_document_dir`" in guide
+    assert "my_document_dir/nested/sample_invoice.pdf\n" in guide
+
+
 def test_api_version_description_matches_cli_help():
     for path in (_README, _USAGE_GUIDE):
         normalized = " ".join(path.read_text(encoding="utf-8").split())
