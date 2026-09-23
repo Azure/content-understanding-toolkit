@@ -237,6 +237,28 @@ def test_directory_workflow_uses_explicit_input_directory():
     assert "`./my_document_dir/invoice-01.pdf`" in readme
     assert "Place the input PDFs in `my_document_dir`" in guide
     assert "my_document_dir/nested/sample_invoice.pdf\n" in guide
+    normalized_guide = " ".join(guide.split())
+    assert "`my_incoming_dir` and `my_archive_dir` directories with PDFs" in normalized_guide
+    assert "place input files in `my_document_dir`." in normalized_guide
+    assert "place representative input PDFs in `my_sample_dir`." in normalized_guide
+
+
+@pytest.mark.parametrize(
+    "identifier,expected_input",
+    [
+        ("analyze_sources_preview", "--source my_incoming_dir --source my_archive_dir"),
+        ("analyze_directory", "cu analyze my_document_dir "),
+        ("analyze_dry_run", "--source my_document_dir "),
+        ("analyzer_test_preview", "--source my_sample_dir "),
+        ("analyzer_test_batch", "--source my_sample_dir "),
+    ],
+    ids=["multiple-directories", "positional-directory", "dry-run", "evaluation-preview", "evaluation-batch"],
+)
+def test_usage_guide_directory_inputs_are_explicit(identifier, expected_input):
+    content = _USAGE_GUIDE.read_text(encoding="utf-8")
+    snippet = content.split(f"<!-- Snippet:{identifier} -->", 1)[1].split("```", 2)[1]
+
+    assert expected_input in snippet
 
 
 def test_api_version_description_matches_cli_help():

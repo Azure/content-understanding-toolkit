@@ -55,15 +55,15 @@ def test_scenario_1_analyze_single_file_markdown(cloud_project, analyzer_option)
 
 def test_scenario_1_analyze_directory_writes_result_files(cloud_project):
     """`cu analyze <dir> --output-dir <dir> --json` writes result files."""
-    docs = Path("docs")
-    docs.mkdir()
-    src = _copy_sample()
-    shutil.move(str(src), str(docs / "sample_invoice.pdf"))
+    source = Path("my_document_dir")
+    source.mkdir()
+    sample = _copy_sample()
+    shutil.move(str(sample), str(source / "sample_invoice.pdf"))
     with use_cassette("analyze_batch"):
         # region Snippet:analyze_directory
         res = _run(
             "analyze",
-            "docs",
+            str(source),
             "--analyzer",
             "prebuilt-layout",
             "--output-dir",

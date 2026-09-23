@@ -1194,7 +1194,7 @@ def test_output_file_rejects_multiple_inputs_before_client(monkeypatch):
 
 
 def test_dry_run_makes_no_client_call_or_file_write(monkeypatch):
-    source = Path("documents")
+    source = Path("my_document_dir")
     source.mkdir()
     copy_sample_invoice(source / "sample_invoice.pdf")
     (source / ".DS_Store").write_text("metadata")
@@ -1245,15 +1245,15 @@ def test_explicit_multi_input_previews_preserve_selection(monkeypatch, selection
         selection = ("--file", sample_paths[0], "--file", sample_paths[1])
         output_dir = "selected-results"
     else:
-        sample_paths = ("incoming/first.pdf", "archive/second.pdf")
-        selection = ("--source", "incoming", "--source", "archive", "--pattern", "*.pdf")
+        sample_paths = ("my_incoming_dir/first.pdf", "my_archive_dir/second.pdf")
+        selection = ("--source", "my_incoming_dir", "--source", "my_archive_dir", "--pattern", "*.pdf")
         output_dir = "combined-results"
     for sample in sample_paths:
         copy_sample_invoice(sample)
     copy_sample_invoice("unselected.pdf")
     if selection_mode == "sources":
-        copy_sample_invoice("incoming/nested/excluded.pdf")
-        Path("incoming/excluded.txt").write_text("not a PDF", encoding="utf-8")
+        copy_sample_invoice("my_incoming_dir/nested/excluded.pdf")
+        Path("my_incoming_dir/excluded.txt").write_text("not a PDF", encoding="utf-8")
 
     selections = []
     original_plan_inputs = input_planning.plan_inputs

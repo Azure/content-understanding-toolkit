@@ -529,13 +529,13 @@ cu analyze --file "invoice one.pdf" --file "invoice two.pdf" --analyzer prebuilt
 ```
 
 To select files from multiple directories, repeat `--source`. Prepare the
-`incoming` and `archive` directories with PDFs. The same `--pattern` applies
-to both directories; only immediate matching files are selected unless you
-add `--recursive`:
+`my_incoming_dir` and `my_archive_dir` directories with PDFs. The same
+`--pattern` applies to both directories; only immediate matching files are
+selected unless you add `--recursive`:
 
 <!-- Snippet:analyze_sources_preview -->
 ```bash
-cu analyze --source incoming --source archive --pattern "*.pdf" --analyzer prebuilt-layout \
+cu analyze --source my_incoming_dir --source my_archive_dir --pattern "*.pdf" --analyzer prebuilt-layout \
   --output-dir combined-results \
   --json \
   --dry-run
@@ -580,12 +580,12 @@ Markdown results use `.result.md` instead. With one input, omit `--output-dir` t
 write the result to standard output or use `--output-file` to choose one file.
 `--output-file` is rejected when more than one input is selected.
 
-For the positional directory shortcut, place input files in `docs`. This form
-does not use a filename pattern and writes results under `out`:
+For the positional directory shortcut, place input files in `my_document_dir`.
+This form does not use a filename pattern and writes results under `out`:
 
 <!-- Snippet:analyze_directory -->
 ```bash
-cu analyze docs --analyzer prebuilt-layout --output-dir out --json
+cu analyze my_document_dir --analyzer prebuilt-layout --output-dir out --json
 ```
 
 ### Preview and run a batch safely
@@ -595,7 +595,7 @@ and existing-file actions before a batch:
 
 <!-- Snippet:analyze_dry_run -->
 ```bash
-cu analyze --source documents --analyzer prebuilt-layout --json --output-dir results \
+cu analyze --source my_document_dir --analyzer prebuilt-layout --json --output-dir results \
   --report-file report.json \
   --dry-run
 ```
@@ -791,12 +791,13 @@ cu analyzer create --name invoice_v1 --schema schema.json
 cu analyzer test invoice_v1 sample_invoice.pdf
 ```
 
-For directory evaluation, place representative input PDFs in `samples`. Preview
-the matching files, including nested PDFs, without making analyzer service calls:
+For directory evaluation, place representative input PDFs in `my_sample_dir`.
+Preview the matching files, including nested PDFs, without making analyzer
+service calls:
 
 <!-- Snippet:analyzer_test_preview -->
 ```bash
-cu analyzer test --name invoice_v1 --source samples --pattern "*.pdf" --recursive \
+cu analyzer test --name invoice_v1 --source my_sample_dir --pattern "*.pdf" --recursive \
   --dry-run
 ```
 
@@ -806,7 +807,7 @@ selected samples are the ones you intend to submit:
 
 <!-- Snippet:analyzer_test_batch -->
 ```bash
-cu analyzer test --name invoice_v1 --source samples --pattern "*.pdf" --recursive \
+cu analyzer test --name invoice_v1 --source my_sample_dir --pattern "*.pdf" --recursive \
   --concurrency 2 \
   --yes \
   --json \

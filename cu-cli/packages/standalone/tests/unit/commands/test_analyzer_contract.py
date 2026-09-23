@@ -334,8 +334,8 @@ def test_analyzer_test_file_and_recursive_report_options(monkeypatch, short_opti
     from cu_cli_core import input_planning
 
     copy_sample_invoice()
-    copy_sample_invoice("samples/sample_invoice.pdf")
-    copy_sample_invoice("samples/nested/sample_invoice.pdf")
+    copy_sample_invoice("my_sample_dir/sample_invoice.pdf")
+    copy_sample_invoice("my_sample_dir/nested/sample_invoice.pdf")
     seen = []
     selected_inputs = []
     built_clients = []
@@ -365,7 +365,7 @@ def test_analyzer_test_file_and_recursive_report_options(monkeypatch, short_opti
     assert seen == ["sample_invoice.pdf"]
     seen.clear()
     selection = (
-        "analyzer", "test", "--name", "invoice_v1", "--source", "samples",
+        "analyzer", "test", "--name", "invoice_v1", "--source", "my_sample_dir",
         "--pattern", "*.pdf", "-r" if short_options else "--recursive",
     )
     if short_options:
@@ -392,7 +392,7 @@ def test_analyzer_test_file_and_recursive_report_options(monkeypatch, short_opti
         # region Snippet:analyzer_test_batch
         _run(*arguments)
         # endregion
-    assert set(seen) == {"samples/sample_invoice.pdf", "samples/nested/sample_invoice.pdf"}
+    assert set(seen) == {"my_sample_dir/sample_invoice.pdf", "my_sample_dir/nested/sample_invoice.pdf"}
     assert selected_inputs[-2] == selected_inputs[-1] == {Path(name).resolve() for name in seen}
     assert len(built_clients) == 2
     assert json.loads(Path("test-report.json").read_text())["analyzerId"] == "invoice_v1"
