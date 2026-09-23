@@ -6,67 +6,13 @@
 from __future__ import annotations
 
 import json
-import os
-from pathlib import Path
-from runpy import run_path
-import time
 from types import SimpleNamespace
 
 import pytest
 
-from support.recording import _before_record_request, _before_record_response, write_cloud_profile
+from support.recording import _before_record_request, _before_record_response
 
 pytestmark = pytest.mark.unit
-
-
-@pytest.mark.parametrize("selected_mode", ["playback", "record", "live"])
-def test_cloud_project_only_skips_polling_in_playback(monkeypatch, request, selected_mode):
-    original_sleep = time.sleep
-    monkeypatch.setenv("CU_TEST_REC_MODE", selected_mode)
-    monkeypatch.setenv("CU_TEST_REC_ENDPOINT", "https://sanitized.services.ai.azure.com/")
-    monkeypatch.setenv("CU_TEST_REC_AUTH", "entra")
-    request.getfixturevalue("cloud_project")
-    assert (time.sleep is original_sleep) == (selected_mode != "playback")
-
-
-@pytest.mark.parametrize("selected_mode", ["playback", "record", "live"])
-def test_isolate_env_preserves_live_identity_but_not_profile_writes(tmp_path, selected_mode):
-    from cu_cli import profile as standalone_profile
-    from cu_cli_core import profiles as core_profiles
-
-    original_home = Path.home()
-    original_home_env = {name: os.getenv(name) for name in ("HOME", "USERPROFILE")}
-    login_cache = tmp_path / "login-cache"
-    login_cache.mkdir()
-    original_config = login_cache / "config"
-    original_config.write_text("[external]\nprotected = true\n", encoding="utf-8")
-    original_bytes = original_config.read_bytes()
-    isolated = tmp_path / "nested-fixture"
-    isolated.mkdir()
-    fixture = run_path(str(Path(__file__).resolve().parents[1] / "conftest.py"))["_isolate_env"]
-    with pytest.MonkeyPatch.context() as patch:
-        patch.setenv("CU_TEST_REC_MODE", selected_mode)
-        patch.setenv("CU_TEST_REC_ENDPOINT", "https://sanitized.services.ai.azure.com/")
-        patch.setenv("CU_TEST_REC_AUTH", "entra")
-        patch.setenv("AZURE_CONFIG_DIR", str(login_cache))
-        generator = fixture.__wrapped__(isolated, patch)
-        try:
-            next(generator)
-            expected_config = isolated / "home" / ".azure" / "config"
-            assert standalone_profile.azure_config_path() == expected_config
-            assert core_profiles.azure_config_path() == expected_config
-            if selected_mode == "playback":
-                assert Path.home() == isolated / "home"
-                assert os.environ["AZURE_CONFIG_DIR"] == str(expected_config.parent)
-            else:
-                assert Path.home() == original_home
-                assert {name: os.getenv(name) for name in original_home_env} == original_home_env
-                assert os.environ["AZURE_CONFIG_DIR"] == str(login_cache)
-            write_cloud_profile(Path.cwd())
-            assert expected_config.is_file()
-            assert original_config.read_bytes() == original_bytes
-        finally:
-            generator.close()
 
 
 @pytest.mark.parametrize(

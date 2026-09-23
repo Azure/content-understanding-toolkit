@@ -5,11 +5,12 @@
 
 from __future__ import annotations
 
+from click.testing import CliRunner
 from types import SimpleNamespace
 
+from cu_cli.cli import main
 from cu_cli.core.doctor import is_defaults_not_set as _is_defaults_not_set
 from cu_cli.core.doctor import missing_requirements as _missing_requirements
-from support.command_catalog import invoke_cli
 
 
 
@@ -17,8 +18,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-def _run(*args, **kwargs):
-    return invoke_cli(args, **kwargs)
+def _run(*args):
+    return CliRunner().invoke(main, list(args))
 
 
 # --- helper: _is_defaults_not_set ------------------------------------------
@@ -200,12 +201,7 @@ def test_doctor_fix_defaults_calls_update(monkeypatch):
     ).exit_code == 0
     fake = _FakeClient({})
     monkeypatch.setattr("cu_cli.commands.doctor.build_client", lambda *a, **k: fake)
-    # region Snippet:doctor_fix_defaults
-    res = _run(
-        "doctor", "--fix-defaults",
-        comment="Apply reviewed local model mappings as remote Content Understanding defaults.",
-    )
-    # endregion
+    res = _run("doctor", "--fix-defaults")
     assert res.exit_code == 0, res.output
     assert "Content Understanding defaults updated" in res.output
     assert fake.updated is not None
@@ -267,8 +263,8 @@ def test_doctor_explains_missing_default_analyzer(monkeypatch):
 def test_doctor_loads_named_profile_without_changing_active_profile(monkeypatch):
     loaded = []
     profile = SimpleNamespace(
-        profile_name="prod",
-        endpoint="https://prod.services.ai.azure.com/",
+        profile_name="named",
+        endpoint="https://named.services.ai.azure.com/",
         api_version="2025-11-01",
         auth_mode="login",
         api_key=None,
@@ -284,9 +280,7 @@ def test_doctor_loads_named_profile_without_changing_active_profile(monkeypatch)
         lambda *args, **kwargs: _FakeClient({}),
     )
 
-    # region Snippet:doctor_named
-    res = _run("doctor", "--profile", "prod", comment="Check prod without changing the active profile.")
-    # endregion
+    res = _run("doctor", "--profile", "named")
 
     assert res.exit_code == 0, res.output
-    assert loaded == [{"profile_name": "prod"}]
+    assert loaded == [{"profile_name": "named"}]

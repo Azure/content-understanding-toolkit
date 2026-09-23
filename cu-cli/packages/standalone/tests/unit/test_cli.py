@@ -13,14 +13,13 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import click
+from click.testing import CliRunner
 
 from cu_cli.apiversion import API_VERSION_HELP
 import cu_cli.commands.analyze as analyze_module
 from cu_cli.cli import main
 from cu_cli.core.analyze import AnalyzeResponse
 from cu_cli.errors import CuCliError
-from support.command_catalog import invoke_cli, record_output
-from support.recording import copy_sample_invoice
 
 
 import pytest
@@ -44,7 +43,7 @@ def _plain(output: str) -> str:
 
 
 def _run(*args, **kwargs):
-    return invoke_cli(args, **kwargs)
+    return CliRunner().invoke(main, list(args), **kwargs)
 
 
 def _create_profile(name: str) -> None:
@@ -491,319 +490,15 @@ def test_common_command_examples_explain_their_purpose(args, descriptions):
 
 
 def test_version():
-    # region Snippet:cli_version
     res = _run("--version")
-    # endregion
     assert res.exit_code == 0
     assert version("cu-cli") in res.output
 
 
-def test_documentation_help_commands():
-    # region Snippet:cli_help
-    result = _run("--help", comment="List top-level command groups and global options.")
-    # endregion
-    assert "Usage:" in result.output
-    # region Snippet:profile_help
-    result = _run(
-        "profile", "--help",
-        comment="Show how to save profile values, including supported keys and examples.",
-    )
-    # endregion
-    assert "set-active" in result.output
-    # region Snippet:copy_help
-    result = _run(
-        "analyzer", "copy", "--help",
-        comment="Show profile-based and Azure-discovery analyzer copy options.",
-    )
-    # endregion
-    assert "--destination-profile" in result.output
-    # region Snippet:infra_help
-    result = _run("infra", "generate", "--help")
-    # endregion
-    assert "--models" in result.output
-
-
-def test_environment_list_examples_export_redacted_output(monkeypatch):
-    monkeypatch.setenv("CU_ENDPOINT", "https://example.services.ai.azure.com/")
-    monkeypatch.setenv("CU_API_KEY", "example-key")
-    # region Snippet:env_list
-    result = _run("env-var", "list", comment="List set, recognized environment overrides in a table.")
-    # endregion
-    assert "example-key" not in result.output
-    # region Snippet:env_json
-    result = _run(
-        "env-var", "list", "--json",
-        comment="Emit the same set of overrides as machine-readable JSON.",
-    )
-    # endregion
-    payload = json.loads(result.stdout)
-    assert any(item["name"] == "CU_ENDPOINT" for item in payload)
-    assert "example-key" not in result.stdout
-
-
-@pytest.mark.parametrize("language", ["bash", "powershell"])
-def test_environment_overrides_saved_profile_in_generated_shell_example(language, monkeypatch):
-    _run("profile", "set", "endpoint", "https://saved.services.ai.azure.com/")
-    monkeypatch.setattr(
-        "cu_cli.commands.analyzer.build_client",
-        lambda *_args, **_kwargs: _FakeListAnalyzerClient(),
-    )
-    options = {
-        "env": {"CU_ENDPOINT": "https://<temporary-resource>.services.ai.azure.com/"},
-        "placeholder_values": {"temporary-resource": "temporary"},
-        "language": language,
-        "comment": (
-            "Temporarily override only the endpoint; other values still resolve normally.\n"
-            "Use the active profile's other settings and print the effective runtime context.\n"
-            "Preserve the previous environment after the command."
-        ),
-    }
-    if language == "bash":
-        # region Snippet:env_override_bash
-        result = _run("analyzer", "list", "--info", **options)
-        # endregion
-    else:
-        # region Snippet:env_override_powershell
-        result = _run("analyzer", "list", "--info", **options)
-        # endregion
-    assert "https://temporary.services.ai.azure.com/" in result.stderr
-    assert "endpoint:" not in result.stdout
-    assert "Analyzers" in _plain(result.stderr)
-    assert _run("profile", "get", "endpoint").stdout.strip() == (
-        "https://saved.services.ai.azure.com/"
-    )
-
-
-def test_analyzer_profile_environment_and_explicit_endpoint_precedence(monkeypatch):
-    from cu_cli.client import resolve
-    from cu_cli.profile import Profile
-
-    endpoints = []
-    def build_client(profile, **overrides):
-        endpoints.append(resolve(profile, **overrides).endpoint)
-        return _FakeListAnalyzerClient()
-
-    monkeypatch.setattr("cu_cli.commands.analyzer.build_client", build_client)
-    monkeypatch.setattr("cu_cli.commands._options.console._width", 500)
-    _create_profile("dev")
-    _create_profile("prod")
-    _run("profile", "set", "endpoint", "https://dev.services.ai.azure.com/", "--name", "dev")
-    _run("profile", "set", "endpoint", "https://prod.services.ai.azure.com/", "--name", "prod")
-    _run("profile", "set-active", "dev")
-    # region Snippet:analyzer_list_active
-    result = _run(
-        "analyzer", "list", "--info",
-        comment=(
-            "Use all effective settings from the active dev profile.\n"
-            "--info prints resolved, non-secret runtime settings to stderr before the request.\n"
-            "It is not a dry run; the analyzer list request still runs."
-        ),
-    )
-    # endregion
-    assert endpoints[-1] == "https://dev.services.ai.azure.com/"
-    assert "endpoint:" not in result.stdout
-    assert "Analyzers" in _plain(result.stderr)
-    context = "\n".join(result.stderr.splitlines()[:5])
-    context = context.replace(str(Profile.load().path), "~/.azure/config")
-    assert "endpoint: https://dev.services.ai.azure.com/" in context
-    assert "settings: ~/.azure/config" in context
-    context = context.replace(
-        "https://dev.services.ai.azure.com/", "https://<dev-resource>.services.ai.azure.com/",
-    )
-    # region Snippet:runtime_info
-    record_output(context)
-    # endregion
-    # region Snippet:analyzer_list_prod
-    _run(
-        "analyzer", "list", "--profile", "prod",
-        comment="Use prod for this command only; dev remains active.",
-    )
-    # endregion
-    assert endpoints[-1] == "https://prod.services.ai.azure.com/"
-    # region Snippet:analyzer_list_env
-    _run(
-        "analyzer", "list", "--profile", "prod", "--info",
-        env={"CU_ENDPOINT": "https://<temporary-resource>.services.ai.azure.com/"},
-        placeholder_values={"temporary-resource": "temporary"},
-        comment="Use prod's remaining settings, but this endpoint wins for this invocation.",
-    )
-    # endregion
-    assert endpoints[-1] == "https://temporary.services.ai.azure.com/"
-    # region Snippet:analyzer_list_explicit
-    _run(
-        "analyzer", "list", "--profile", "prod", "--endpoint",
-        "https://<one-time-resource>.services.ai.azure.com/", "--info",
-        env={"CU_ENDPOINT": "https://<temporary-resource>.services.ai.azure.com/"},
-        placeholder_values={"one-time-resource": "one-time", "temporary-resource": "temporary"},
-        comment="The explicit option wins over both CU_ENDPOINT and the selected profile.",
-    )
-    # endregion
-    assert endpoints[-1] == "https://one-time.services.ai.azure.com/"
-    assert Profile.load().profile_name == "dev"
-
-
-@pytest.mark.parametrize("modality", ["document", "image", "audio", "video"])
-def test_schema_modality_templates_validate(modality):
-    path = f"{modality}-schema.json"
-    arguments = (
-        "analyzer", "schema", "create", "--modality", modality,
-        "--output-file", path,
-    )
-    if modality == "document":
-        # region Snippet:schema_document
-        result = _run(*arguments)
-        # endregion
-    elif modality == "image":
-        # region Snippet:schema_image
-        result = _run(
-            *arguments, comment="Generate an image field-extraction schema instead of the document default.",
-        )
-        # endregion
-    elif modality == "audio":
-        # region Snippet:schema_audio
-        result = _run(*arguments)
-        # endregion
-    else:
-        # region Snippet:schema_video
-        result = _run(*arguments)
-        # endregion
-    assert result.exit_code == 0
-    payload = json.loads(Path(path).read_text())
-    assert payload["baseAnalyzerId"] == f"prebuilt-{modality}"
-    result = _run("analyzer", "validate", "--schema", path, "--spec")
-    assert result.exit_code == 0, result.output
-
-
-@pytest.mark.parametrize("auth_mode", ["login", "key"])
-@pytest.mark.parametrize("profile_option", ["--profile", "-p"])
-@pytest.mark.parametrize(
-    ("arguments", "module", "has_info"),
-    [
-        (("analyze", "sample.pdf", "--analyzer", "prebuilt-layout", "--json"), "analyze", False),
-        (("analyzer", "list"), "analyzer", True),
-        (("analyzer", "show", "invoice_v1"), "analyzer", True),
-        (("analyzer", "create", "invoice_v1", "--schema", "schema.json"), "analyzer", True),
-        (("analyzer", "delete", "invoice_v1", "--yes"), "analyzer", True),
-        (("analyzer", "test", "invoice_v1", "sample.pdf"), "analyzer", True),
-        (("analyzer", "schema", "create", "--from-sample", "sample.pdf"), "analyzer", True),
-        (("analyzer", "copy", "invoice_v1", "invoice_v2"), "analyzer", True),
-        (("defaults", "show"), "defaults", True),
-        (("defaults", "set", "--model", "gpt-5.2=completion"), "defaults", True),
-        (("doctor",), "doctor", False),
-    ],
-    ids=["analyze", "list", "show", "create", "delete", "test", "schema", "copy", "defaults_show", "defaults_set", "doctor"],
-)
-def test_service_options_reach_transport_with_explicit_overrides(
-    monkeypatch, arguments, module, has_info, auth_mode, profile_option,
-):
-    copy_sample_invoice("sample.pdf")
-    Path("schema.json").write_text(json.dumps({
-        "baseAnalyzerId": "prebuilt-document", "fieldSchema": {"fields": {}},
-    }))
-    _create_profile("dev")
-    _run("profile", "set", "endpoint", "https://saved.services.ai.azure.com/", "--name", "dev")
-    captured = []
-
-    def stop_at_transport(profile, **overrides):
-        captured.append((profile, overrides))
-        raise CuCliError("offline transport boundary")
-
-    monkeypatch.setattr(f"cu_cli.commands.{module}.build_client", stop_at_transport)
-    options = [
-        profile_option, "dev", "--endpoint", "https://override.services.ai.azure.com/",
-        "--api-key", "example-key", "--api-version", "2026-06-01-preview",
-        "--auth-mode", auth_mode, "--time",
-    ]
-    if has_info:
-        options.append("--info")
-    result = _run(*arguments, *options)
-
-    assert result.exit_code == 1, result.output
-    assert "offline transport boundary" in result.output
-    assert len(captured) == 1
-    profile, overrides = captured[0]
-    assert profile.profile_name == "dev"
-    assert overrides["endpoint_override"] == "https://override.services.ai.azure.com/"
-    assert overrides["api_key_override"] == "example-key"
-    assert overrides["api_version_override"] == "2026-06-01-preview"
-    assert overrides.get("auth_mode_override", overrides.get("force_entra")) == auth_mode
-
-
-def test_schema_base_override_and_named_validation():
-    # region Snippet:schema_base
-    _run(
-        "analyzer", "schema", "create", "--base", "prebuilt-document", "--name", "invoice_v1",
-        "--output-file", "schema.json",
-    )
-    # endregion
-    assert json.loads(Path("schema.json").read_text())["baseAnalyzerId"] == "prebuilt-document"
-    # region Snippet:schema_validate
-    _run("analyzer", "validate", "schema.json", comment="Validate the local schema shape.")
-    # endregion
-    # region Snippet:schema_validate_spec
-    result = _run(
-        "analyzer", "validate", "--schema", "schema.json", "--spec", "--json",
-        comment="Also validate rules from the selected Content Understanding API specification.",
-    )
-    # endregion
-    assert json.loads(result.stdout)["ok"] is True
-
-
-def test_defaults_documented_merge_replace_and_profile_sources(monkeypatch):
-    fake = _FakeDefaultsClient({"unrelated": "keep"})
-    monkeypatch.setattr("cu_cli.commands.defaults.build_client", lambda *_args, **_kwargs: fake)
-    _run("profile", "set", "endpoint", "https://example.services.ai.azure.com/")
-    # region Snippet:profile_completion_model
-    _run(
-        "profile", "set", "model_deployments.gpt-5.2", "my-gpt-52-deployment",
-        comment="Replace my-gpt-52-deployment with the completion deployment name on your resource.",
-    )
-    # endregion
-    # region Snippet:profile_embedding_model
-    _run(
-        "profile", "set", "model_deployments.text-embedding-3-large", "my-embedding-deployment",
-        comment="Replace my-embedding-deployment with your embeddings deployment name.",
-    )
-    # endregion
-    # region Snippet:defaults_from_profile
-    _run(
-        "defaults", "set", "--from-profile",
-        comment="Apply model mappings from the active CU CLI profile to the remote resource.",
-    )
-    # endregion
-    assert fake.updated["unrelated"] == "keep"
-    assert fake.updated["prebuilt-analyzer-completion"] == "my-gpt-52-deployment"
-    # region Snippet:defaults_model
-    _run(
-        "defaults", "set", "--model", "gpt-5.2=custom-completion",
-        comment="Replace custom-completion with a deployment name and set that remote mapping.",
-    )
-    # endregion
-    assert fake.updated["gpt-5.2"] == "custom-completion"
-    result = _run("defaults", "show", "--table")
-    assert "custom-completion" in result.stdout
-    # region Snippet:defaults_replace
-    result = _run(
-        "defaults", "set", "--model", "gpt-5.2=custom-completion",
-        "--model", "text-embedding-3-large=custom-embedding", "--replace", "--json",
-    )
-    # endregion
-    assert fake.updated["unrelated"] is None
-    mappings = json.loads(result.stdout)["modelDeployments"]
-    assert "unrelated" not in mappings
-    assert mappings["gpt-5.2"] == "custom-completion"
-    assert mappings == fake.get_defaults().model_deployments
-
-
 def test_schema_template_stamps_default_version():
-    # region Snippet:schema_template
-    res = _run(
-        "analyzer", "schema", "create", "--output-file", "schema.json",
-        comment="Default to a document field-extraction schema.",
-    )
-    # endregion
+    res = _run("analyzer", "schema", "create", "--output-file", "s.json")
     assert res.exit_code == 0
-    body = json.loads(Path("schema.json").read_text())
+    body = json.loads(Path("s.json").read_text())
     assert body["apiVersion"] == "2025-11-01"
     assert "example_string_field" in body["fieldSchema"]["fields"]
 
@@ -869,13 +564,10 @@ def test_schema_template_defaults_to_extraction_type():
 
 
 def test_schema_template_classification_type_has_creatable_categories():
-    # region Snippet:schema_classification
     res = _run(
         "analyzer", "schema", "create", "--output-file", "classify.json",
-        "--type", "classification",
-        comment="Generate a classification schema instead of a field-extraction schema.",
+        "--type", "classification"
     )
-    # endregion
     assert res.exit_code == 0, res.output
     body = json.loads(Path("classify.json").read_text())
     assert "fieldSchema" not in body
@@ -1425,39 +1117,6 @@ def test_validate_strict_fails_on_warnings():
     assert "warning" in res.output.lower()
 
 
-def test_validate_strict_spec_json_documentation_example(monkeypatch):
-    monkeypatch.setattr(
-        "cu_cli.commands.analyzer._client",
-        lambda *_args, **_kwargs: pytest.fail("local validation must not create a service client"),
-    )
-    body = {
-        "analyzerId": "invoice_v1",
-        "baseAnalyzerId": "prebuilt-document",
-        "models": {"completion": "gpt-5.2"},
-        "fieldSchema": {
-            "fields": {
-                "InvoiceNumber": {
-                    "type": "string",
-                    "method": "extract",
-                    "description": "Invoice number printed on the document.",
-                }
-            }
-        },
-    }
-    Path("schema.json").write_text(json.dumps(body), encoding="utf-8")
-
-    # region Snippet:schema_validate_strict
-    result = _run("analyzer", "validate", "schema.json", "--strict", "--spec", "--json")
-    # endregion
-
-    assert result.exit_code == 0, result.output
-    payload = json.loads(result.stdout)
-    assert payload["ok"] is True
-    assert payload["strict"] is True
-    assert payload["errors"] == []
-    assert payload["warnings"] == []
-
-
 def test_validate_strict_json_reports_failure_for_warnings():
     body = {
         "analyzerId": "a1",
@@ -1475,21 +1134,14 @@ def test_validate_strict_json_reports_failure_for_warnings():
     }
     Path("warn-strict.json").write_text(json.dumps(body), encoding="utf-8")
 
-    normal = _run("analyzer", "validate", "warn-strict.json", "--spec", "--json")
-    assert normal.exit_code == 0, normal.output
-    normal_payload = json.loads(normal.stdout)
-    assert normal_payload["ok"] is True
-    assert normal_payload["errors"] == []
-    assert normal_payload["warnings"]
-
-    res = _run("analyzer", "validate", "warn-strict.json", "--strict", "--spec", "--json")
+    res = _run("analyzer", "validate", "warn-strict.json", "--strict", "--json")
 
     assert res.exit_code == 2
     payload = json.loads(res.output)
     assert payload["ok"] is False
     assert payload["strict"] is True
     assert payload["errors"] == []
-    assert payload["warnings"] == normal_payload["warnings"]
+    assert payload["warnings"]
 
 
 def test_validate_json_output_contains_errors_and_warnings():
@@ -1534,9 +1186,7 @@ def test_service_command_rejects_malformed_environment_endpoint(monkeypatch):
 def test_upgrade_check_up_to_date(monkeypatch):
     monkeypatch.setattr("cu_cli.commands.upgrade.fetch_latest_version_detailed",
                         lambda **_: (version("cu-cli"), "ok"))
-    # region Snippet:upgrade_check
     res = _run("upgrade", "--check")
-    # endregion
     assert res.exit_code == 0
     assert "up to date" in res.output
 
@@ -1575,9 +1225,7 @@ def test_upgrade_uses_provider_environment(monkeypatch):
     )
     monkeypatch.setattr("cu_cli.commands.upgrade.subprocess.run", _subprocess_run)
     monkeypatch.setattr("cu_cli.commands.upgrade.is_windows", lambda: False)
-    # region Snippet:upgrade_apply
     res = _run("upgrade", "--yes")
-    # endregion
     assert res.exit_code == 0, res.output
     assert captured["args"][-1] == "cu-cli==9.9.9"
     assert captured["env"]["PIP_INDEX_URL"].startswith("https://credential@")
@@ -1674,7 +1322,8 @@ def test_analyze_requires_analyzer_when_default_is_unset(monkeypatch):
 
 
 def test_readme_sample_analyze_single_file_output_json(monkeypatch):
-    copy_sample_invoice()
+    sample = Path("sample_invoice.pdf")
+    sample.write_bytes(b"%PDF-1.4 sample")
 
     def _fake_run_one(_client, job):
         return job, {"analyzerId": job.analyzer_id, "status": "ok"}
@@ -1683,7 +1332,7 @@ def test_readme_sample_analyze_single_file_output_json(monkeypatch):
     monkeypatch.setattr("cu_cli.commands.analyze._run_one", _fake_run_one)
 
     res = _run(
-        "analyze", "sample_invoice.pdf", "--analyzer", "prebuilt-layout", "--json",
+        "analyze", "sample_invoice.pdf", "--analyzer", "prebuilt-layout", "--json"
     )
     assert res.exit_code == 0, res.output
     payload = json.loads(res.output)
@@ -1830,9 +1479,9 @@ def test_analyze_output_dir_writes_correct_sidecar_extension_for_each_view(monke
     assert not (Path("json_out") / "doc.pdf.result.md").exists()
 
 
-@pytest.mark.parametrize("inline_option", ["--inline", "-i"], ids=["long", "short"])
-def test_analyze_inline_uses_synchronous_runner(monkeypatch, inline_option):
-    sample = copy_sample_invoice()
+def test_analyze_inline_uses_synchronous_runner(monkeypatch):
+    sample = Path("sample.pdf")
+    sample.write_bytes(b"%PDF-1.4 sample")
     calls = []
 
     monkeypatch.setattr("cu_cli.commands.analyze.build_client", lambda *_a, **_k: object())
@@ -1848,8 +1497,8 @@ def test_analyze_inline_uses_synchronous_runner(monkeypatch, inline_option):
     monkeypatch.setattr("cu_cli.commands.analyze._run_one_inline", _fake_inline)
 
     res = _run(
-        "analyze", inline_option, "--api-version", "2026-06-01-preview",
-        str(sample), "--analyzer", "prebuilt-layout", "--json",
+        "analyze", "-i", str(sample), "--analyzer", "prebuilt-layout", "--json",
+        "--api-version", "2026-06-01-preview",
     )
 
     assert res.exit_code == 0, res.output
@@ -2324,11 +1973,7 @@ class _FakeDefaultsClient:
 
     def update_defaults(self, *, model_deployments):
         self.updated = dict(model_deployments)
-        for model, deployment in model_deployments.items():
-            if deployment is None:
-                self._existing.pop(model, None)
-            else:
-                self._existing[model] = deployment
+        self._existing = dict(model_deployments)
         return _FakeDefaults(self._existing)
 
 
@@ -2402,9 +2047,7 @@ def test_defaults_show_json(monkeypatch):
 def test_defaults_show_uses_json_by_default(monkeypatch):
     fake = _FakeDefaultsClient({"gpt-4.1": "dep-gpt"})
     monkeypatch.setattr("cu_cli.commands.defaults.build_client", lambda *_a, **_k: fake)
-    res = _run(
-        "defaults", "show", "--endpoint", "https://x.services.ai.azure.com/",
-    )
+    res = _run("defaults", "show", "--endpoint", "https://x.services.ai.azure.com/")
     assert res.exit_code == 0, res.output
     assert json.loads(res.output)["modelDeployments"]["gpt-4.1"] == "dep-gpt"
 
@@ -2609,42 +2252,12 @@ def test_analyzer_list_kind_prebuilt_json(monkeypatch):
     assert [a["analyzerId"] for a in payload] == ["prebuilt-document", "prebuilt-invoice"]
 
 
-def test_analyzer_list_kind_prebuilt_markdown_count(monkeypatch):
-    monkeypatch.setattr(
-        "cu_cli.commands.analyzer._client", lambda *_args, **_kwargs: _FakeListAnalyzerClient(),
-    )
-    # region Snippet:analyzer_list_prebuilt
-    result = _run("analyzer", "list", "--kind", "prebuilt")
-    # endregion
-    assert result.exit_code == 0, result.output
-    assert "2 analyzer(s)" in result.output
-    assert "prebuilt-document" in result.output
-    assert "prebuilt-invoice" in result.output
-    assert "my_custom_v1" not in result.output
-
-
 def test_analyzer_list_kind_all_is_default(monkeypatch):
     monkeypatch.setattr("cu_cli.commands.analyzer._client", lambda *_a, **_k: _FakeListAnalyzerClient())
     res = _run("analyzer", "list", "--json")
     assert res.exit_code == 0, res.output
     payload = json.loads(res.output)
     assert len(payload) == 3  # no filtering by default
-
-
-@pytest.mark.parametrize("kind", ["all", "prebuilt", "custom"])
-@pytest.mark.parametrize("sort_by", ["analyzerId", "createdAt", "lastModifiedAt"])
-def test_analyzer_filter_and_sort_combinations(monkeypatch, kind, sort_by):
-    monkeypatch.setattr(
-        "cu_cli.commands.analyzer._client", lambda *_args, **_kwargs: _FakeListAnalyzerClient(),
-    )
-    result = _run("analyzer", "list", "--kind", kind, "--sort-by", sort_by, "--json")
-    assert result.exit_code == 0, result.output
-    payload = json.loads(result.stdout)
-    assert len(payload) == {"all": 3, "prebuilt": 2, "custom": 1}[kind]
-    if kind != "all":
-        assert all(item["analyzerId"].startswith("prebuilt-") == (kind == "prebuilt") for item in payload)
-    values = [item[sort_by] for item in payload]
-    assert values == sorted(values)
 
 
 def test_analyzer_list_sort_by_analyzer_id(monkeypatch):

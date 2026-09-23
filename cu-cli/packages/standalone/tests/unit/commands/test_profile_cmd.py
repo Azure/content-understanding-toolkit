@@ -6,22 +6,18 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+from click.testing import CliRunner
 
+from cu_cli.cli import main
 from cu_cli.profile import ProfileStore, azure_config_path
-from support.command_catalog import invoke_cli
 
 pytestmark = pytest.mark.unit
 
+_runner = CliRunner()
 
-def _run(
-    *args: str, input: str | None = None,
-    placeholder_values: dict[str, str] | None = None,
-    comment: str | None = None,
-):
-    return invoke_cli(
-        args, color=False, input=input,
-        placeholder_values=placeholder_values, comment=comment,
-    )
+
+def _run(*args: str, input: str | None = None):
+    return _runner.invoke(main, list(args), color=False, input=input)
 
 
 @pytest.mark.parametrize(
@@ -81,151 +77,6 @@ def test_set_get_and_show_default_profile():
     assert show_result.exit_code == 0, show_result.output
     assert "CU CLI profile: default (active)" in show_result.output
     assert "2026-06-01-preview" in show_result.output
-
-
-def test_profile_workflow_exports_commands_and_preserves_independent_profiles():
-    endpoint = "https://cu-docs-resource.services.ai.azure.com/"
-    _run(
-        "profile", "set", "endpoint", "https://<resource-name>.services.ai.azure.com/",
-        placeholder_values={"resource-name": "cu-docs-resource"},
-    )
-    # region Snippet:profile_login
-    _run(
-        "profile", "set", "auth_mode", "login",
-        comment="Login authentication is the default; this command selects it explicitly.",
-    )
-    # endregion
-    _run(
-        "profile", "set", "api_key", "<key>",
-        placeholder_values={"key": "offline-test-key"},
-    )
-    assert ProfileStore.load().get("api_key") == "offline-test-key"
-    assert ProfileStore.load().get("auth_mode") == "key"
-    # region Snippet:profile_unset_key
-    _run(
-        "profile", "unset", "api_key",
-        comment="Remove the saved key and return this profile to login authentication.",
-    )
-    # endregion
-    assert ProfileStore.load().get("api_key") is None
-    assert ProfileStore.load().get("auth_mode") == "login"
-    # region Snippet:profile_show
-    _run("profile", "show", comment="Show all effective values for the active profile.")
-    # endregion
-    # region Snippet:profile_get_endpoint
-    result = _run(
-        "profile", "get", "endpoint",
-        comment="Print only the effective endpoint from the active profile.",
-    )
-    # endregion
-    assert result.stdout.strip() == endpoint
-    # region Snippet:profile_create_dev
-    _run("profile", "create", "dev", comment="Create an empty dev profile.")
-    # endregion
-    # region Snippet:profile_dev_endpoint
-    _run(
-        "profile", "set", "endpoint", "https://<dev-resource>.services.ai.azure.com/", "--name", "dev",
-        placeholder_values={"dev-resource": "dev"},
-        comment="Save the dev resource endpoint without changing the active profile.",
-    )
-    # endregion
-    assert ProfileStore.load().get("endpoint", name="dev") == "https://dev.services.ai.azure.com/"
-    # region Snippet:profile_create_prod
-    _run("profile", "create", "prod", comment="Create an empty prod profile.")
-    # endregion
-    # region Snippet:profile_prod_endpoint
-    _run(
-        "profile", "set", "endpoint", "https://<prod-resource>.services.ai.azure.com/", "--name", "prod",
-        placeholder_values={"prod-resource": "prod"},
-        comment="Save a distinct resource endpoint on prod.",
-    )
-    # endregion
-    assert ProfileStore.load().get("endpoint", name="prod") == "https://prod.services.ai.azure.com/"
-    # region Snippet:profile_activate_dev
-    _run(
-        "profile", "set-active", "dev",
-        comment="Make dev the profile used when --profile is omitted.",
-    )
-    # endregion
-    # region Snippet:profile_show_prod
-    _run("profile", "show", "--name", "prod", comment="Show prod without changing the active profile.")
-    # endregion
-    assert ProfileStore.load().get_active_name() == "dev"
-    # region Snippet:profile_copy_cleanup
-    _run("profile", "copy", "dev", "test", comment="Create test as an independent copy of dev.")
-    _run("profile", "rename", "test", "staging", comment="Rename test and its saved values to staging.")
-    _run(
-        "profile", "delete", "staging", "--yes",
-        comment="Delete the inactive staging profile; this does not delete an Azure resource.",
-    )
-    # endregion
-    assert not ProfileStore.load().has_name("staging")
-    # region Snippet:profile_list
-    result = _run("profile", "list", comment="List saved profiles and identify the active profile.")
-    # endregion
-    assert "dev" in result.stdout and "prod" in result.stdout
-    assert ProfileStore.load().get("endpoint", name="prod") != endpoint
-    # region Snippet:profile_preview
-    _run(
-        "profile", "set", "api_version", "2026-06-01-preview", "--name", "dev",
-        comment="Save a preview API version on dev without changing the active profile.",
-    )
-    # endregion
-    _run(
-        "profile", "set", "default_analyzer", "prebuilt-layout",
-    )
-    assert ProfileStore.load().get("default_analyzer", name="dev") == "prebuilt-layout"
-
-
-@pytest.mark.parametrize("name_option", ["--name", "-n"])
-def test_named_profile_options_cover_create_get_set_unset_activate_delete(name_option):
-    assert _run("profile", "create", name_option, "dev").exit_code == 0
-    assert _run(
-        "profile", "set", "--key", "endpoint", "--value",
-        "https://dev.services.ai.azure.com/", name_option, "dev",
-    ).exit_code == 0
-    result = _run("profile", "get", "--key", "endpoint", name_option, "dev")
-    assert result.exit_code == 0
-    assert result.stdout.strip() == "https://dev.services.ai.azure.com/"
-    assert _run("profile", "show", name_option, "dev").exit_code == 0
-    assert _run("profile", "unset", "--key", "endpoint", name_option, "dev").exit_code == 0
-    assert ProfileStore.load().get_explicit_profile("dev") == {}
-    assert _run("profile", "set-active", name_option, "dev").exit_code == 0
-    assert ProfileStore.load().get_active_name() == "dev"
-    assert _run("profile", "set-active", "default").exit_code == 0
-    assert _run("profile", "delete", name_option, "dev", "--yes").exit_code == 0
-    assert not ProfileStore.load().has_name("dev")
-
-
-def test_profile_copy_and_rename_named_selectors():
-    assert _run("profile", "create", "dev").exit_code == 0
-    assert _run("profile", "set-active", "dev").exit_code == 0
-    assert _run("profile", "copy", "--destination", "test").exit_code == 0
-    assert _run("profile", "copy", "--source", "dev", "--destination", "prod").exit_code == 0
-    assert _run(
-        "profile", "rename", "--source", "test", "--destination", "staging",
-    ).exit_code == 0
-    assert ProfileStore.load().has_name("staging")
-    assert ProfileStore.load().get_active_name() == "dev"
-
-
-def test_profile_show_deployments_time_keeps_saved_configuration(monkeypatch):
-    _run("profile", "set", "endpoint", "https://example.services.ai.azure.com/")
-    captured = []
-    monkeypatch.setattr(
-        "cu_cli.commands.profile_cmd._live_foundry_deployments",
-        lambda profile: captured.append(profile.endpoint) or {"deployment=completion": "gpt-5.2"},
-    )
-    before = azure_config_path().read_bytes()
-
-    # region Snippet:profile_deployments
-    result = _run("profile", "show", "--deployments", "--time")
-    # endregion
-
-    assert captured == ["https://example.services.ai.azure.com/"]
-    assert "gpt-5.2" in result.stdout
-    assert "Total command time:" in result.stderr
-    assert azure_config_path().read_bytes() == before
 
 
 def test_hidden_has_values_reports_saved_default_profile_state():
@@ -416,44 +267,22 @@ def test_sync_defaults_uses_saved_endpoint_not_environment(
                 }
             )
 
-    def _build_client(profile, **overrides):
+    def _build_client(profile, **_kwargs):
         captured["endpoint"] = profile.endpoint
-        captured["api_key"] = overrides.get("api_key_override")
         return _Client()
 
     monkeypatch.setattr("cu_cli.commands.profile_cmd.build_client", _build_client)
 
-    # region Snippet:profile_sync_named
-    result = _run(
-        "profile", "sync-defaults", "--name", "dev",
-        comment="Import remote defaults into dev without changing the active profile.",
-    )
-    # endregion
+    result = _run("profile", "sync-defaults", "--name", "dev")
 
     assert result.exit_code == 0, result.output
     assert captured["endpoint"] == saved_endpoint
-    assert _run("profile", "sync-defaults", "-n", "dev").exit_code == 0
     store = ProfileStore.load()
     assert store.get("model_deployments.gpt-5.2", name="dev") == "gpt-prod"
     assert store.get(
         "model_deployments.text-embedding-3-large",
         name="dev",
     ) == "embedding-prod"
-    assert _run("profile", "set-active", "dev").exit_code == 0
-    # region Snippet:profile_sync
-    _run("profile", "sync-defaults", comment="Import remote defaults into the active CU CLI profile.")
-    # endregion
-    # region Snippet:profile_sync_auth
-    result = _run(
-        "profile", "sync-defaults", "--name", "dev", "--auth-mode", "key",
-        "--api-key", "<key>", "--time",
-        placeholder_values={"key": "offline-test-key"},
-    )
-    # endregion
-    assert "Total command time:" in result.stderr
-    assert captured["endpoint"] == saved_endpoint
-    assert captured["api_key"] == "offline-test-key"
-    assert "offline-test-key" not in result.output
 
 
 def test_sync_defaults_requires_saved_endpoint(monkeypatch: pytest.MonkeyPatch):

@@ -42,6 +42,24 @@ def test_with_prebuilt_default_mappings_adds_service_aliases():
     assert mappings["prebuilt-analyzer-embedding"] == "embedding"
 
 
+def test_apply_defaults_merges_existing_values():
+    class Client:
+        def get_defaults(self):
+            return SimpleNamespace(model_deployments={"existing": "old"})
+
+        def update_defaults(self, *, model_deployments):
+            return SimpleNamespace(model_deployments=model_deployments)
+
+    updated, merged = apply_defaults(
+        Client(),
+        {"gpt-5.2": "completion"},
+        replace=False,
+    )
+
+    assert merged["existing"] == "old"
+    assert extract_model_deployments(updated) == merged
+
+
 @pytest.mark.parametrize("replace", [False, True], ids=["merge", "replace"])
 def test_apply_defaults_merges_or_replaces_existing_values(replace):
     existing = {

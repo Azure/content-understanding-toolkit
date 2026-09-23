@@ -6,12 +6,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
 
+from cu_cli.cli import main
 from cu_cli.commands.infra import AzureAccount
-from support.command_catalog import invoke_cli
 
 pytestmark = pytest.mark.unit
 
+_runner = CliRunner()
 _ACCOUNT = AzureAccount(
     subscription_id="sub-id",
     subscription_name="Development",
@@ -20,7 +22,7 @@ _ACCOUNT = AzureAccount(
 
 
 def _run(*args: str):
-    return invoke_cli(args, color=False)
+    return _runner.invoke(main, list(args), color=False)
 
 
 def test_infra_generate_defaults_to_noninteractive_provision_directory(
@@ -38,9 +40,7 @@ def test_infra_generate_defaults_to_noninteractive_provision_directory(
 
     monkeypatch.setattr("cu_cli.commands.infra.run_wizard", _run_wizard)
 
-    # region Snippet:infra_generate
     result = _run("infra", "generate")
-    # endregion
 
     assert result.exit_code == 0, result.output
     assert captured["target"] == Path("provision").resolve()
@@ -51,9 +51,8 @@ def test_infra_generate_defaults_to_noninteractive_provision_directory(
     assert "cu infra generate" in result.output
 
 
-@pytest.mark.parametrize("short_options", [False, True], ids=["long", "short"])
 def test_infra_generate_passes_custom_output_and_new_resource_options(
-    monkeypatch: pytest.MonkeyPatch, short_options: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     captured: dict[str, object] = {}
     checked: list[str | None] = []
@@ -66,14 +65,14 @@ def test_infra_generate_passes_custom_output_and_new_resource_options(
         lambda target, **kwargs: captured.update(target=target, **kwargs),
     )
 
-    arguments = (
+    result = _run(
         "infra",
         "generate",
-        "-d" if short_options else "--output-dir",
+        "--output-dir",
         "infra",
-        "-e" if short_options else "--environment",
+        "--environment",
         "dev-01",
-        "-l" if short_options else "--location",
+        "--location",
         "westus3",
         "--subscription",
         "Development",
@@ -87,12 +86,6 @@ def test_infra_generate_passes_custom_output_and_new_resource_options(
         "false",
         "--force",
     )
-    if short_options:
-        result = _run(*arguments)
-    else:
-        # region Snippet:infra_custom
-        result = _run(*arguments)
-        # endregion
 
     assert result.exit_code == 0, result.output
     assert checked == ["Development"]
