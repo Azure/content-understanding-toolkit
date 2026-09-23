@@ -537,7 +537,6 @@ selected unless you add `--recursive`:
 ```bash
 cu analyze --source my_incoming_dir --source my_archive_dir --pattern "*.pdf" --analyzer prebuilt-layout \
   --output-dir combined-results \
-  --json \
   --dry-run
 ```
 
@@ -553,8 +552,7 @@ recursive selection. To analyze only immediate files matching the PDF pattern:
 
 <!-- Snippet:analyze_pattern -->
 ```bash
-cu analyze --source my_document_dir --pattern "*.pdf" -a prebuilt-layout --output-dir results \
-  --json
+cu analyze --source my_document_dir --pattern "*.pdf" -a prebuilt-layout --output-dir results
 ```
 
 Directory input selects immediate files only. Add `--recursive` to include
@@ -563,8 +561,7 @@ nested directories:
 <!-- Snippet:analyze_recursive -->
 ```bash
 cu analyze --source my_document_dir --pattern "*.pdf" --recursive --analyzer prebuilt-layout \
-  --output-dir recursive-results \
-  --json
+  --output-dir recursive-results
 ```
 
 With `--output-dir`, CU CLI preserves each input path relative to the selected
@@ -573,19 +570,19 @@ source directory. For example:
 <!-- Snippet:output_mapping -->
 ```text
 my_document_dir/nested/sample_invoice.pdf
-  -> recursive-results/nested/sample_invoice.pdf.result.json
+  -> recursive-results/nested/sample_invoice.pdf.result.md
 ```
 
-Markdown results use `.result.md` instead. With one input, omit `--output-dir` to
-write the result to standard output or use `--output-file` to choose one file.
-`--output-file` is rejected when more than one input is selected.
+Add `--json` to write `.result.json` files instead. With one input, omit
+`--output-dir` to write the result to standard output or use `--output-file`
+to choose one file. `--output-file` is rejected when more than one input is selected.
 
 For the positional directory shortcut, place input files in `my_document_dir`.
 This form does not use a filename pattern and writes results under `out`:
 
 <!-- Snippet:analyze_directory -->
 ```bash
-cu analyze my_document_dir --analyzer prebuilt-layout --output-dir out --json
+cu analyze my_document_dir --analyzer prebuilt-layout --output-dir out
 ```
 
 ### Preview and run a batch safely
@@ -595,7 +592,7 @@ and existing-file actions before a batch:
 
 <!-- Snippet:analyze_dry_run -->
 ```bash
-cu analyze --source my_document_dir --analyzer prebuilt-layout --json --output-dir results \
+cu analyze --source my_document_dir --analyzer prebuilt-layout --output-dir results \
   --report-file report.json \
   --dry-run
 ```
@@ -645,15 +642,15 @@ failed. This lets automation keep good results while reporting files that need
 attention.
 
 The following noninteractive batch uses eight concurrent jobs and skips the
-large-batch confirmation with `--yes`. It writes to `batch-results`, separately
-from the earlier directory examples. Use an unused result directory and report
+large-batch confirmation with `--yes`. It writes Markdown results to
+`batch-results`, separately from the earlier directory examples, and a JSON
+status report to `run-report.json`. Use an unused result directory and report
 path; if reusing paths, choose an existing-output policy and a new report path:
 
 <!-- Snippet:analyze_recursive_report -->
 ```bash
 cu analyze --source my_document_dir --pattern "*.pdf" --recursive --analyzer prebuilt-layout \
   --output-dir batch-results \
-  --json \
   --report-file run-report.json \
   --yes \
   --concurrency 8

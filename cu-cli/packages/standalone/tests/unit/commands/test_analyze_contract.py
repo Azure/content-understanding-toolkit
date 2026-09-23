@@ -1217,7 +1217,6 @@ def test_dry_run_makes_no_client_call_or_file_write(monkeypatch):
         str(source),
         "--analyzer",
         "prebuilt-layout",
-        "--json",
         "--output-dir",
         "results",
         "--report-file",
@@ -1268,9 +1267,10 @@ def test_explicit_multi_input_previews_preserve_selection(monkeypatch, selection
         "cu_cli.commands.analyze.build_client",
         lambda *_args, **_kwargs: pytest.fail("dry-run must not create a service client"),
     )
+    output_options = ("--json",) if selection_mode == "files" else ()
     arguments = (
         "analyze", *selection, "--analyzer", "prebuilt-layout", "--output-dir", output_dir,
-        "--json", "--dry-run",
+        *output_options, "--dry-run",
     )
     if selection_mode == "files":
         # region Snippet:analyze_files_preview

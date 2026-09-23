@@ -261,6 +261,32 @@ def test_usage_guide_directory_inputs_are_explicit(identifier, expected_input):
     assert expected_input in snippet
 
 
+@pytest.mark.parametrize(
+    "path,identifier",
+    [
+        (_README, "analyze_pattern"),
+        (_USAGE_GUIDE, "analyze_sources_preview"),
+        (_USAGE_GUIDE, "analyze_pattern"),
+        (_USAGE_GUIDE, "analyze_recursive"),
+        (_USAGE_GUIDE, "analyze_directory"),
+        (_USAGE_GUIDE, "analyze_dry_run"),
+        (_USAGE_GUIDE, "analyze_recursive_report"),
+    ],
+    ids=["readme-pattern", "multiple-directories", "pattern", "recursive", "positional", "dry-run", "report"],
+)
+def test_directory_analysis_uses_default_markdown(path, identifier):
+    content = path.read_text(encoding="utf-8")
+    snippet = content.split(f"<!-- Snippet:{identifier} -->", 1)[1].split("```", 2)[1]
+
+    assert "--json" not in snippet
+    if path == _README:
+        assert "`./results/invoice-01.pdf.result.md`" in content
+    if identifier == "analyze_recursive":
+        assert "recursive-results/nested/sample_invoice.pdf.result.md\n" in content
+    if identifier == "analyze_recursive_report":
+        assert "--report-file run-report.json" in snippet
+
+
 def test_api_version_description_matches_cli_help():
     for path in (_README, _USAGE_GUIDE):
         normalized = " ".join(path.read_text(encoding="utf-8").split())

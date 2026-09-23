@@ -54,12 +54,12 @@ def test_scenario_1_analyze_single_file_markdown(cloud_project, analyzer_option)
 
 
 def test_scenario_1_analyze_directory_writes_result_files(cloud_project):
-    """`cu analyze <dir> --output-dir <dir> --json` writes result files."""
+    """`cu analyze <dir> --output-dir <dir>` writes Markdown result files."""
     source = Path("my_document_dir")
     source.mkdir()
     sample = _copy_sample()
     shutil.move(str(sample), str(source / "sample_invoice.pdf"))
-    with use_cassette("analyze_batch"):
+    with use_cassette("analyze_batch") as cassette:
         # region Snippet:analyze_directory
         res = _run(
             "analyze",
@@ -68,12 +68,18 @@ def test_scenario_1_analyze_directory_writes_result_files(cloud_project):
             "prebuilt-layout",
             "--output-dir",
             "out",
-            "--json",
         )
         # endregion
     assert res.exit_code == 0, res.output
+    if mode() == "playback":
+        assert cassette.play_count > 0
     # Paths under --output-dir are relative to the selected source directory.
-    assert (Path("out") / "sample_invoice.pdf.result.json").exists()
+    output = Path("out") / "sample_invoice.pdf.result.md"
+    assert list(Path("out").rglob("*.result.*")) == [output]
+    content = output.read_text(encoding="utf-8")
+    assert content.startswith("---")
+    assert "mimeType:" in content
+    assert "<!-- InputPageNumber:" in content
 
 
 def test_scenario_3_analyze_prebuilt_invoice_json(cloud_project):
@@ -284,11 +290,11 @@ def test_directory_examples_use_recorded_invoice_content(cloud_project, recursiv
     if recursive:
         arguments.append("--recursive")
     analyzer_option = "--analyzer" if recursive else "-a"
-    arguments.extend([analyzer_option, "prebuilt-layout", "--output-dir", str(destination), "--json"])
+    arguments.extend([analyzer_option, "prebuilt-layout", "--output-dir", str(destination)])
     if with_report:
         arguments.extend(["--report-file", "run-report.json", "--yes", "--concurrency", "8"])
 
-    with use_cassette("analyze_batch"):
+    with use_cassette("analyze_batch") as cassette:
         if with_report:
             # region Snippet:analyze_recursive_report
             result = _run(*arguments)
@@ -303,12 +309,14 @@ def test_directory_examples_use_recorded_invoice_content(cloud_project, recursiv
             # endregion
 
     assert result.exit_code == 0, result.output
-    output = destination / (sample.relative_to(source).as_posix() + ".result.json")
-    assert list(destination.rglob("*.result.json")) == [output]
-    payload = json.loads(output.read_text(encoding="utf-8"))
-    assert payload["status"] == "Succeeded"
-    assert payload["result"]["analyzerId"] == "prebuilt-layout"
-    assert payload["result"]["contents"][0]["markdown"]
+    if mode() == "playback":
+        assert cassette.play_count > 0
+    output = destination / (sample.relative_to(source).as_posix() + ".result.md")
+    assert list(destination.rglob("*.result.*")) == [output]
+    content = output.read_text(encoding="utf-8")
+    assert content.startswith("---")
+    assert "mimeType:" in content
+    assert "<!-- InputPageNumber:" in content
     if with_report:
         report = json.loads(Path("run-report.json").read_text(encoding="utf-8"))
         assert report["counts"]["succeeded"] == 1
