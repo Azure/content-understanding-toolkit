@@ -20,7 +20,7 @@ import pytest
 from support import snippets
 from support.recording import mode, write_cloud_profile
 
-_PRODUCT_ROOT = Path(__file__).resolve().parents[4]
+_PRODUCT_ROOT = Path(snippets.__file__).resolve().parents[4]
 _SCRIPT = run_path(str(_PRODUCT_ROOT / "scripts" / "update-snippet.py"))
 # Read at import time because _isolate_env removes CU_* variables while each test runs.
 _OUTPUT = os.environ.get(_SCRIPT["OUTPUT_ENVIRONMENT"])
@@ -144,11 +144,22 @@ def pytest_sessionfinish(session: pytest.Session):
 
 
 @pytest.fixture
-def sample_invoice(_isolate_env: Path) -> Path:
+def copy_invoice(_isolate_env: Path):
+    """Copy the public sample invoice to the paths used by the examples."""
+
+    def copy(destination: str | Path = "sample_invoice.pdf") -> Path:
+        target = Path(destination)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(_PRODUCT_ROOT / "sample_files" / "sample_invoice.pdf", target)
+        return target
+
+    return copy
+
+
+@pytest.fixture
+def sample_invoice(copy_invoice) -> Path:
     """Copy the public sample invoice referenced by the documents into the working directory."""
-    target = Path("sample_invoice.pdf")
-    shutil.copyfile(_PRODUCT_ROOT / "sample_files" / "sample_invoice.pdf", target)
-    return target
+    return copy_invoice()
 
 
 @pytest.fixture

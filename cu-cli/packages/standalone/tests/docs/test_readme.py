@@ -10,11 +10,11 @@ from importlib.metadata import entry_points, version
 import json
 from pathlib import Path
 import shutil
-from types import SimpleNamespace
 
 import yaml
 
 from cu_cli.profile import ProfileStore
+from support.fake_analyzers import LocalAnalyzers
 from support.recording import PLACEHOLDER_ENDPOINT, cassette_path, use_cassette
 from support.snippets import invoke_azure, invoke_cli, record_external
 
@@ -31,25 +31,6 @@ def _analyzer_ids(cassette: str) -> list[str]:
     recording = yaml.safe_load(cassette_path(cassette).read_text(encoding="utf-8"))
     body = json.loads(recording["interactions"][0]["response"]["body"]["string"])
     return [analyzer["analyzerId"] for analyzer in body["value"]]
-
-
-class _LocalAnalyzers:
-    """Keeps created analyzers in memory and forwards other calls to the recorded service."""
-
-    def __init__(self, service, created: dict[str, dict]):
-        self._service = service
-        self._created = created
-
-    def __getattr__(self, name):
-        return getattr(self._service, name)
-
-    def begin_create_analyzer(self, name, definition):
-        self._created[name] = definition
-        return SimpleNamespace(result=lambda: self.get_analyzer(name))
-
-    def get_analyzer(self, name):
-        definition = {"analyzerId": name, **self._created[name]}
-        return SimpleNamespace(analyzer_id=name, as_dict=lambda: definition)
 
 
 def test_install_and_list_commands():
@@ -302,11 +283,11 @@ def test_create_custom_analyzer(cloud_profile, sample_invoice, monkeypatch):
 
     monkeypatch.setattr(
         analyzer_commands, "_client",
-        lambda *args, **kwargs: _LocalAnalyzers(service_client(*args, **kwargs), created),
+        lambda *args, **kwargs: LocalAnalyzers(service_client(*args, **kwargs), created),
     )
     monkeypatch.setattr(
         "cu_cli.commands.analyze.build_client",
-        lambda *_args, **_kwargs: _LocalAnalyzers(None, created),
+        lambda *_args, **_kwargs: LocalAnalyzers(None, created),
     )
     monkeypatch.setattr("cu_cli.commands.analyze._run_one", analyze)
     # region Snippet:custom_analyzer_workflow

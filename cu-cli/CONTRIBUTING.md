@@ -124,195 +124,118 @@ Add or update tests for every behavior change.
 
 ### Generate public documentation from tests
 
-Tests are the only source of executable examples in [README.md](README.md) and
-[docs/usage-guide.md](docs/usage-guide.md). Neither document defines the command
-coverage target: use the actual Click command tree, shared argument metadata,
-and the command contracts, including aliases, boundaries, dependencies, mutual
-exclusions, and configuration precedence.
+Every code block in [README.md](README.md) and [docs/usage-guide.md](docs/usage-guide.md)
+comes from one documentation test file per document:
 
-Keep command arguments in the owning test and execute them with
-`support.command_catalog.invoke_cli` through its existing `_run` helper. Mark
-the calls to publish with a named region inside a top-level test function:
+| Document | Documentation test |
+| --- | --- |
+| `README.md` | [tests/docs/test_readme.py](packages/standalone/tests/docs/test_readme.py) |
+| `docs/usage-guide.md` | [tests/docs/test_usage_guide.py](packages/standalone/tests/docs/test_usage_guide.py) |
+
+The tests follow the order of their document. Each code block is a named region
+that contains only the commands to publish. Run each command with the file's
+`_run` helper, and put its assertions directly after `# endregion`:
 
 ```python
-# region Snippet:analyze_layout
-result = _run("analyze", "sample_invoice.pdf", "-a", "prebuilt-layout")
-# endregion
-assert result.exit_code == 0, result.output
+with use_cassette("defaults_get"):
+    # region Snippet:defaults_show
+    result = _run(
+        "defaults", "show",
+        comment="Show the Content Understanding defaults configured on the resource.",
+    )
+    # endregion
+assert json.loads(result.stdout)["modelDeployments"]
 ```
 
-The region name maps directly to the document's `Snippet` marker. Use a stable
-semantic name, not a `test_` function name or a document-specific number. Markers
-must be standalone comments with matching indentation. Missing closing markers,
-duplicate names, regions outside tests, and boundaries splitting a call fail
-discovery with a source location. Strings containing marker text are ignored.
-No extra pytest label or call-level identifier is required; `unit` and
-`integration` retain their existing meanings.
+The region name is the document marker. The block after
+`<!-- Snippet:defaults_show -->` receives the command that the region ran:
 
-Keep sample/configuration setup and result/request/state assertions in the test,
-normally outside the region. Only invocations originating inside the region are
-published, including calls through `_run`. The captured runtime arguments become
-shell commands; Python setup and assertions are not copied into the document.
-Unmarked calls still run normally but do not create documentation snippets.
-Do not add a second command string just for documentation.
+```bash
+# Show the Content Understanding defaults configured on the resource.
+cu defaults show
+```
 
-A region can contain several command calls, which are exported in execution
-order with a single newline between them. Blank lines, comments, and line
-continuations inside each captured snippet are preserved. Regions may be nested
-when a complete workflow and an individual command both need public names. In parameterized
-tests, put each distinct region in its corresponding branch and share the
-argument construction. A region must execute in exactly one selected test case;
-repeated call sites, duplicate exports from other cases, and mixed output
-languages are rejected rather than producing an ambiguous example.
+For a block with several commands, give each command its own nested step region
+and assert after each step:
 
-For an output snapshot, place `record_output(result.stdout, language="json")`
-inside its own named region. It takes the content, not a snippet name; the
-region supplies that name. The same region convention applies to `invoke_azure`
-and explicitly classified installation/login prerequisites in `record_external`.
+```python
+# region Snippet:configure_key
+# region Snippet:key_endpoint
+_run(
+    "profile", "set", "endpoint", "https://<resource-name>.services.ai.azure.com/",
+    placeholder_values={"resource-name": "sanitized"},
+    comment="Save the endpoint on the active profile.",
+)
+# endregion
+assert ProfileStore.load().get("endpoint") == PLACEHOLDER_ENDPOINT
+# region Snippet:profile_key
+_run(
+    "profile", "set", "api_key", "<key>",
+    placeholder_values={"key": "playback-dummy-key"},
+    comment="Save a resource key on the active profile and select key authentication.",
+)
+# endregion
+assert ProfileStore.load().get("auth_mode") == "key"
+# endregion
+```
 
-For resource-specific values, keep a named placeholder in the test command, such
-as `https://<resource-name>.services.ai.azure.com/`, and pass
-`placeholder_values={"resource-name": "cu-docs-resource"}` to `invoke_cli`.
-The test executes the bound value through normal CLI validation; documentation
-keeps the placeholder for the reader to replace. Simple Bash placeholders are
-unquoted; values requiring shell quoting use escaped double quotes. Missing or
-unused bindings fail before execution.
-The same bindings apply to string values in an explicit `env` mapping, including
-`CU_ENDPOINT`; generated Bash and PowerShell commands keep the environment
-templates. The input mapping and the caller's environment are preserved.
-Bindings replace values inside arguments or environment values, never add or
-split arguments.
+The outer region publishes all of its commands in execution order. Step regions
+only structure the test, so the document does not need to reference them. Write
+only assertions between step regions: a command called there is also published.
+Run additional verification commands after the outer region.
 
-Use complete repository samples and matching sanitized service recordings for
-successful examples whenever available. `support.recording.copy_sample_invoice`
-copies the public invoice fixture into the test's isolated directory. Do not
-write a short text string or a PDF header into a `.pdf` file for a normal example.
-Keep constructed invalid inputs and deterministic service doubles for negative,
-boundary, and side-effect tests, but do not present them as real service results.
-Do not change analyzer IDs or API versions in existing recordings to make a
-different scenario pass. Report missing samples or recordings instead.
-The [recording data notes](packages/standalone/tests/integration/recordings/README.md#sample-data-and-gaps)
-list available data and the remaining gaps. Keep secrets in local configuration,
-not in test arguments, published samples, recordings, or chat.
+- Use semantic `snake_case` names without a `test_` prefix. Names are unique
+  within a documentation test; both documents can use the same name.
+- Put markers on their own lines, with matching indentation, inside a top-level
+  test function. A region cannot split a call. Prepare files, profiles, and
+  service doubles before the region.
+- `comment="..."` becomes shell comment lines before the command; separate lines
+  with `\n`. Python comments are not published.
+- Keep resource-specific values as placeholders, such as
+  `https://<resource-name>.services.ai.azure.com/`, and pass `placeholder_values`.
+  The test runs the bound value, and the document keeps the placeholder. The same
+  bindings apply to string values in an `env` mapping. Missing or unused bindings
+  fail before the command runs.
+- Pass `language="powershell"` to render a PowerShell block. Use
+  `record_output(content, language=...)` in its own region for an output block,
+  `invoke_azure` through `_az` for Azure CLI examples, and `record_external(...,
+  reason=...)` only for installation and interactive sign-in, which tests never
+  run.
 
-Link a fenced block directly with `<!-- Snippet:analyze_inline -->`. Names are
-unique in the test sources, but the same name can be referenced multiple times
-within either document or across both documents. Do not add document-specific
-aliases or an `Examples:` mapping.
+Use the complete repository sample (the `sample_invoice` and `copy_invoice`
+fixtures) and sanitized recordings (`use_cassette`) for successful examples. Use
+service doubles only where no recording exists, and do not present them as real
+service results. The [recording data notes](packages/standalone/tests/integration/recordings/README.md#sample-data-and-gaps)
+list the available data and the remaining gaps. Keep secrets in local
+configuration, not in tests, recordings, documents, or chat.
 
-Keep the marker and code block at the document's top level. Code fences nested
-inside lists or block quotes are rejected before either document is updated;
-move both the block and its marker outside the container. Fence-like text inside
-a code block remains literal output.
+Documentation tests run offline. Generation forces playback, a network
+connection fails the test, and a skipped test fails. A test publishes its regions
+only when its setup, call, and teardown pass, and every region must publish.
+Snippet regions are allowed only in the two documentation tests.
 
-For a continuous workflow, enclose all its commands in one named region, as in
-`configure_key` and `profile_copy_cleanup`. To combine already published regions
-from independent tests into a documentation section, use the test-side
-`DOC_SCENARIOS` mapping in
-[test_public_docs.py](packages/standalone/tests/unit/test_public_docs.py).
-For example, `configure_login` groups the existing `profile_endpoint`,
-`profile_login`, `azure_login`, and `doctor` sources; its document marker is simply
-`<!-- Snippet:configure_login -->`. Scenarios preserve source order and combine
-already tested commands of the same language with a single newline between
-sources, without duplicating their text or changing their internal formatting.
-They do not replace end-to-end workflow tests. A single command uses its own
-name directly. Missing members and duplicate source or scenario names fail.
-Exported sources must be referenced directly or by a referenced scenario.
-Tests that fail, skip, or fail during cleanup cannot publish examples.
-An unexecuted region also prevents synchronization, even if its test passes.
+Keep headings and longer descriptions outside the marked code blocks. Updates
+replace only the block contents and preserve the surrounding prose. Keep each
+marker and its block at the document's top level; code fences inside lists or
+block quotes are rejected.
 
-The verification report distinguishes consecutive commands from one passing
-test (`continuous`) from examples composed across tests or with intervening
-commands (`composed`). Continuous execution proves shared local state and
-command order; it does not imply that all service calls use real recordings.
-The configuration-to-analysis workflow starts from an empty profile. The custom
-analyzer workflow passes the recorded schema-suggestion output file through
-creation, sample testing, analysis, inspection, and deletion using a stateful
-service double after schema generation. Its missing live recordings remain
-explicit in the report and recording data notes.
-
-Write headings and longer command descriptions outside the marked code block. An
-initial description may be drafted automatically, then edited by hand; later
-updates only replace the block's contents. They preserve all surrounding prose
-and whitespace and do not compare handwritten descriptions with test wording.
-
-For step comments inside a generated code block, pass `comment="..."` to
-`invoke_cli`, `invoke_azure`, or `record_external`; separate multiple lines with
-`\n`. Local `_run` wrappers must forward this parameter. Each line is rendered
-as a shell comment before the command, never passed to the CLI or executed.
-Preserve existing step comments in these test sources rather than editing the
-generated blocks. Python comments inside a region are not copied automatically.
-
-Use `invoke_azure` for actual Azure CLI extension parsing. `record_output` validates
-JSON/YAML or publishes an asserted, normalized output snapshot. Installation and
-interactive login are explicitly classified external prerequisites with reasons;
-CU commands cannot use that classification. Documentation generation forces
-playback and blocks live network connections in source tests. A missing recording
-fails rather than silently skipping. It never signs in, deploys, or upgrades the
-developer's environment while executing an example.
-
-The generator and pytest protections use the same source-discovery function.
-Each parameterized variant of a source test receives the offline network guard;
-when exporting documentation, a skipped source test is a failure. Ordinary tests
-without named examples keep their normal skip behavior.
-
-The command renderer derives shell syntax from the tested argument vector. It
-supports quoting, multiline Bash/PowerShell, temporary environment overrides,
-comments, and explicit expected exit codes. Normal examples require exit code 0;
-intentional failures must declare their expected code and are labeled in output.
-
-After changing a source test, regenerate and then run the read-only check:
+After changing a documentation test, regenerate the documents and then run the
+read-only check:
 
 ```bash
 python scripts/update-snippet.py update
-python scripts/update-snippet.py check --report .pytest_cache/snippet-verification.json
+python scripts/update-snippet.py check
 ```
 
-Both modes execute the source tests. `update` validates all references and block
-structure before writing either document. `check` never rewrites either
-documentation file and fails on missing markers, duplicate test-side names,
-missing/unused sources, skipped tests, language mismatch, or code-block drift.
-Reusing a source name in the documents is allowed. PR CI runs `check`.
+Both commands run the documentation tests. `update` validates both documents
+before writing either. `check` never writes and fails on code-block drift,
+unmarked blocks, markers without regions, regions that the document does not use,
+language mismatches, and failing or skipped tests. PR CI runs `check`.
 
-`--report` writes a separate artifact in either mode. Its path must not refer
-to either document, the synchronizer script, or a Python file in the test tree,
-including through symbolic links or hard links. Conflicting report paths fail
-before source tests run and are checked again before the report is written.
-
-The optional JSON report lists source locations, validation modes (`local`,
-`playback`, `mocked`, or `external`), output validation types, and hashes of
-checked-in samples and consumed recordings. It excludes command text and
-credentials. `playback` requires the invocation to consume a recorded response;
-entering an unused cassette alone does not count. Hashes identify the fixtures
-used in this run, not the original input bytes scrubbed from old recordings.
-Multi-command regions retain per-command evidence and indicate whether the
-commands were consecutive; their mode is `mixed` when the evidence modes differ.
-CI uploads this report and the invocation matrix as artifacts, including on a
-failed check. Do not commit the generated reports.
-
-Test fixtures fix both Rich help and CLI consoles to deterministic non-colored
-output, independent of the host terminal. Windows CI enables symbolic links
-before checkout, so the package README is validated as a real link rather than
-silently skipping the check.
-
-Refresh the invocation evidence matrix when changing the command surface:
-
-```bash
-python -m pytest -c packages/standalone/pyproject.toml -m unit packages/standalone/tests/unit \
-	--command-catalog .pytest_cache/command-catalog.json \
-	--command-matrix .pytest_cache/command-test-matrix.md \
-	--require-command-coverage
-```
-
-The generated matrix records observed option combinations and test IDs, not an
-assertion of exhaustive arbitrary value/state coverage. Keep this report in the
-cache or CI artifacts rather than committing a machine-dependent snapshot.
-The gate requires every public command and option spelling to appear in non-help
-calls from passing tests. Parsing uses callback-free copies of the actual Click
-parameters; rejected syntax, invalid values, and missing option values do not
-count. Application-level expected failures may still provide invocation evidence.
-This gate does not replace semantic assertions, boundary tests, or request and
-side-effect checks. CI writes its matrix to the cache, not to tracked documentation.
+Documentation test fixtures render Rich help and CLI output without terminal
+styling at a fixed width, independent of the host terminal. Windows CI enables
+symbolic links before checkout, so the package README is validated as a real link
+rather than silently skipping the check.
 
 ## Pull requests
 

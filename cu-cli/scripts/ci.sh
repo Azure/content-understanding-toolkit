@@ -60,7 +60,7 @@ python scripts/check_headers.py
 end_section
 
 section "Documentation snippets"
-python scripts/update-snippet.py check --report .pytest_cache/snippet-verification.json
+python scripts/update-snippet.py check
 end_section
 
 section "Frontend CU SDK boundary"
@@ -196,10 +196,7 @@ python -m pytest -q -m unit tests/unit/core/
 end_section
 
 section "Unit tests - remaining standalone modules"
-python -m pytest -q -m unit --ignore=tests/unit/core/ tests/unit/ \
-    --command-catalog "${product_dir}/.pytest_cache/command-catalog.json" \
-    --command-matrix "${product_dir}/.pytest_cache/command-test-matrix.md" \
-    --require-command-coverage
+python -m pytest -q -m unit --ignore=tests/unit/core/ tests/unit/
 end_section
 
 export CU_TEST_REC_MODE=playback

@@ -355,8 +355,12 @@ def main(argv: list[str] | None = None) -> int:
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
-    counts = ", ".join(f"{len(items)} in {document.as_posix()}" for document, items in snippets.items())
-    print(f"{args.mode}: synchronized {sum(map(len, snippets.values()))} tested snippet(s) ({counts})")
+    blocks = {
+        document: sum(not snippet.nested for snippet in items.values())
+        for document, items in snippets.items()
+    }
+    counts = ", ".join(f"{count} in {document.as_posix()}" for document, count in blocks.items())
+    print(f"{args.mode}: synchronized {sum(blocks.values())} tested code block(s) ({counts})")
     return 0
 
 
