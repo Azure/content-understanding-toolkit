@@ -13,13 +13,14 @@ it remains invocable without appearing in the top-level ``az cu`` command list.
 """
 
 from cu_cli_core.command_spec import COMMAND_SPECS, SurfaceClassification
+from . import _format
 
 _TABLE_TRANSFORMERS = {
-    ("analyzer", "list"): "azext_content_understanding._format#analyzer_list_table",
-    ("defaults", "show"): "azext_content_understanding._format#defaults_table",
-    ("defaults", "set"): "azext_content_understanding._format#defaults_table",
-    ("profile", "list"): "azext_content_understanding._format#profile_list_table",
-    ("env-var", "list"): "azext_content_understanding._format#environment_table",
+    ("analyzer", "list"): _format.analyzer_list_table,
+    ("defaults", "show"): _format.defaults_table,
+    ("defaults", "set"): _format.defaults_table,
+    ("profile", "list"): _format.profile_list_table,
+    ("env-var", "list"): _format.environment_table,
 }
 
 _INTERNAL_COMMAND_PATHS = {

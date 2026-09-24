@@ -11,6 +11,7 @@ import yaml
 
 from azext_content_understanding import _help  # noqa: F401
 from azext_content_understanding import _commands
+from azext_content_understanding import _format
 from azext_content_understanding.commands import (
     azure_command_bindings,
     azure_command_specs,
@@ -48,10 +49,12 @@ def test_preview_commands_are_generated_from_shared_specs() -> None:
         "cu " + " ".join(azure_path) for _, azure_path in azure_command_bindings()
     }
     assert len(command_table) == len(azure_command_bindings())
-    assert command_table["cu analyzer list"]["table_transformer"].endswith(
-        "#analyzer_list_table"
+    assert command_table["cu analyzer list"]["table_transformer"] is _format.analyzer_list_table
+    assert command_table["cu defaults show"]["table_transformer"] is _format.defaults_table
+    assert all(
+        callable(command["table_transformer"])
+        for command in command_table.values() if "table_transformer" in command
     )
-    assert command_table["cu defaults show"]["table_transformer"].endswith("#defaults_table")
 
 
 @pytest.mark.unit
