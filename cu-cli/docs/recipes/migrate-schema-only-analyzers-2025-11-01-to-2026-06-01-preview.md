@@ -24,8 +24,8 @@ custom analyzers, CU CLI can retrieve the live analyzer definition through the
 GA API and use that service definition to create a corresponding registration
 through the preview API.
 
-If the `2025-11-01` resource uses GPT-4.1 as its completion model, upgrade its
-completion deployment and Content Understanding default to GPT-5.2 before
+If the `2025-11-01` resource uses `gpt-4.1` as its completion model, upgrade its
+completion deployment and Content Understanding default to `gpt-5.2` before
 creating the preview analyzer. See the
 [supported generative models](https://learn.microsoft.com/azure/ai-services/content-understanding/service-limits#supported-generative-models)
 in the Content Understanding documentation.
@@ -246,8 +246,8 @@ properties:
     }
   },
   "models": {
-    // Check current model support and retirement dates. Migrate GPT-4.1 to a
-    // supported model such as GPT-5.2 before creating the preview analyzer.
+    // Check current model support and retirement dates. Migrate gpt-4.1 to a
+    // supported model such as gpt-5.2 before creating the preview analyzer.
     "completion": "gpt-4.1",
     "embedding": "text-embedding-3-large"
   }
@@ -257,7 +257,8 @@ properties:
 Model availability and retirement dates change over time. Check the
 [supported generative models](https://learn.microsoft.com/azure/ai-services/content-understanding/service-limits#supported-generative-models)
 and linked model retirement schedule rather than relying only on this example.
-If the export selects GPT-4.1, deploy a supported replacement such as GPT-5.2,
+If the export selects `gpt-4.1`, deploy a supported replacement such as
+`gpt-5.2`,
 configure it as a Content Understanding default, and then change
 `models.completion` in the migration file to `gpt-5.2`.
 
@@ -495,10 +496,10 @@ cu doctor --api-version 2025-11-01
 cu doctor --api-version 2026-06-01-preview
 ```
 
-For example, if both the model and deployment names match:
+For example, if the deployments use descriptive names:
 
 ```powershell
-cu defaults set --model gpt-5.2=gpt-5.2 --model text-embedding-3-large=text-embedding-3-large --api-version 2025-11-01
+cu defaults set --model gpt-5.2=my-gpt-5.2-deployment --model text-embedding-3-large=my-text-embedding-3-large-deployment --api-version 2025-11-01
 ```
 
 CU CLI derives the required prebuilt analyzer aliases from supported model
