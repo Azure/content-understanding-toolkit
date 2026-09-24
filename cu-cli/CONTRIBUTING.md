@@ -207,6 +207,16 @@ Run additional verification commands after the outer region.
   block, and `record_external("...", reason=...)` only for installation and
   interactive sign-in, which tests never run.
 
+Every documented command is also checked in the other frontend with the same
+words. When all of its words are shared by both frontends, the real `cu` and
+`az cu` parsers must accept them and bind the same shared request and service
+options. The `az cu` check stops before the command runs, so it makes no service
+calls and writes no files. Help examples must also succeed in `az cu`.
+Standalone-only syntax is not checked in `az cu`. This includes positional
+shortcuts, presentation options such as `--json` and `--table`, `--info`,
+`--time`, and standalone-only commands such as `upgrade`. The shared
+classifications in `cu_cli_core.command_spec` decide which words are shared.
+
 Use the complete repository sample (the `sample_invoice` and `copy_invoice`
 fixtures) and sanitized recordings (`use_cassette`) for successful examples. Use
 service doubles only where no recording exists, and do not present them as real

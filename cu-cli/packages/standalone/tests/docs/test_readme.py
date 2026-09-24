@@ -118,8 +118,7 @@ def test_configure_key_authentication():
     # endregion
 
 
-def test_frontends_share_profile_settings(monkeypatch, sample_invoice):
-    monkeypatch.setattr("azure.cli.core.util.handle_version_update", lambda: None)
+def test_frontends_share_profile_settings(sample_invoice):
     _run("cu profile set api_key playback-dummy-key")
     # region Snippet:shared_frontend_profile
     # region Snippet:standalone_endpoint

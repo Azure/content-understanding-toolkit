@@ -12,6 +12,7 @@ import textwrap
 import click
 import pytest
 
+from support import snippets
 from support.snippets import _PARTS, _REGIONS, _documented_command, record_external, record_output, run_command
 
 
@@ -201,9 +202,7 @@ def test_only_cu_and_az_cu_commands_run(command, monkeypatch):
         run_command(command)
 
 
-def test_azure_command_text_runs_the_local_extension(region, monkeypatch):
-    monkeypatch.setattr("azure.cli.core.util.handle_version_update", lambda: None)
-
+def test_azure_command_text_runs_the_local_extension(region):
     profiles = run_command("""
         # Read the shared profile.
         az cu profile list --output json
@@ -224,6 +223,57 @@ def test_external_command_text_is_published_without_running(region, monkeypatch)
     assert _content(region) == "# Sign in.\naz login"
     with pytest.raises(AssertionError, match="Only installation and login"):
         record_external("cu --version", reason="Not allowed.")
+
+
+_SHARED_COMMAND = "cu analyzer schema create --modality image --output-file image-schema.json"
+
+
+def test_shared_syntax_is_parsed_by_both_frontends(region, monkeypatch):
+    parsed = []
+    azure_parameters = snippets._azure_parameters
+    monkeypatch.setattr(
+        snippets, "_azure_parameters", lambda arguments: parsed.append(arguments) or azure_parameters(arguments),
+    )
+
+    run_command(_SHARED_COMMAND)
+
+    assert parsed == [_SHARED_COMMAND.split()[1:]]
+    assert _content(region) == _SHARED_COMMAND
+
+
+def test_frontends_must_bind_the_same_request(region, monkeypatch):
+    azure_parameters = snippets._azure_parameters
+    monkeypatch.setattr(
+        snippets, "_azure_parameters", lambda arguments: {**azure_parameters(arguments), "modality": "audio"},
+    )
+
+    with pytest.raises(AssertionError, match="parse .* differently"):
+        run_command(_SHARED_COMMAND)
+
+    assert region == {}
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["cu profile create dev", "cu env-var list --json", "cu --version", "cu analyzer list --info"],
+    ids=["positional-shortcut", "presentation-option", "standalone-command", "standalone-option"],
+)
+def test_standalone_only_syntax_runs_only_in_cu(monkeypatch, command):
+    monkeypatch.setattr(
+        snippets, "_azure_parameters", lambda _arguments: pytest.fail("cu-only syntax must not reach az cu"),
+    )
+
+    snippets._assert_same_in_both_frontends(command.split()[1:], {})
+
+
+def test_help_examples_also_run_in_az_cu(region, monkeypatch):
+    calls = []
+    run_azure = snippets._run_azure
+    monkeypatch.setattr(snippets, "_run_azure", lambda arguments: calls.append(arguments) or run_azure(arguments))
+
+    run_command("cu profile --help")
+
+    assert calls == [["cu", "profile", "--help"]]
 
 
 @pytest.mark.parametrize(

@@ -15,8 +15,13 @@ import re
 import shlex
 import sys
 import textwrap
+from unittest import mock
 
+import click
 from click.testing import CliRunner
+
+from cu_cli_core.command_spec import ArgumentValueType, SurfaceClassification, bind_command_arguments
+from cu_cli_core.service_options import get_service_option
 
 
 _PLACEHOLDER = re.compile(r"<([a-z][a-z0-9_-]*)>")
@@ -31,6 +36,7 @@ _POWERSHELL_ENVIRONMENT = re.compile(
     r"try \{\n  (?P<command>[^\n]+)\n\} finally \{\n"
     r"  \$env:(?P=name) = \$previous_(?P=name)\n\}"
 )
+_SHARED = {SurfaceClassification.COMMON, SurfaceClassification.SHARED_ALIAS}
 _REGIONS: ContextVar[dict[str, tuple[Path, int, int, str]]] = ContextVar("snippet_regions", default={})
 _PARTS: ContextVar[dict[str, list[dict]] | None] = ContextVar("snippet_parts", default=None)
 
@@ -139,7 +145,10 @@ def _run_azure(arguments: list[str]):
             return self.command_table
 
     output = StringIO()
-    with redirect_stdout(output), redirect_stderr(output):
+    # Azure CLI version checks call the network; documentation tests stay offline.
+    with redirect_stdout(output), redirect_stderr(output), mock.patch(
+        "azure.cli.core.util.handle_version_update", lambda: None,
+    ), mock.patch("azure.cli.core.util.show_updates_available", lambda **_options: None):
         cli = AzCli(
             cli_name="az", config_dir=os.environ["AZURE_CONFIG_DIR"],
             commands_loader_cls=LocalCommandsLoader,
@@ -151,6 +160,101 @@ def _run_azure(arguments: list[str]):
         status = cli.invoke(arguments)
     assert status == 0, output.getvalue()
     return cli.result.result
+
+
+def _shared_spec(arguments: list[str]):
+    """Return the command spec when both frontends register every word of ``arguments``."""
+    from azext_content_understanding.commands import azure_command_specs
+
+    specs = {spec.path: spec for spec in azure_command_specs()}
+    spec = next((
+        specs[tuple(arguments[:size])] for size in range(len(arguments), 0, -1)
+        if tuple(arguments[:size]) in specs
+    ), None)
+    if spec is None:
+        return None
+    options = {
+        name: option
+        for option in (*spec.arguments, *map(get_service_option, spec.service_options))
+        if option.name.startswith("-") and option.classification in _SHARED
+        for name in (option.name, *option.aliases)
+    }
+    remaining = arguments[len(spec.path):]
+    while remaining:
+        option = options.get(remaining[0].split("=", 1)[0])
+        if option is None:
+            return None
+        takes_value = option.value_type is not ArgumentValueType.BOOLEAN and "=" not in remaining[0]
+        remaining = remaining[2 if takes_value else 1:]
+    return spec
+
+
+def _standalone_parameters(arguments: list[str], environment: dict[str, str]):
+    from cu_cli.cli import main
+
+    parsed = []
+
+    def capture(command, context):
+        if not isinstance(command, click.Group):
+            parsed.append((command, dict(context.params)))
+
+    with mock.patch.object(click.Command, "invoke", capture):
+        result = CliRunner().invoke(main, arguments, env=environment)
+    assert result.exit_code == 0 and len(parsed) == 1, result.output
+    return parsed[0]
+
+
+def _azure_parameters(arguments: list[str]) -> dict:
+    from azext_content_understanding import _commands
+
+    parsed = []
+    # Stop after the Azure CLI parser, before any client, file, or service work.
+    with mock.patch.object(_commands, "_invoke", lambda _function, _cmd, values: parsed.append(dict(values))):
+        _run_azure(["cu", *arguments])
+    assert len(parsed) == 1, f"az cu {shlex.join(arguments)} did not reach its command"
+    return parsed[0]
+
+
+def _same(left, right) -> bool:
+    if isinstance(left, dict) and isinstance(right, dict):
+        return left.keys() == right.keys() and all(_same(left[key], right[key]) for key in left)
+    if isinstance(left, (list, tuple)) and isinstance(right, (list, tuple)):
+        return len(left) == len(right) and all(map(_same, left, right))
+    if isinstance(left, Path) or isinstance(right, Path):
+        return None not in (left, right) and Path(left) == Path(right)
+    return left == right
+
+
+def _assert_same_in_both_frontends(arguments: list[str], environment: dict[str, str]) -> None:
+    """Require ``cu`` and ``az cu`` to accept shared syntax and bind the same request from it."""
+    if arguments[-1:] == ["--help"]:
+        from azext_content_understanding.commands import azure_command_specs
+
+        group = tuple(arguments[:-1])
+        if any(spec.path[:len(group)] == group for spec in azure_command_specs()):
+            try:
+                _run_azure(["cu", *arguments])
+            except SystemExit as stopped:
+                assert stopped.code == 0, f"az cu {shlex.join(arguments)} exited with {stopped.code}"
+        return
+    spec = _shared_spec(arguments)
+    if spec is None:
+        return
+    command, standalone = _standalone_parameters(arguments, environment)
+    azure = _azure_parameters(arguments)
+    options = [get_service_option(key) for key in spec.service_options]
+    standalone_options = {name: parameter.name for parameter in command.params for name in parameter.opts}
+    expected = {
+        **bind_command_arguments(spec, standalone),
+        **{option.name: standalone.get(standalone_options.get(option.name)) for option in options},
+    }
+    actual = {
+        **bind_command_arguments(spec, azure),
+        **{option.name: azure.get(option.parser_name) for option in options},
+    }
+    assert _same(expected, actual), (
+        f"cu and az cu parse {shlex.join(arguments)!r} differently\n  cu:    {expected}\n  az cu: {actual}"
+    )
 
 
 def run_command(
@@ -166,6 +270,8 @@ def run_command(
         environment = {name: bind(value) for name, value in environment.items()}
     if words[:1] not in (["cu"], ["cu-cli"]) and words[:2] != ["az", "cu"]:
         raise AssertionError(f"documented commands start with cu, cu-cli, or az cu:\n{content}")
+    if regions:
+        _assert_same_in_both_frontends(words[2:] if words[0] == "az" else words[1:], environment)
     if words[0] == "az":
         assert not kwargs and not environment, "az cu commands take no environment or CliRunner options"
         result = _run_azure(words[1:])
