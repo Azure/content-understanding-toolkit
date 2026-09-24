@@ -210,17 +210,83 @@ guide.
 cu analyze sample.pdf --analyzer SOURCE_ANALYZER_ID --json --output-file result-2025.json --api-version 2025-11-01
 ```
 
-### 2. Export and validate the live definition
+### 2. Export the live definition
 
 Export the analyzer directly from the service. Do not substitute an older
 local schema file:
 
 ```powershell
 cu analyzer show SOURCE_ANALYZER_ID --api-version 2025-11-01 > analyzer-service-2025.json
+```
+
+Keep an unchanged copy of this service export as the GA backup.
+
+### 3. Inspect the schema and model readiness
+
+Open `analyzer-service-2025.json` and confirm that it describes the intended
+analyzer. This guide applies only when the definition doesn't contain
+`knowledgeSources`. Review the field names, types, methods, descriptions, and
+enums under `fieldSchema.fields`.
+
+Also inspect `models.completion` and `models.embedding`, which identify the
+models selected by the analyzer. The abbreviated example below shows where to
+look; the actual export contains the complete field schema and other service
+properties:
+
+```jsonc
+{
+  "analyzerId": "SOURCE_ANALYZER_ID",
+  "fieldSchema": {
+    "fields": {
+      "invoiceTotal": {
+        "type": "number",
+        "method": "extract",
+        "description": "Total amount due on the invoice."
+      }
+    }
+  },
+  "models": {
+    // Check current model support and retirement dates. Migrate GPT-4.1 to a
+    // supported model such as GPT-5.2 before creating the preview analyzer.
+    "completion": "gpt-4.1",
+    "embedding": "text-embedding-3-large"
+  }
+}
+```
+
+Model availability and retirement dates change over time. Check the
+[supported generative models](https://learn.microsoft.com/azure/ai-services/content-understanding/service-limits#supported-generative-models)
+and linked model retirement schedule rather than relying only on this example.
+If the export selects GPT-4.1, deploy a supported replacement such as GPT-5.2,
+configure it as a Content Understanding default, and then change
+`models.completion` in the migration file to `gpt-5.2`.
+
+Content Understanding defaults are resource-level mappings from model names and
+service aliases to deployment names. They let analyzers use the configured
+models without requiring every API call to specify deployment names. The model
+must be deployed before its default can be configured. Verify both API versions
+before continuing:
+
+```powershell
+cu defaults show --api-version 2025-11-01
+cu defaults show --api-version 2026-06-01-preview
+cu doctor --api-version 2025-11-01
+cu doctor --api-version 2026-06-01-preview
+```
+
+If the replacement deployment or defaults are missing, follow
+[Troubleshoot model deployments and defaults](#appendix-troubleshoot-model-deployments-and-defaults)
+to inspect deployments and configure mappings. Do not create the preview
+analyzer until `cu doctor` succeeds for both API versions.
+
+After completing the inspection and any required model update, validate the
+migration file for the preview API:
+
+```powershell
 cu analyzer validate analyzer-service-2025.json --api-version 2026-06-01-preview
 ```
 
-### 3. Verify that the preview ID is available
+### 4. Verify that the preview ID is available
 
 For a manual check, list the preview custom analyzers and confirm that
 `PREVIEW_ANALYZER_ID` doesn't appear:
@@ -240,20 +306,17 @@ If it prints `false` and exits with status `1`, stop before creating. Inspect
 the existing preview analyzer, choose a new test ID, or intentionally delete
 only that preview registration before retrying.
 
-### 4. Create the preview registration
+### 5. Create the preview registration
 
 Create the preview analyzer from the live GA service export. Do not delete the
-GA analyzer. Before creating it, confirm that the resource's completion
-deployment and Content Understanding default have been upgraded from GPT-4.1
-to GPT-5.2 when applicable. See
-[supported generative models](https://learn.microsoft.com/azure/ai-services/content-understanding/service-limits#supported-generative-models)
-and the [troubleshooting appendix](#appendix-troubleshoot-model-deployments-and-defaults).
+GA analyzer. Use the inspected and validated migration file from the previous
+steps.
 
 ```powershell
 cu analyzer create PREVIEW_ANALYZER_ID --schema analyzer-service-2025.json --api-version 2026-06-01-preview
 ```
 
-### 5. Confirm both registrations
+### 6. Confirm both registrations
 
 For a manual check, list the preview custom analyzers. Find
 `PREVIEW_ANALYZER_ID` and confirm that its status is `ready`:
@@ -279,7 +342,7 @@ cu analyzer list --kind custom --json --api-version 2025-11-01 | jq -e --arg id 
 The API version isn't returned as an analyzer property. The explicit
 `--api-version` selects the corresponding analyzer registration.
 
-### 6. Analyze with the preview registration
+### 7. Analyze with the preview registration
 
 You can pass the preview API version per command without changing the default
 profile:
