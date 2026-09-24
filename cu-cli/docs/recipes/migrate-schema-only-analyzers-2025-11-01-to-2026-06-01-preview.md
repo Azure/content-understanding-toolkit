@@ -62,22 +62,45 @@ analyzer, so both can remain available during validation.
 - [`jq`](https://jqlang.github.io/jq/) for the optional automated checks and
   comparison commands in this guide.
 
-Install or update CU CLI on Windows:
+For an isolated installation that keeps CU CLI dependencies separate from other
+Python packages while making the command available across shells, first
+[install pipx](https://pipx.pypa.io/latest/how-to/install-pipx.html), then
+install CU CLI:
 
 ```powershell
+pipx install cu-cli
+cu --version
+cu --help
+```
+
+If CU CLI is already installed with pipx, update it instead:
+
+```powershell
+pipx upgrade cu-cli
+```
+
+If you don't want to use pipx, install CU CLI in a virtual environment. On
+Windows using PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade cu-cli
 cu --version
 cu --help
 ```
 
-On Linux:
+On Linux using Bash:
 
 ```bash
-python3 -m pip install --upgrade cu-cli
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade cu-cli
 cu --version
 cu --help
 ```
 
+Activate the virtual environment again in each new shell before running `cu`.
 CU CLI also installs a `cu` executable. On macOS, use `cu-cli` because macOS
 includes an unrelated system command named `cu`.
 

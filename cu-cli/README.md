@@ -49,8 +49,37 @@ Requirements:
 - [Azure CLI](https://aka.ms/azcli) for login and resource discovery
 - [Azure Developer CLI](https://aka.ms/azd) only when using `cu infra generate`
 
+For an isolated installation that keeps CU CLI dependencies separate from other
+Python packages while making the command available across shells, first
+[install pipx](https://pipx.pypa.io/latest/how-to/install-pipx.html), then run:
+
 ```bash
-python -m pip install cu-cli
+pipx install cu-cli
+cu --version
+cu --help
+```
+
+To upgrade an existing pipx installation, run `pipx upgrade cu-cli`.
+
+If you don't want to use pipx, install CU CLI in a virtual environment. Activate
+the environment again in each new shell before running `cu`.
+
+On Windows using PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade cu-cli
+cu --version
+cu --help
+```
+
+On Linux or macOS:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade cu-cli
 cu --version
 cu --help
 ```
