@@ -428,26 +428,25 @@ def _run_documentation_suite(source, output, *options):
 def test_documentation_tests_publish_only_calls_inside_regions(tmp_path):
     source = _documentation_suite(
         tmp_path,
-        "from support.snippets import invoke_cli, record_external, record_output\n"
-        "def _run(*args, **kwargs):\n    return invoke_cli(args, **kwargs)\n"
+        "from support.snippets import record_external, record_output, run_command as _run\n"
         "def test_commands():\n"
-        "    _run('profile', 'list')\n"
+        "    _run('cu profile list')\n"
         "    # region Snippet:cli_setup\n"
         "    # region Snippet:version_step\n"
-        "    version = _run('--version')\n"
+        "    version = _run('cu --version')\n"
         "    # endregion\n"
         "    assert version.exit_code == 0\n"
-        "    help_text = _run('--help', comment='List commands.')\n"
+        "    help_text = _run('# List commands.\\ncu --help')\n"
         "    # endregion\n"
         "    assert 'Usage:' in help_text.output\n"
-        "    _run('profile', 'show')\n"
+        "    _run('cu profile show')\n"
         "def test_output():\n"
         "    # region Snippet:json_output\n"
         "    record_output('{}\\n', language='json')\n"
         "    # endregion\n"
         "def test_external():\n"
         "    # region Snippet:login\n"
-        "    record_external(['az', 'login'], reason='Interactive sign-in')\n"
+        "    record_external('az login', reason='Interactive sign-in')\n"
         "    # endregion\n",
     )
     output = tmp_path / "snippets.json"
@@ -470,10 +469,10 @@ def test_documentation_tests_block_network_fail_skips_and_publish_only_passing_t
         tmp_path,
         "import socket\n"
         "import pytest\n"
-        "from support.snippets import invoke_cli\n"
+        "from support.snippets import run_command\n"
         "def test_command():\n"
         "    # region Snippet:cli_help\n"
-        "    invoke_cli(['--help'])\n"
+        "    run_command('cu --help')\n"
         "    # endregion\n"
         "@pytest.mark.parametrize('operation', ['connect', 'connect_ex'])\n"
         "def test_network(operation):\n"
@@ -488,13 +487,13 @@ def test_documentation_tests_block_network_fail_skips_and_publish_only_passing_t
         "    pass\n"
         "def test_failed_assertion():\n"
         "    # region Snippet:failed_probe\n"
-        "    invoke_cli(['--version'])\n"
+        "    run_command('cu --version')\n"
         "    # endregion\n"
         "    assert False, 'post-command validation failed'\n"
         "def test_repeated_call():\n"
         "    # region Snippet:repeated_probe\n"
         "    for _ in range(2):\n"
-        "        invoke_cli(['--version'])\n"
+        "        run_command('cu --version')\n"
         "    # endregion\n",
     )
     output = tmp_path / "snippets.json"
@@ -523,7 +522,7 @@ def test_collection_requires_every_region_to_publish(tmp_path, monkeypatch):
     (tests / "docs").mkdir(parents=True)
     for document in _MODULE.DOCUMENTS.values():
         (tmp_path / document).write_text(
-            "def test_help():\n    # region Snippet:help\n    invoke_cli(['--help'])\n    # endregion\n",
+            "def test_help():\n    # region Snippet:help\n    run_command('cu --help')\n    # endregion\n",
             encoding="utf-8",
         )
     monkeypatch.setitem(

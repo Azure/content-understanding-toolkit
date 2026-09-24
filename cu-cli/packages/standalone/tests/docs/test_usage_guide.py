@@ -20,9 +20,8 @@ from cu_cli.commands.infra import AzureAccount
 from cu_cli.profile import Profile, ProfileStore
 from support.fake_analyzers import LocalAnalyzers
 from support.recording import PLACEHOLDER_ENDPOINT, cassette_path, mode, use_cassette
-from support.snippets import invoke_cli, record_external, record_output
+from support.snippets import record_external, record_output, run_command as _run
 
-_ASSETS = "https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/"
 _ACCOUNT = AzureAccount(subscription_id="sub-id", subscription_name="Development", tenant_id="tenant-id")
 _WARNING_FREE_SCHEMA = {
     "analyzerId": "invoice_v1",
@@ -38,10 +37,6 @@ _WARNING_FREE_SCHEMA = {
         }
     },
 }
-
-
-def _run(*args, **kwargs):
-    return invoke_cli(args, **kwargs)
 
 
 def _read_json(path: str):
@@ -130,48 +125,49 @@ def test_named_profiles_and_resolution_precedence(resolved_endpoints, monkeypatc
     monkeypatch.setattr("cu_cli.commands._options.console._width", 500)
     # region Snippet:profile_setup
     # region Snippet:profile_create_dev
-    _run("profile", "create", "dev", comment="Create an empty dev profile.")
+    _run("""
+        # Create an empty dev profile.
+        cu profile create dev
+    """)
     # endregion
     assert ProfileStore.load().has_name("dev")
     # region Snippet:profile_dev_endpoint
-    _run(
-        "profile", "set", "endpoint", "https://<dev-resource>.services.ai.azure.com/", "--name", "dev",
-        placeholder_values={"dev-resource": "dev"},
-        comment="Save the dev resource endpoint without changing the active profile.",
-    )
+    _run("""
+        # Save the dev resource endpoint without changing the active profile.
+        cu profile set endpoint https://<dev-resource>.services.ai.azure.com/ --name dev
+    """, placeholder_values={"dev-resource": "dev"})
     # endregion
     assert ProfileStore.load().get("endpoint", name="dev") == "https://dev.services.ai.azure.com/"
     # region Snippet:profile_create_prod
-    _run("profile", "create", "prod", comment="Create an empty prod profile.")
+    _run("""
+        # Create an empty prod profile.
+        cu profile create prod
+    """)
     # endregion
     assert ProfileStore.load().has_name("prod")
     # region Snippet:profile_prod_endpoint
-    _run(
-        "profile", "set", "endpoint", "https://<prod-resource>.services.ai.azure.com/", "--name", "prod",
-        placeholder_values={"prod-resource": "prod"},
-        comment="Save a distinct resource endpoint on prod.",
-    )
+    _run("""
+        # Save a distinct resource endpoint on prod.
+        cu profile set endpoint https://<prod-resource>.services.ai.azure.com/ --name prod
+    """, placeholder_values={"prod-resource": "prod"})
     # endregion
     assert ProfileStore.load().get("endpoint", name="prod") == "https://prod.services.ai.azure.com/"
     # region Snippet:profile_activate_dev
-    _run(
-        "profile", "set-active", "dev",
-        comment="Make dev the profile used when --profile is omitted.",
-    )
+    _run("""
+        # Make dev the profile used when --profile is omitted.
+        cu profile set-active dev
+    """)
     # endregion
     assert ProfileStore.load().get_active_name() == "dev"
     # endregion
     with use_cassette("analyzer_list"):
         # region Snippet:analyzer_list_active
-        result = _run(
-            "analyzer", "list", "--info",
-            comment=(
-                "Use all effective settings from the active dev profile.\n"
-                "--info prints resolved, non-secret runtime settings to stderr before "
-                "the request.\n"
-                "It is not a dry run; the analyzer list request still runs."
-            ),
-        )
+        result = _run("""
+            # Use all effective settings from the active dev profile.
+            # --info prints resolved, non-secret runtime settings to stderr before the request.
+            # It is not a dry run; the analyzer list request still runs.
+            cu analyzer list --info
+        """)
         # endregion
     assert resolved_endpoints[-1] == "https://dev.services.ai.azure.com/"
     assert "endpoint:" not in result.stdout and "prebuilt-layout" in result.output
@@ -186,32 +182,32 @@ def test_named_profiles_and_resolution_precedence(resolved_endpoints, monkeypatc
     # endregion
     with use_cassette("analyzer_list"):
         # region Snippet:analyzer_list_prod
-        _run(
-            "analyzer", "list", "--profile", "prod",
-            comment="Use prod for this command only; dev remains active.",
-        )
+        _run("""
+            # Use prod for this command only; dev remains active.
+            cu analyzer list --profile prod
+        """)
         # endregion
     assert resolved_endpoints[-1] == "https://prod.services.ai.azure.com/"
     assert ProfileStore.load().get_active_name() == "dev"
     with use_cassette("analyzer_list"):
         # region Snippet:analyzer_list_env
-        _run(
-            "analyzer", "list", "--profile", "prod", "--info",
-            env={"CU_ENDPOINT": "https://<temporary-resource>.services.ai.azure.com/"},
-            placeholder_values={"temporary-resource": "temporary"},
-            comment="Use prod's remaining settings, but this endpoint wins for this invocation.",
-        )
+        _run(r"""
+            # Use prod's remaining settings, but this endpoint wins for this invocation.
+            CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/ \
+              cu analyzer list --profile prod --info
+        """, placeholder_values={"temporary-resource": "temporary"})
         # endregion
     assert resolved_endpoints[-1] == "https://temporary.services.ai.azure.com/"
     with use_cassette("analyzer_list"):
         # region Snippet:analyzer_list_explicit
-        _run(
-            "analyzer", "list", "--profile", "prod", "--endpoint",
-            "https://<one-time-resource>.services.ai.azure.com/", "--info",
-            env={"CU_ENDPOINT": "https://<temporary-resource>.services.ai.azure.com/"},
-            placeholder_values={"one-time-resource": "one-time", "temporary-resource": "temporary"},
-            comment="The explicit option wins over both CU_ENDPOINT and the selected profile.",
-        )
+        _run(r"""
+            # The explicit option wins over both CU_ENDPOINT and the selected profile.
+            CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/ \
+              cu analyzer list \
+                --profile prod \
+                --endpoint https://<one-time-resource>.services.ai.azure.com/ \
+                --info
+        """, placeholder_values={"one-time-resource": "one-time", "temporary-resource": "temporary"})
         # endregion
     assert resolved_endpoints[-1] == "https://one-time.services.ai.azure.com/"
     assert ProfileStore.load().get_active_name() == "dev"
@@ -219,63 +215,75 @@ def test_named_profiles_and_resolution_precedence(resolved_endpoints, monkeypatc
 
 def test_profile_commands():
     for name in ("dev", "prod"):
-        _run("profile", "create", name)
-        _run("profile", "set", "endpoint", f"https://{name}.services.ai.azure.com/", "--name", name)
-    _run("profile", "set-active", "dev")
+        _run(f"cu profile create {name}")
+        _run(f"cu profile set endpoint https://{name}.services.ai.azure.com/ --name {name}")
+    _run("cu profile set-active dev")
     # region Snippet:profile_workflow
     # region Snippet:profile_show
-    result = _run("profile", "show", comment="Show all effective values for the active profile.")
+    result = _run("""
+        # Show all effective values for the active profile.
+        cu profile show
+    """)
     # endregion
     assert "CU CLI profile: dev (active)" in result.output
     # region Snippet:profile_get_endpoint
-    result = _run(
-        "profile", "get", "endpoint",
-        comment="Print only the effective endpoint from the active profile.",
-    )
+    result = _run("""
+        # Print only the effective endpoint from the active profile.
+        cu profile get endpoint
+    """)
     # endregion
     assert result.stdout.strip() == "https://dev.services.ai.azure.com/"
     # region Snippet:profile_list
-    result = _run("profile", "list", comment="List saved profiles and identify the active profile.")
+    result = _run("""
+        # List saved profiles and identify the active profile.
+        cu profile list
+    """)
     # endregion
     assert "dev" in result.stdout and "prod" in result.stdout
     # region Snippet:profile_show_prod
-    result = _run(
-        "profile", "show", "--name", "prod",
-        comment="Show prod without changing the active profile.",
-    )
+    result = _run("""
+        # Show prod without changing the active profile.
+        cu profile show --name prod
+    """)
     # endregion
     assert "https://prod.services.ai.azure.com/" in result.output
     assert ProfileStore.load().get_active_name() == "dev"
     # endregion
     # region Snippet:profile_preview
-    _run(
-        "profile", "set", "api_version", "2026-06-01-preview", "--name", "dev",
-        comment="Save a preview API version on dev without changing the active profile.",
-    )
+    _run("""
+        # Save a preview API version on dev without changing the active profile.
+        cu profile set api_version 2026-06-01-preview --name dev
+    """)
     # endregion
     assert ProfileStore.load().get("api_version", name="dev") == "2026-06-01-preview"
     # region Snippet:profile_copy_cleanup
     # region Snippet:profile_copy
-    _run("profile", "copy", "dev", "test", comment="Create test as an independent copy of dev.")
+    _run("""
+        # Create test as an independent copy of dev.
+        cu profile copy dev test
+    """)
     # endregion
     assert ProfileStore.load().get("endpoint", name="test") == "https://dev.services.ai.azure.com/"
     # region Snippet:profile_rename
-    _run("profile", "rename", "test", "staging", comment="Rename test and its saved values to staging.")
+    _run("""
+        # Rename test and its saved values to staging.
+        cu profile rename test staging
+    """)
     # endregion
     assert not ProfileStore.load().has_name("test")
     assert ProfileStore.load().get("endpoint", name="staging") == "https://dev.services.ai.azure.com/"
     # region Snippet:profile_delete
-    _run(
-        "profile", "delete", "staging", "--yes",
-        comment="Delete the inactive staging profile; this does not delete an Azure resource.",
-    )
+    _run("""
+        # Delete the inactive staging profile; this does not delete an Azure resource.
+        cu profile delete staging --yes
+    """)
     # endregion
     assert not ProfileStore.load().has_name("staging")
     # endregion
 
 
 def test_inspect_live_deployments(monkeypatch):
-    _run("profile", "set", "endpoint", "https://dev.services.ai.azure.com/")
+    _run("cu profile set endpoint https://dev.services.ai.azure.com/")
     inspected = []
     monkeypatch.setattr(
         "cu_cli.commands.profile_cmd._live_foundry_deployments",
@@ -284,7 +292,7 @@ def test_inspect_live_deployments(monkeypatch):
     settings = Profile.load().path
     saved = settings.read_bytes()
     # region Snippet:profile_deployments
-    result = _run("profile", "show", "--deployments", "--time")
+    result = _run("cu profile show --deployments --time")
     # endregion
     assert inspected == ["https://dev.services.ai.azure.com/"]
     assert "gpt-5.2" in result.stdout and "Total command time:" in result.stderr
@@ -294,34 +302,32 @@ def test_inspect_live_deployments(monkeypatch):
 def test_authentication_settings():
     # region Snippet:login_authentication
     # region Snippet:azure_login
-    record_external(
-        ["az", "login"],
-        reason="Interactive Azure sign-in is never run by tests.",
-        comment="Sign in for the default login authentication mode.",
-    )
+    record_external("""
+        # Sign in for the default login authentication mode.
+        az login
+    """, reason="Interactive Azure sign-in is never run by tests.")
     # endregion
     # region Snippet:profile_login
-    _run(
-        "profile", "set", "auth_mode", "login",
-        comment="Login authentication is the default; this command selects it explicitly.",
-    )
+    _run("""
+        # Login authentication is the default; this command selects it explicitly.
+        cu profile set auth_mode login
+    """)
     # endregion
     assert ProfileStore.load().get("auth_mode") == "login"
     # endregion
     # region Snippet:profile_key
-    _run(
-        "profile", "set", "api_key", "<key>",
-        placeholder_values={"key": "offline-test-key"},
-        comment="Save a resource key on the active profile and select key authentication.",
-    )
+    _run("""
+        # Save a resource key on the active profile and select key authentication.
+        cu profile set api_key <key>
+    """, placeholder_values={"key": "offline-test-key"})
     # endregion
     assert ProfileStore.load().get("api_key") == "offline-test-key"
     assert ProfileStore.load().get("auth_mode") == "key"
     # region Snippet:profile_unset_key
-    _run(
-        "profile", "unset", "api_key",
-        comment="Remove the saved key and return this profile to login authentication.",
-    )
+    _run("""
+        # Remove the saved key and return this profile to login authentication.
+        cu profile unset api_key
+    """)
     # endregion
     assert ProfileStore.load().get("api_key") is None
     assert ProfileStore.load().get("auth_mode") == "login"
@@ -332,14 +338,17 @@ def test_inspect_environment_overrides(monkeypatch):
     monkeypatch.setenv("CU_API_KEY", "offline-test-key")
     # region Snippet:environment_inspection
     # region Snippet:env_list
-    result = _run("env-var", "list", comment="List set, recognized environment overrides in a table.")
+    result = _run("""
+        # List set, recognized environment overrides in a table.
+        cu env-var list
+    """)
     # endregion
     assert "CU_ENDPOINT" in result.output and "offline-test-key" not in result.output
     # region Snippet:env_json
-    result = _run(
-        "env-var", "list", "--json",
-        comment="Emit the same set of overrides as machine-readable JSON.",
-    )
+    result = _run("""
+        # Emit the same set of overrides as machine-readable JSON.
+        cu env-var list --json
+    """)
     # endregion
     assert any(item["name"] == "CU_ENDPOINT" for item in json.loads(result.stdout))
     assert "offline-test-key" not in result.stdout
@@ -347,34 +356,42 @@ def test_inspect_environment_overrides(monkeypatch):
 
 
 def test_temporary_endpoint_override(resolved_endpoints):
-    _run("profile", "set", "endpoint", "https://saved.services.ai.azure.com/")
-    override = {
-        "env": {"CU_ENDPOINT": "https://<temporary-resource>.services.ai.azure.com/"},
-        "placeholder_values": {"temporary-resource": "temporary"},
-        "comment": (
-            "Temporarily override only the endpoint; other values still resolve normally.\n"
-            "Use the active profile's other settings and print the effective runtime context.\n"
-            "Preserve the previous environment after the command."
-        ),
-    }
+    _run("cu profile set endpoint https://saved.services.ai.azure.com/")
     with use_cassette("analyzer_list"):
         # region Snippet:env_override_bash
-        result = _run("analyzer", "list", "--info", **override)
+        result = _run(r"""
+            # Temporarily override only the endpoint; other values still resolve normally.
+            # Use the active profile's other settings and print the effective runtime context.
+            # Preserve the previous environment after the command.
+            CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/ \
+              cu analyzer list --info
+        """, placeholder_values={"temporary-resource": "temporary"})
         # endregion
     assert resolved_endpoints[-1] == "https://temporary.services.ai.azure.com/"
     assert "https://temporary.services.ai.azure.com/" in result.stderr
     with use_cassette("analyzer_list"):
         # region Snippet:env_override_powershell
-        result = _run("analyzer", "list", "--info", language="powershell", **override)
+        result = _run("""
+            # Temporarily override only the endpoint; other values still resolve normally.
+            # Use the active profile's other settings and print the effective runtime context.
+            # Preserve the previous environment after the command.
+            $previous_CU_ENDPOINT = $env:CU_ENDPOINT
+            $env:CU_ENDPOINT = "https://<temporary-resource>.services.ai.azure.com/"
+            try {
+              cu analyzer list --info
+            } finally {
+              $env:CU_ENDPOINT = $previous_CU_ENDPOINT
+            }
+        """, language="powershell", placeholder_values={"temporary-resource": "temporary"})
         # endregion
     assert resolved_endpoints[-1] == "https://temporary.services.ai.azure.com/"
     assert ProfileStore.load().get("endpoint") == "https://saved.services.ai.azure.com/"
 
 
 def test_import_remote_defaults_into_profiles(monkeypatch):
-    _run("profile", "set", "endpoint", "https://default.services.ai.azure.com/")
-    _run("profile", "create", "dev")
-    _run("profile", "set", "endpoint", "https://dev.services.ai.azure.com/", "--name", "dev")
+    _run("cu profile set endpoint https://default.services.ai.azure.com/")
+    _run("cu profile create dev")
+    _run("cu profile set endpoint https://dev.services.ai.azure.com/ --name dev")
     monkeypatch.setenv("CU_ENDPOINT", "https://environment.services.ai.azure.com/")
     remote = _Defaults({"gpt-5.2": "gpt-prod", "text-embedding-3-large": "embedding-prod"})
     requests = []
@@ -385,23 +402,25 @@ def test_import_remote_defaults_into_profiles(monkeypatch):
 
     monkeypatch.setattr("cu_cli.commands.profile_cmd.build_client", build_client)
     # region Snippet:profile_sync
-    _run("profile", "sync-defaults", comment="Import remote defaults into the active CU CLI profile.")
+    _run("""
+        # Import remote defaults into the active CU CLI profile.
+        cu profile sync-defaults
+    """)
     # endregion
     assert requests[-1] == ("https://default.services.ai.azure.com/", None)
     assert ProfileStore.load().get("model_deployments.gpt-5.2") == "gpt-prod"
     # region Snippet:profile_sync_named
-    _run(
-        "profile", "sync-defaults", "--name", "dev",
-        comment="Import remote defaults into dev without changing the active profile.",
-    )
+    _run("""
+        # Import remote defaults into dev without changing the active profile.
+        cu profile sync-defaults --name dev
+    """)
     # endregion
     assert requests[-1] == ("https://dev.services.ai.azure.com/", None)
     assert ProfileStore.load().get("model_deployments.gpt-5.2", name="dev") == "gpt-prod"
     assert ProfileStore.load().get_active_name() == "default"
     # region Snippet:profile_sync_auth
     result = _run(
-        "profile", "sync-defaults", "--name", "dev", "--auth-mode", "key",
-        "--api-key", "<key>", "--time",
+        "cu profile sync-defaults --name dev --auth-mode key --api-key <key> --time",
         placeholder_values={"key": "offline-test-key"},
     )
     # endregion
@@ -412,17 +431,17 @@ def test_import_remote_defaults_into_profiles(monkeypatch):
 def test_save_model_deployment_mappings():
     # region Snippet:configure_model_mappings
     # region Snippet:profile_completion_model
-    _run(
-        "profile", "set", "model_deployments.gpt-5.2", "my-gpt-52-deployment",
-        comment="Replace my-gpt-52-deployment with the completion deployment name on your resource.",
-    )
+    _run("""
+        # Replace my-gpt-52-deployment with the completion deployment name on your resource.
+        cu profile set model_deployments.gpt-5.2 my-gpt-52-deployment
+    """)
     # endregion
     assert ProfileStore.load().get("model_deployments.gpt-5.2") == "my-gpt-52-deployment"
     # region Snippet:profile_embedding_model
-    _run(
-        "profile", "set", "model_deployments.text-embedding-3-large", "my-embedding-deployment",
-        comment="Replace my-embedding-deployment with your embeddings deployment name.",
-    )
+    _run("""
+        # Replace my-embedding-deployment with your embeddings deployment name.
+        cu profile set model_deployments.text-embedding-3-large my-embedding-deployment
+    """)
     # endregion
     assert ProfileStore.load().get("model_deployments.text-embedding-3-large") == "my-embedding-deployment"
     # endregion
@@ -440,18 +459,20 @@ def test_generate_infrastructure(monkeypatch):
         lambda target, **options: wizards.append({"target": target, **options}),
     )
     # region Snippet:infra_generate
-    result = _run("infra", "generate")
+    result = _run("cu infra generate")
     # endregion
     assert wizards[-1]["target"] == Path("provision").resolve()
     assert wizards[-1]["interactive"] is False and wizards[-1]["models"] is None
     assert wizards[-1]["subscription_id"] == "sub-id" and "cu infra generate" in result.output
     # region Snippet:infra_custom
-    _run(
-        "infra", "generate", "--output-dir", "infra", "--environment", "dev-01",
-        "--location", "westus3", "--subscription", "Development",
-        "--api-version", "2026-06-01-preview", "--models", "gpt-5.2, text-embedding-3-large",
-        "--foundry-prefix", "contoso-cu", "--assign-roles", "false", "--force",
-    )
+    _run(r"""
+        cu infra generate --output-dir infra --environment dev-01 --location westus3 --subscription Development \
+          --api-version 2026-06-01-preview \
+          --models "gpt-5.2, text-embedding-3-large" \
+          --foundry-prefix contoso-cu \
+          --assign-roles false \
+          --force
+    """)
     # endregion
     assert subscriptions[-1] == "Development"
     assert wizards[-1]["target"] == Path("infra").resolve()
@@ -464,13 +485,11 @@ def test_generate_infrastructure(monkeypatch):
 def test_analyze_local_file(cloud_profile, sample_invoice):
     with use_cassette("analyze_single"):
         # region Snippet:analyze_layout
-        result = _run(
-            "analyze", "sample_invoice.pdf", "--analyzer", "prebuilt-layout",
-            comment=(
-                "Generate Markdown from the analyzer result with the CU SDK's to_llm_input().\n"
-                "This is a billed service call; Markdown is written to standard output."
-            ),
-        )
+        result = _run("""
+            # Generate Markdown from the analyzer result with the CU SDK's to_llm_input().
+            # This is a billed service call; Markdown is written to standard output.
+            cu analyze sample_invoice.pdf --analyzer prebuilt-layout
+        """)
         # endregion
     assert result.stdout.startswith("---")
     assert "mimeType:" in result.stdout and "<!-- InputPageNumber:" in result.stdout
@@ -479,18 +498,18 @@ def test_analyze_local_file(cloud_profile, sample_invoice):
 def test_analyze_with_profile_default(cloud_profile, sample_invoice):
     # region Snippet:analyze_with_profile_default
     # region Snippet:profile_default_analyzer
-    _run(
-        "profile", "set", "default_analyzer", "prebuilt-layout",
-        comment="Save the default analyzer on the active profile.",
-    )
+    _run("""
+        # Save the default analyzer on the active profile.
+        cu profile set default_analyzer prebuilt-layout
+    """)
     # endregion
     assert ProfileStore.load().get("default_analyzer") == "prebuilt-layout"
     with use_cassette("analyze_single"):
         # region Snippet:analyze_default
-        result = _run(
-            "analyze", "sample_invoice.pdf", "--json",
-            comment="Analyze one file using the saved default analyzer.",
-        )
+        result = _run("""
+            # Analyze one file using the saved default analyzer.
+            cu analyze sample_invoice.pdf --json
+        """)
         # endregion
     assert json.loads(result.stdout)["result"]["analyzerId"] == "prebuilt-layout"
     # endregion
@@ -499,28 +518,26 @@ def test_analyze_with_profile_default(cloud_profile, sample_invoice):
 def test_output_formats(cloud_profile, sample_invoice):
     with use_cassette("analyze_single"):
         # region Snippet:analyze_json
-        result = _run(
-            "analyze", "sample_invoice.pdf", "--analyzer", "prebuilt-layout", "--json",
-            comment="Print the complete structured result as JSON to the terminal.",
-        )
+        result = _run("""
+            # Print the complete structured result as JSON to the terminal.
+            cu analyze sample_invoice.pdf --analyzer prebuilt-layout --json
+        """)
         # endregion
     assert json.loads(result.stdout)["result"]["contents"][0]["markdown"]
     with use_cassette("analyze_single"):
         # region Snippet:analyze_markdown_file
-        _run(
-            "analyze", "sample_invoice.pdf", "--analyzer", "prebuilt-layout",
-            "--output-file", "results/invoice.md",
-            comment="Save Markdown instead of printing it; parent directories are created.",
-        )
+        _run("""
+            # Save Markdown instead of printing it; parent directories are created.
+            cu analyze sample_invoice.pdf --analyzer prebuilt-layout --output-file results/invoice.md
+        """)
         # endregion
     assert "<!-- InputPageNumber:" in Path("results/invoice.md").read_text(encoding="utf-8")
     with use_cassette("analyze_single"):
         # region Snippet:analyze_json_file
-        _run(
-            "analyze", "sample_invoice.pdf", "--analyzer", "prebuilt-layout", "--json",
-            "--output-file", "results/invoice.json",
-            comment="Save structured JSON instead of printing it.",
-        )
+        _run("""
+            # Save structured JSON instead of printing it.
+            cu analyze sample_invoice.pdf --analyzer prebuilt-layout --json --output-file results/invoice.json
+        """)
         # endregion
     assert _read_json("results/invoice.json")["result"]["analyzerId"] == "prebuilt-layout"
 
@@ -528,10 +545,11 @@ def test_output_formats(cloud_profile, sample_invoice):
 def test_analyze_public_video_url(cloud_profile):
     with use_cassette("analyze_public_video_url"):
         # region Snippet:analyze_video_url
-        result = _run(
-            "analyze", "--url", _ASSETS + "videos/sdk_samples/FlightSimulator.mp4",
-            "--analyzer", "prebuilt-videoSearch", "--json",
-        )
+        result = _run(r"""
+            cu analyze --url https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/videos/sdk_samples/FlightSimulator.mp4 \
+              --analyzer prebuilt-videoSearch \
+              --json
+        """)
         # endregion
     contents = json.loads(result.stdout)["result"]["contents"]
     assert contents and all(content["kind"] == "audioVisual" for content in contents)
@@ -550,23 +568,25 @@ def test_analyze_sas_url_and_preview_remote_inputs(cloud_profile, monkeypatch):
     monkeypatch.setattr("cu_cli.commands.analyze._run_one", analyze_remote)
     sas_token = "sv=2026-01-01&sp=r&sig=a%2Bb%2Fc%3D"
     # region Snippet:analyze_sas_url
-    result = _run(
-        "analyze", "--url", "https://<storage-account>.blob.core.windows.net/<container>/<blob>?<sas-token>",
-        "--analyzer", "prebuilt-videoSearch", "--json",
-        placeholder_values={
-            "storage-account": "cuclitest", "container": "samples", "blob": "video.mp4",
-            "sas-token": sas_token,
-        },
-    )
+    result = _run(r"""
+        cu analyze --url "https://<storage-account>.blob.core.windows.net/<container>/<blob>?<sas-token>" \
+          --analyzer prebuilt-videoSearch \
+          --json
+    """, placeholder_values={
+        "storage-account": "cuclitest", "container": "samples", "blob": "video.mp4",
+        "sas-token": sas_token,
+    })
     # endregion
     assert sent == [f"https://cuclitest.blob.core.windows.net/samples/video.mp4?{sas_token}"]
     assert "a%2Bb%2Fc%3D" not in result.output
     # region Snippet:analyze_urls_preview
-    result = _run(
-        "analyze", "--url", _ASSETS + "document/invoice.pdf",
-        "--url", _ASSETS + "document/receipt.png", "--output-dir", "results",
-        "--analyzer", "prebuilt-layout", "--dry-run",
-    )
+    result = _run(r"""
+        cu analyze --url https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/invoice.pdf \
+          --url https://github.com/Azure-Samples/azure-ai-content-understanding-assets/raw/refs/heads/main/document/receipt.png \
+          --output-dir results \
+          --analyzer prebuilt-layout \
+          --dry-run
+    """)
     # endregion
     assert len(sent) == 1 and not Path("results").exists()
     assert "2 remote size(s) unavailable" in unstyle(result.output)
@@ -595,18 +615,21 @@ def test_select_multiple_local_inputs(copy_invoice, monkeypatch):
         lambda *_args, **_kwargs: pytest.fail("previews must not create a service client"),
     )
     # region Snippet:analyze_files_preview
-    result = _run(
-        "analyze", "--file", "invoice one.pdf", "--file", "invoice two.pdf",
-        "--analyzer", "prebuilt-layout", "--output-dir", "selected-results", "--json", "--dry-run",
-    )
+    result = _run(r"""
+        cu analyze --file "invoice one.pdf" --file "invoice two.pdf" --analyzer prebuilt-layout \
+          --output-dir selected-results \
+          --json \
+          --dry-run
+    """)
     # endregion
     assert selections[-1] == {Path("invoice one.pdf").resolve(), Path("invoice two.pdf").resolve()}
     assert "Selected: 2 input(s)" in result.output and not Path("selected-results").exists()
     # region Snippet:analyze_sources_preview
-    result = _run(
-        "analyze", "--source", "my_incoming_dir", "--source", "my_archive_dir", "--pattern", "*.pdf",
-        "--analyzer", "prebuilt-layout", "--output-dir", "combined-results", "--dry-run",
-    )
+    result = _run(r"""
+        cu analyze --source my_incoming_dir --source my_archive_dir --pattern "*.pdf" --analyzer prebuilt-layout \
+          --output-dir combined-results \
+          --dry-run
+    """)
     # endregion
     assert selections[-1] == {
         Path("my_incoming_dir/first.pdf").resolve(), Path("my_archive_dir/second.pdf").resolve(),
@@ -619,11 +642,10 @@ def test_analyze_matching_files(cloud_profile, copy_invoice):
     Path("my_document_dir/notes.txt").write_text("not matched by the PDF pattern", encoding="utf-8")
     with use_cassette("analyze_batch"):
         # region Snippet:analyze_pattern
-        _run(
-            "analyze", "--source", "my_document_dir", "--pattern", "*.pdf",
-            "-a", "prebuilt-layout", "--output-dir", "results",
-            comment="Analyze only matching files directly inside my_document_dir.",
-        )
+        _run("""
+            # Analyze only matching files directly inside my_document_dir.
+            cu analyze --source my_document_dir --pattern "*.pdf" -a prebuilt-layout --output-dir results
+        """)
         # endregion
     assert list(Path("results").rglob("*.result.*")) == [Path("results/sample_invoice.pdf.result.md")]
 
@@ -633,11 +655,11 @@ def test_analyze_directory_recursively(cloud_profile, copy_invoice):
     Path("my_document_dir/notes.txt").write_text("not matched by the PDF pattern", encoding="utf-8")
     with use_cassette("analyze_batch"):
         # region Snippet:analyze_recursive
-        _run(
-            "analyze", "--source", "my_document_dir", "--pattern", "*.pdf", "--recursive",
-            "--analyzer", "prebuilt-layout", "--output-dir", "recursive-results",
-            comment="Quote the pattern so CU CLI, rather than the shell, applies it.",
-        )
+        _run(r"""
+            # Quote the pattern so CU CLI, rather than the shell, applies it.
+            cu analyze --source my_document_dir --pattern "*.pdf" --recursive --analyzer prebuilt-layout \
+              --output-dir recursive-results
+        """)
         # endregion
     output = Path("recursive-results/nested/sample_invoice.pdf.result.md")
     assert list(Path("recursive-results").rglob("*.result.*")) == [output]
@@ -650,7 +672,7 @@ def test_analyze_directory_argument(cloud_profile, copy_invoice):
     copy_invoice("my_document_dir/sample_invoice.pdf")
     with use_cassette("analyze_batch"):
         # region Snippet:analyze_directory
-        _run("analyze", "my_document_dir", "--analyzer", "prebuilt-layout", "--output-dir", "out")
+        _run("cu analyze my_document_dir --analyzer prebuilt-layout --output-dir out")
         # endregion
     assert list(Path("out").rglob("*.result.*")) == [Path("out/sample_invoice.pdf.result.md")]
 
@@ -663,11 +685,12 @@ def test_preview_batch_without_service_calls(copy_invoice, monkeypatch):
         lambda *_args, **_kwargs: pytest.fail("dry runs must not create a service client"),
     )
     # region Snippet:analyze_dry_run
-    result = _run(
-        "analyze", "--source", "my_document_dir", "--analyzer", "prebuilt-layout",
-        "--output-dir", "results", "--report-file", "report.json", "--dry-run",
-        comment="Preview the discovered files and output mappings without service calls.",
-    )
+    result = _run(r"""
+        # Preview the discovered files and output mappings without service calls.
+        cu analyze --source my_document_dir --analyzer prebuilt-layout --output-dir results \
+          --report-file report.json \
+          --dry-run
+    """)
     # endregion
     assert "Skipped during discovery: 1" in result.output
     assert ".DS_Store:hiddenfileskipped" in "".join(result.output.split())
@@ -675,23 +698,20 @@ def test_preview_batch_without_service_calls(copy_invoice, monkeypatch):
 
 
 def test_existing_output_policies(cloud_profile, sample_invoice):
-    _run("profile", "set", "default_analyzer", "prebuilt-layout")
+    _run("cu profile set default_analyzer prebuilt-layout")
     with use_cassette("analyze_single"):
-        _run("analyze", "sample_invoice.pdf", "--json", "--output-file", "result.json")
+        _run("cu analyze sample_invoice.pdf --json --output-file result.json")
     output = Path("result.json")
     content, modified = output.read_bytes(), output.stat().st_mtime_ns
     with use_cassette("analyze_single") as cassette:
         # region Snippet:analyze_skip
-        _run("analyze", "sample_invoice.pdf", "--json", "--output-file", "result.json", "--on-existing", "skip")
+        _run("cu analyze sample_invoice.pdf --json --output-file result.json --on-existing skip")
         # endregion
     assert mode() != "playback" or cassette.play_count == 0
     assert output.read_bytes() == content and output.stat().st_mtime_ns == modified
     with use_cassette("analyze_single") as cassette:
         # region Snippet:analyze_reanalyze
-        _run(
-            "analyze", "sample_invoice.pdf", "--json", "--output-file", "result.json",
-            "--on-existing", "reanalyze",
-        )
+        _run("cu analyze sample_invoice.pdf --json --output-file result.json --on-existing reanalyze")
         # endregion
     assert mode() != "playback" or cassette.play_count > 0
     assert _read_json("result.json")["result"]["analyzerId"] == "prebuilt-layout"
@@ -702,16 +722,15 @@ def test_recursive_batch_report(cloud_profile, copy_invoice):
     Path("my_document_dir/notes.txt").write_text("not matched by the PDF pattern", encoding="utf-8")
     with use_cassette("analyze_batch"):
         # region Snippet:analyze_recursive_report
-        _run(
-            "analyze", "--source", "my_document_dir", "--pattern", "*.pdf", "--recursive",
-            "--analyzer", "prebuilt-layout", "--output-dir", "batch-results",
-            "--report-file", "run-report.json", "--yes", "--concurrency", "8",
-            comment=(
-                "Analyze recursively, save one Markdown result per input, and record all statuses "
-                "in JSON.\n"
-                "Process up to eight batch jobs concurrently instead of the default four."
-            ),
-        )
+        _run(r"""
+            # Analyze recursively, save one Markdown result per input, and record all statuses in JSON.
+            # Process up to eight batch jobs concurrently instead of the default four.
+            cu analyze --source my_document_dir --pattern "*.pdf" --recursive --analyzer prebuilt-layout \
+              --output-dir batch-results \
+              --report-file run-report.json \
+              --yes \
+              --concurrency 8
+        """)
         # endregion
     output = Path("batch-results/nested/sample_invoice.pdf.result.md")
     assert list(Path("batch-results").rglob("*.result.*")) == [output]
@@ -722,10 +741,10 @@ def test_recursive_batch_report(cloud_profile, copy_invoice):
 def test_track_elapsed_time(cloud_profile, sample_invoice):
     with use_cassette("analyze_single"):
         # region Snippet:analyze_llm_input
-        result = _run(
-            "analyze", "sample_invoice.pdf", "--analyzer", "prebuilt-layout", "--llm-input", "--time",
-            comment="Print service-call and total elapsed time for the analysis.",
-        )
+        result = _run("""
+            # Print service-call and total elapsed time for the analysis.
+            cu analyze sample_invoice.pdf --analyzer prebuilt-layout --llm-input --time
+        """)
         # endregion
     assert "<!-- InputPageNumber:" in result.stdout
     timings = [line for line in result.stderr.splitlines() if "time:" in line]
@@ -738,9 +757,7 @@ def test_track_elapsed_time(cloud_profile, sample_invoice):
 def test_inspect_service_usage(cloud_profile, sample_invoice):
     with use_cassette("analyze_single"):
         # region Snippet:analyze_usage
-        result = _run(
-            "analyze", "sample_invoice.pdf", "--analyzer", "prebuilt-layout", "--json", "--usage", "--time",
-        )
+        result = _run("cu analyze sample_invoice.pdf --analyzer prebuilt-layout --json --usage --time")
         # endregion
     usage = result.stderr.split("Usage:", 1)[1]
     reported, _end = json.JSONDecoder().raw_decode(usage[usage.index("{"):])
@@ -751,25 +768,25 @@ def test_inspect_service_usage(cloud_profile, sample_invoice):
 def test_schema_templates():
     # region Snippet:schema_templates
     # region Snippet:schema_template
-    _run(
-        "analyzer", "schema", "create", "--output-file", "schema.json",
-        comment="Default to a document field-extraction schema.",
-    )
+    _run("""
+        # Default to a document field-extraction schema.
+        cu analyzer schema create --output-file schema.json
+    """)
     # endregion
     schema = _read_json("schema.json")
     assert schema["apiVersion"] == "2025-11-01" and "example_string_field" in schema["fieldSchema"]["fields"]
     # region Snippet:schema_image
-    _run(
-        "analyzer", "schema", "create", "--modality", "image", "--output-file", "image-schema.json",
-        comment="Generate an image field-extraction schema instead of the document default.",
-    )
+    _run("""
+        # Generate an image field-extraction schema instead of the document default.
+        cu analyzer schema create --modality image --output-file image-schema.json
+    """)
     # endregion
     assert _read_json("image-schema.json")["baseAnalyzerId"] == "prebuilt-image"
     # region Snippet:schema_classification
-    _run(
-        "analyzer", "schema", "create", "--output-file", "classify.json", "--type", "classification",
-        comment="Generate a classification schema instead of a field-extraction schema.",
-    )
+    _run("""
+        # Generate a classification schema instead of a field-extraction schema.
+        cu analyzer schema create --output-file classify.json --type classification
+    """)
     # endregion
     categories = _read_json("classify.json")["config"]["contentCategories"]
     assert "invoice" in categories
@@ -780,11 +797,10 @@ def test_schema_templates():
 def test_schema_from_sample(cloud_profile, sample_invoice):
     with use_cassette("schema_suggest"):
         # region Snippet:schema_from_sample
-        _run(
-            "analyzer", "schema", "create", "--name", "invoice_v1",
-            "--from-sample", "sample_invoice.pdf", "--output-file", "schema.json",
-            comment="Generate a schema from a representative document.",
-        )
+        _run("""
+            # Generate a schema from a representative document.
+            cu analyzer schema create --name invoice_v1 --from-sample sample_invoice.pdf --output-file schema.json
+        """)
         # endregion
     schema = _read_json("schema.json")
     assert schema["analyzerId"] == "invoice_v1" and schema["fieldSchema"]["fields"]
@@ -792,10 +808,7 @@ def test_schema_from_sample(cloud_profile, sample_invoice):
 
 def test_schema_base_override():
     # region Snippet:schema_base
-    _run(
-        "analyzer", "schema", "create", "--base", "prebuilt-document", "--name", "invoice_v1",
-        "--output-file", "schema.json",
-    )
+    _run("cu analyzer schema create --base prebuilt-document --name invoice_v1 --output-file schema.json")
     # endregion
     schema = _read_json("schema.json")
     assert schema["baseAnalyzerId"] == "prebuilt-document" and schema["analyzerId"] == "invoice_v1"
@@ -804,28 +817,25 @@ def test_schema_base_override():
 def test_schema_modalities():
     # region Snippet:schema_modalities
     # region Snippet:schema_document
-    _run("analyzer", "schema", "create", "--modality", "document", "--output-file", "document-schema.json")
+    _run("cu analyzer schema create --modality document --output-file document-schema.json")
     # endregion
     assert _read_json("document-schema.json")["baseAnalyzerId"] == "prebuilt-document"
     # region Snippet:schema_audio
-    _run("analyzer", "schema", "create", "--modality", "audio", "--output-file", "audio-schema.json")
+    _run("cu analyzer schema create --modality audio --output-file audio-schema.json")
     # endregion
     assert _read_json("audio-schema.json")["baseAnalyzerId"] == "prebuilt-audio"
     # region Snippet:schema_video
-    _run("analyzer", "schema", "create", "--modality", "video", "--output-file", "video-schema.json")
+    _run("cu analyzer schema create --modality video --output-file video-schema.json")
     # endregion
     assert _read_json("video-schema.json")["baseAnalyzerId"] == "prebuilt-video"
     # endregion
     for modality in ("document", "audio", "video"):
-        validation = _run("analyzer", "validate", "--schema", f"{modality}-schema.json", "--spec")
+        validation = _run(f"cu analyzer validate --schema {modality}-schema.json --spec")
         assert validation.exit_code == 0, validation.output
 
 
 def test_validate_schemas(monkeypatch):
-    created = _run(
-        "analyzer", "schema", "create", "--base", "prebuilt-document", "--name", "invoice_v1",
-        "--output-file", "schema.json",
-    )
+    created = _run("cu analyzer schema create --base prebuilt-document --name invoice_v1 --output-file schema.json")
     assert created.exit_code == 0, created.output
     monkeypatch.setattr(
         "cu_cli.commands.analyzer._client",
@@ -833,20 +843,23 @@ def test_validate_schemas(monkeypatch):
     )
     # region Snippet:schema_validation
     # region Snippet:schema_validate
-    result = _run("analyzer", "validate", "schema.json", comment="Validate the local schema shape.")
+    result = _run("""
+        # Validate the local schema shape.
+        cu analyzer validate schema.json
+    """)
     # endregion
     assert "schema.json" in result.output
     # region Snippet:schema_validate_spec
-    result = _run(
-        "analyzer", "validate", "--schema", "schema.json", "--spec", "--json",
-        comment="Also validate rules from the selected Content Understanding API specification.",
-    )
+    result = _run("""
+        # Also validate rules from the selected Content Understanding API specification.
+        cu analyzer validate --schema schema.json --spec --json
+    """)
     # endregion
     assert json.loads(result.stdout)["ok"] is True
     # endregion
     Path("schema.json").write_text(json.dumps(_WARNING_FREE_SCHEMA), encoding="utf-8")
     # region Snippet:schema_validate_strict
-    result = _run("analyzer", "validate", "schema.json", "--strict", "--spec", "--json")
+    result = _run("cu analyzer validate schema.json --strict --spec --json")
     # endregion
     payload = json.loads(result.stdout)
     assert payload["ok"] is True and payload["strict"] is True
@@ -854,10 +867,7 @@ def test_validate_schemas(monkeypatch):
 
 
 def test_create_and_test_analyzer(sample_invoice, monkeypatch):
-    schema = _run(
-        "analyzer", "schema", "create", "--base", "prebuilt-document", "--name", "invoice_v1",
-        "--output-file", "schema.json",
-    )
+    schema = _run("cu analyzer schema create --base prebuilt-document --name invoice_v1 --output-file schema.json")
     assert schema.exit_code == 0, schema.output
     created: dict[str, dict] = {}
     tested: list[str] = []
@@ -872,24 +882,20 @@ def test_create_and_test_analyzer(sample_invoice, monkeypatch):
     monkeypatch.setattr("cu_cli.commands.analyze._run_one", analyze)
     # region Snippet:analyzer_evaluation
     # region Snippet:analyzer_create
-    _run(
-        "analyzer", "create", "--name", "invoice_v1", "--schema", "schema.json",
-        comment=(
-            "Review and update the generated schema for your extraction requirements,\n"
-            "then create the analyzer."
-        ),
-    )
+    _run("""
+        # Review and update the generated schema for your extraction requirements,
+        # then create the analyzer.
+        cu analyzer create --name invoice_v1 --schema schema.json
+    """)
     # endregion
     assert created["invoice_v1"]["fieldSchema"] == _read_json("schema.json")["fieldSchema"]
     # region Snippet:analyzer_test_single
-    result = _run(
-        "analyzer", "test", "invoice_v1", "sample_invoice.pdf",
-        comment=(
-            "Run the analyzer against the sample and summarize whether fields were returned\n"
-            "and any confidence values supplied by the service. This is not an accuracy\n"
-            "benchmark and does not compare the result with labeled ground truth."
-        ),
-    )
+    result = _run("""
+        # Run the analyzer against the sample and summarize whether fields were returned
+        # and any confidence values supplied by the service. This is not an accuracy
+        # benchmark and does not compare the result with labeled ground truth.
+        cu analyzer test invoice_v1 sample_invoice.pdf
+    """)
     # endregion
     assert "1 ok / 0 failed / 1 total" in result.output and tested == ["invoice_v1"]
     # endregion
@@ -918,23 +924,24 @@ def test_preview_and_run_analyzer_tests(copy_invoice, monkeypatch):
     )
     monkeypatch.setattr("cu_cli.commands.analyze._run_one", analyze)
     # region Snippet:analyzer_test_preview
-    result = _run(
-        "analyzer", "test", "--name", "invoice_v1", "--source", "my_sample_dir", "--pattern", "*.pdf",
-        "--recursive", "--dry-run",
-        comment="Preview the matching samples without making service calls.",
-    )
+    result = _run(r"""
+        # Preview the matching samples without making service calls.
+        cu analyzer test --name invoice_v1 --source my_sample_dir --pattern "*.pdf" --recursive \
+          --dry-run
+    """)
     # endregion
     assert "Found 2 inputs:" in result.output and "No service calls or files were written" in result.output
     assert tested == [] and clients == []
     # region Snippet:analyzer_test_batch
-    _run(
-        "analyzer", "test", "--name", "invoice_v1", "--source", "my_sample_dir", "--pattern", "*.pdf",
-        "--recursive", "--concurrency", "2", "--yes", "--json", "--output-file", "test-report.json",
-        comment=(
-            "Test every matching sample in my_sample_dir, including nested PDFs,\n"
-            "and save one aggregate JSON report."
-        ),
-    )
+    _run(r"""
+        # Test every matching sample in my_sample_dir, including nested PDFs,
+        # and save one aggregate JSON report.
+        cu analyzer test --name invoice_v1 --source my_sample_dir --pattern "*.pdf" --recursive \
+          --concurrency 2 \
+          --yes \
+          --json \
+          --output-file test-report.json
+    """)
     # endregion
     assert set(tested) == {"my_sample_dir/sample_invoice.pdf", "my_sample_dir/nested/sample_invoice.pdf"}
     assert selections[-2] == selections[-1] and len(clients) == 1
@@ -953,17 +960,23 @@ def test_inspect_analyzers(cloud_profile, monkeypatch):
     # region Snippet:analyzer_management
     with use_cassette("analyzer_list"):
         # region Snippet:analyzer_list
-        result = _run("analyzer", "list", comment="List analyzers available on the selected resource.")
+        result = _run("""
+            # List analyzers available on the selected resource.
+            cu analyzer list
+        """)
         # endregion
     assert "Analyzers" in result.stderr and "analyzer(s)" in result.stderr
     # region Snippet:analyzer_show
-    result = _run("analyzer", "show", "invoice_v1", comment="Print one analyzer definition.")
+    result = _run("""
+        # Print one analyzer definition.
+        cu analyzer show invoice_v1
+    """)
     # endregion
     assert json.loads(result.stdout)["baseAnalyzerId"] == "prebuilt-document"
     # endregion
     with use_cassette("analyzer_list"):
         # region Snippet:analyzer_list_custom
-        result = _run("analyzer", "list", "--json", "--kind", "custom", "--sort-by", "analyzerId")
+        result = _run("cu analyzer list --json --kind custom --sort-by analyzerId")
         # endregion
     names = [item["analyzerId"] for item in json.loads(result.stdout)]
     assert names == sorted(names) and not any(name.startswith("prebuilt-") for name in names)
@@ -975,7 +988,7 @@ def test_copy_within_resource(cloud_profile, analyzer_copies, monkeypatch):
     client = object()
     monkeypatch.setattr(analyzer_commands, "_client", lambda *_args, **_kwargs: client)
     # region Snippet:analyzer_copy_same_resource
-    _run("analyzer", "copy", "invoice_v1", "invoice_v2")
+    _run("cu analyzer copy invoice_v1 invoice_v2")
     # endregion
     [(arguments, options)] = analyzer_copies
     assert arguments == (client, "invoice_v1", "invoice_v2")
@@ -987,8 +1000,8 @@ def test_copy_between_profiles(analyzer_copies, monkeypatch):
     from cu_cli.core import analyzers as analyzers_core
 
     for name in ("dev", "prod"):
-        _run("profile", "create", name)
-        _run("profile", "set", "endpoint", f"https://{name}.services.ai.azure.com/", "--name", name)
+        _run(f"cu profile create {name}")
+        _run(f"cu profile set endpoint https://{name}.services.ai.azure.com/ --name {name}")
     endpoints = []
     monkeypatch.setattr(
         analyzer_commands, "build_client",
@@ -999,17 +1012,14 @@ def test_copy_between_profiles(analyzer_copies, monkeypatch):
         lambda *_args, **_kwargs: SimpleNamespace(config=SimpleNamespace(content_categories={})),
     )
     # region Snippet:analyzer_copy_profiles
-    _run(
-        "analyzer", "copy", "invoice_v1", "invoice_v1", "--source-profile", "dev",
-        "--destination-profile", "prod",
-        comment=(
-            "Copy one analyzer between resources represented by saved CU CLI profiles.\n"
-            "The first positional ID is the existing analyzer on the dev resource.\n"
-            "The second positional ID is the analyzer to create on the prod resource.\n"
-            "--source-profile supplies the source endpoint and authentication.\n"
-            "--destination-profile supplies the destination endpoint and authentication."
-        ),
-    )
+    _run("""
+        # Copy one analyzer between resources represented by saved CU CLI profiles.
+        # The first positional ID is the existing analyzer on the dev resource.
+        # The second positional ID is the analyzer to create on the prod resource.
+        # --source-profile supplies the source endpoint and authentication.
+        # --destination-profile supplies the destination endpoint and authentication.
+        cu analyzer copy invoice_v1 invoice_v1 --source-profile dev --destination-profile prod
+    """)
     # endregion
     [(_arguments, options)] = analyzer_copies
     assert options["target_azure_resource_id"].endswith("/accounts/prod")
@@ -1040,19 +1050,14 @@ def test_copy_between_discovered_resources(analyzer_copies, monkeypatch):
         lambda *_args, **_kwargs: SimpleNamespace(config=SimpleNamespace(content_categories={})),
     )
     # region Snippet:analyzer_copy_resources
-    _run(
-        "analyzer", "copy", "invoice_v1", "invoice_v1",
-        "--source-resource", "<source-resource>",
-        "--destination-resource", "<destination-resource>",
-        placeholder_values={"source-resource": "src", "destination-resource": "tgt"},
-        comment=(
-            "Copy one analyzer using Azure resource discovery instead of saved profiles.\n"
-            "The first positional ID is the existing analyzer on the source resource.\n"
-            "The second positional ID is the analyzer to create on the destination resource.\n"
-            "--source-resource selects the source by name, endpoint, or ARM resource ID.\n"
-            "--destination-resource selects the destination using the same identifier forms."
-        ),
-    )
+    _run("""
+        # Copy one analyzer using Azure resource discovery instead of saved profiles.
+        # The first positional ID is the existing analyzer on the source resource.
+        # The second positional ID is the analyzer to create on the destination resource.
+        # --source-resource selects the source by name, endpoint, or ARM resource ID.
+        # --destination-resource selects the destination using the same identifier forms.
+        cu analyzer copy invoice_v1 invoice_v1 --source-resource <source-resource> --destination-resource <destination-resource>
+    """, placeholder_values={"source-resource": "src", "destination-resource": "tgt"})
     # endregion
     [(_arguments, options)] = analyzer_copies
     assert options["source_azure_resource_id"] == resources["src"].arm_id
@@ -1064,13 +1069,13 @@ def test_delete_analyzer_after_confirmation(monkeypatch):
     monkeypatch.setattr(
         "cu_cli.commands.analyzer._client", lambda *_args, **_kwargs: LocalAnalyzers(None, created),
     )
-    declined = _run("analyzer", "delete", "invoice_v1", input="n\n")
+    declined = _run("cu analyzer delete invoice_v1", input="n\n")
     assert declined.exit_code != 0 and "invoice_v1" in created
     # region Snippet:analyzer_delete
-    result = _run(
-        "analyzer", "delete", "invoice_v1", input="y\n",
-        comment="Delete a custom analyzer after confirmation.",
-    )
+    result = _run("""
+        # Delete a custom analyzer after confirmation.
+        cu analyzer delete invoice_v1
+    """, input="y\n")
     # endregion
     assert "Delete analyzer 'invoice_v1'?" in result.output and created == {}
 
@@ -1078,10 +1083,10 @@ def test_delete_analyzer_after_confirmation(monkeypatch):
 def test_show_remote_defaults(cloud_profile):
     with use_cassette("defaults_get"):
         # region Snippet:defaults_show
-        result = _run(
-            "defaults", "show",
-            comment="Show the Content Understanding defaults configured on the resource.",
-        )
+        result = _run("""
+            # Show the Content Understanding defaults configured on the resource.
+            cu defaults show
+        """)
         # endregion
     assert json.loads(result.stdout)["modelDeployments"]
     # region Snippet:defaults_json_output
@@ -1089,10 +1094,10 @@ def test_show_remote_defaults(cloud_profile):
     # endregion
     with use_cassette("defaults_get"):
         # region Snippet:defaults_table
-        result = _run(
-            "defaults", "show", "--table",
-            comment="Show the same remote mappings as a human-readable table.",
-        )
+        result = _run("""
+            # Show the same remote mappings as a human-readable table.
+            cu defaults show --table
+        """)
         # endregion
     assert "Model" in result.stdout and "Deployment" in result.stdout
 
@@ -1100,29 +1105,30 @@ def test_show_remote_defaults(cloud_profile):
 def test_update_remote_defaults(monkeypatch):
     remote = _DefaultsService({"unrelated": "keep"})
     monkeypatch.setattr("cu_cli.commands.defaults.build_client", lambda *_args, **_kwargs: remote)
-    _run("profile", "set", "endpoint", PLACEHOLDER_ENDPOINT)
-    _run("profile", "set", "model_deployments.gpt-5.2", "my-gpt-52-deployment")
-    _run("profile", "set", "model_deployments.text-embedding-3-large", "my-embedding-deployment")
+    _run(f"cu profile set endpoint {PLACEHOLDER_ENDPOINT}")
+    _run("cu profile set model_deployments.gpt-5.2 my-gpt-52-deployment")
+    _run("cu profile set model_deployments.text-embedding-3-large my-embedding-deployment")
     # region Snippet:defaults_model
-    _run(
-        "defaults", "set", "--model", "gpt-5.2=custom-completion",
-        comment="Replace custom-completion with a deployment name and set that remote mapping.",
-    )
+    _run("""
+        # Replace custom-completion with a deployment name and set that remote mapping.
+        cu defaults set --model gpt-5.2=custom-completion
+    """)
     # endregion
     assert remote.updated["gpt-5.2"] == "custom-completion" and remote.updated["unrelated"] == "keep"
     # region Snippet:defaults_from_profile
-    _run(
-        "defaults", "set", "--from-profile",
-        comment="Apply model mappings from the active CU CLI profile to the remote resource.",
-    )
+    _run("""
+        # Apply model mappings from the active CU CLI profile to the remote resource.
+        cu defaults set --from-profile
+    """)
     # endregion
     assert remote.updated["prebuilt-analyzer-completion"] == "my-gpt-52-deployment"
     assert remote.updated["unrelated"] == "keep"
     # region Snippet:defaults_replace
-    result = _run(
-        "defaults", "set", "--model", "gpt-5.2=custom-completion",
-        "--model", "text-embedding-3-large=custom-embedding", "--replace", "--json",
-    )
+    result = _run(r"""
+        cu defaults set --model gpt-5.2=custom-completion --model text-embedding-3-large=custom-embedding \
+          --replace \
+          --json
+    """)
     # endregion
     assert remote.updated["unrelated"] is None
     mappings = json.loads(result.stdout)["modelDeployments"]
@@ -1130,22 +1136,25 @@ def test_update_remote_defaults(monkeypatch):
 
 
 def test_check_readiness(cloud_profile):
-    _run("profile", "create", "prod")
-    _run("profile", "set", "endpoint", "https://prod.services.ai.azure.com/", "--name", "prod")
-    _run("profile", "set", "api_key", "playback-dummy-key", "--name", "prod")
+    _run("cu profile create prod")
+    _run("cu profile set endpoint https://prod.services.ai.azure.com/ --name prod")
+    _run("cu profile set api_key playback-dummy-key --name prod")
     # region Snippet:diagnose_configuration
     with use_cassette("doctor"):
         # region Snippet:doctor
-        result = _run("doctor", comment="Check the active profile.")
+        result = _run("""
+            # Check the active profile.
+            cu doctor
+        """)
         # endregion
     assert f"Microsoft Foundry resource: {PLACEHOLDER_ENDPOINT}" in result.output
     assert "Connected to the Microsoft Foundry resource." in result.output
     with use_cassette("doctor"):
         # region Snippet:doctor_named
-        result = _run(
-            "doctor", "--profile", "prod",
-            comment="Check prod without changing the active profile.",
-        )
+        result = _run("""
+            # Check prod without changing the active profile.
+            cu doctor --profile prod
+        """)
         # endregion
     assert "Microsoft Foundry resource: https://prod.services.ai.azure.com/" in result.output
     assert ProfileStore.load().get_active_name() == "default"
@@ -1153,16 +1162,16 @@ def test_check_readiness(cloud_profile):
 
 
 def test_apply_reviewed_mappings_as_defaults(monkeypatch):
-    _run("profile", "set", "endpoint", PLACEHOLDER_ENDPOINT)
-    _run("profile", "set", "model_deployments.gpt-5.2", "dep-gpt")
-    _run("profile", "set", "model_deployments.text-embedding-3-large", "dep-emb")
+    _run(f"cu profile set endpoint {PLACEHOLDER_ENDPOINT}")
+    _run("cu profile set model_deployments.gpt-5.2 dep-gpt")
+    _run("cu profile set model_deployments.text-embedding-3-large dep-emb")
     remote = _DefaultsService({})
     monkeypatch.setattr("cu_cli.commands.doctor.build_client", lambda *_args, **_kwargs: remote)
     # region Snippet:doctor_fix_defaults
-    result = _run(
-        "doctor", "--fix-defaults",
-        comment="Apply reviewed local model mappings as remote Content Understanding defaults.",
-    )
+    result = _run("""
+        # Apply reviewed local model mappings as remote Content Understanding defaults.
+        cu doctor --fix-defaults
+    """)
     # endregion
     assert "Content Understanding defaults updated" in result.output
     assert remote.updated["gpt-5.2"] == "dep-gpt"
@@ -1172,21 +1181,24 @@ def test_apply_reviewed_mappings_as_defaults(monkeypatch):
 def test_help_overview():
     # region Snippet:cli_help_overview
     # region Snippet:cli_help
-    result = _run("--help", comment="List top-level command groups and global options.")
+    result = _run("""
+        # List top-level command groups and global options.
+        cu --help
+    """)
     # endregion
     assert "Usage:" in result.output
     # region Snippet:profile_help
-    result = _run(
-        "profile", "--help",
-        comment="Show how to save profile values, including supported keys and examples.",
-    )
+    result = _run("""
+        # Show how to save profile values, including supported keys and examples.
+        cu profile --help
+    """)
     # endregion
     assert "set-active" in result.output
     # region Snippet:copy_help
-    result = _run(
-        "analyzer", "copy", "--help",
-        comment="Show profile-based and Azure-discovery analyzer copy options.",
-    )
+    result = _run("""
+        # Show profile-based and Azure-discovery analyzer copy options.
+        cu analyzer copy --help
+    """)
     # endregion
     assert "--destination-profile" in result.output
     # endregion
@@ -1197,7 +1209,7 @@ def test_check_for_upgrade(monkeypatch):
         "cu_cli.commands.upgrade.fetch_latest_version_detailed", lambda **_: (version("cu-cli"), "ok"),
     )
     # region Snippet:upgrade_check
-    result = _run("upgrade", "--check")
+    result = _run("cu upgrade --check")
     # endregion
     assert "up to date" in result.output
 
@@ -1223,7 +1235,7 @@ def test_apply_upgrade(monkeypatch):
     )
     monkeypatch.setattr("cu_cli.commands.upgrade.is_windows", lambda: False)
     # region Snippet:upgrade_apply
-    result = _run("upgrade", "--yes")
+    result = _run("cu upgrade --yes")
     # endregion
     [(arguments, environment)] = installs
     assert arguments[-1] == "cu-cli==9.9.9"

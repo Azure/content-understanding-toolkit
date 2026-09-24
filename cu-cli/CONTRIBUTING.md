@@ -133,22 +133,23 @@ comes from one documentation test file per document:
 | `docs/usage-guide.md` | [tests/docs/test_usage_guide.py](packages/standalone/tests/docs/test_usage_guide.py) |
 
 The tests follow the order of their document. Each code block is a named region
-that contains only the commands to publish. Run each command with the file's
-`_run` helper, and put its assertions directly after `# endregion`:
+that contains only the commands to publish. Write each command as its shell text
+with the file's `_run` helper, and put its assertions directly after `# endregion`:
 
 ```python
 with use_cassette("defaults_get"):
     # region Snippet:defaults_show
-    result = _run(
-        "defaults", "show",
-        comment="Show the Content Understanding defaults configured on the resource.",
-    )
+    result = _run("""
+        # Show the Content Understanding defaults configured on the resource.
+        cu defaults show
+    """)
     # endregion
 assert json.loads(result.stdout)["modelDeployments"]
 ```
 
 The region name is the document marker. The block after
-`<!-- Snippet:defaults_show -->` receives the command that the region ran:
+`<!-- Snippet:defaults_show -->` receives the text that the region ran, without
+its common indentation:
 
 ```bash
 # Show the Content Understanding defaults configured on the resource.
@@ -161,19 +162,17 @@ and assert after each step:
 ```python
 # region Snippet:configure_key
 # region Snippet:key_endpoint
-_run(
-    "profile", "set", "endpoint", "https://<resource-name>.services.ai.azure.com/",
-    placeholder_values={"resource-name": "sanitized"},
-    comment="Save the endpoint on the active profile.",
-)
+_run("""
+    # Save the endpoint on the active profile.
+    cu profile set endpoint https://<resource-name>.services.ai.azure.com/
+""", placeholder_values={"resource-name": "sanitized"})
 # endregion
 assert ProfileStore.load().get("endpoint") == PLACEHOLDER_ENDPOINT
 # region Snippet:profile_key
-_run(
-    "profile", "set", "api_key", "<key>",
-    placeholder_values={"key": "playback-dummy-key"},
-    comment="Save a resource key on the active profile and select key authentication.",
-)
+_run("""
+    # Save a resource key on the active profile and select key authentication.
+    cu profile set api_key <key>
+""", placeholder_values={"key": "playback-dummy-key"})
 # endregion
 assert ProfileStore.load().get("auth_mode") == "key"
 # endregion
@@ -189,18 +188,24 @@ Run additional verification commands after the outer region.
 - Put markers on their own lines, with matching indentation, inside a top-level
   test function. A region cannot split a call. Prepare files, profiles, and
   service doubles before the region.
-- `comment="..."` becomes shell comment lines before the command; separate lines
-  with `\n`. Python comments are not published.
+- Each `_run` call contains exactly one `cu`, `cu-cli`, or `az cu` command. Lines
+  that start with `#` are published as shell comments; Python comments are not
+  published.
+- Write a multiline command as a raw string (`r"""..."""`) so its `\` line
+  continuations are kept. A plain string drops them, and the test fails.
+- Quote anything the shell would interpret, such as `"*.pdf"` or a SAS URL.
+  Unquoted `*`, `?`, `$`, `;`, `&`, `~`, backslash escapes, and trailing comments
+  fail before the command runs.
 - Keep resource-specific values as placeholders, such as
   `https://<resource-name>.services.ai.azure.com/`, and pass `placeholder_values`.
-  The test runs the bound value, and the document keeps the placeholder. The same
-  bindings apply to string values in an `env` mapping. Missing or unused bindings
-  fail before the command runs.
-- Pass `language="powershell"` to render a PowerShell block. Use
-  `record_output(content, language=...)` in its own region for an output block,
-  `invoke_azure` through `_az` for Azure CLI examples, and `record_external(...,
-  reason=...)` only for installation and interactive sign-in, which tests never
-  run.
+  The test runs the bound value, and the document keeps the placeholder. Missing
+  or unused bindings fail before the command runs.
+- A leading `NAME=value` sets an environment variable for that command only. For
+  a PowerShell block, pass `language="powershell"` and save, set, and restore one
+  `$env:` variable around one command with `try` and `finally`.
+- Use `record_output(content, language=...)` in its own region for an output
+  block, and `record_external("...", reason=...)` only for installation and
+  interactive sign-in, which tests never run.
 
 Use the complete repository sample (the `sample_invoice` and `copy_invoice`
 fixtures) and sanitized recordings (`use_cassette`) for successful examples. Use

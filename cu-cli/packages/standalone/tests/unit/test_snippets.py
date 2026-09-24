@@ -5,16 +5,14 @@ import inspect
 import json
 import os
 from pathlib import Path
-import shlex
 import shutil
 import subprocess
+import textwrap
 
 import click
 import pytest
 
-from support.snippets import (
-    _PARTS, _REGIONS, invoke_azure, invoke_cli, record_external, record_output, render_command,
-)
+from support.snippets import _PARTS, _REGIONS, _documented_command, record_external, record_output, run_command
 
 
 pytestmark = pytest.mark.unit
@@ -38,139 +36,48 @@ def _content(parts):
     return "\n".join(part["content"] for part in parts["probe"])
 
 
-def test_bash_rendering_roundtrips_multiline_spaces_quotes_and_sas():
-    arguments = [
-        "analyze", "--url", "https://example.test/bob's/video.mp4?sp=r&sig=a%2Bb",
-        "--analyzer", "prebuilt-videoSearch", "--output-dir", "results with spaces", "--json",
-    ]
-    rendered = render_command(arguments, executable="cu", language="bash", environment={})
-    assert "\\\n" in rendered
-    assert shlex.split(rendered.replace("\\\n", "")) == ["cu", *arguments]
-
-
-@pytest.mark.parametrize(
-    ("value", "unquoted"),
-    [
-        ("https://<dev-resource>.services.ai.azure.com/", True),
-        ("https://<account>.blob.core.windows.net/<container>/<blob>?<sas-token>", False),
-        ("https://storage.example.net/video.mp4?sv=<version>&sp=r&sig=<signature>", False),
-        ("https://<resource>/folder with spaces", False),
-        ("https://<resource>/$(command)", False),
-        ("<key>", True),
-        ("<source-resource>", True),
-        ("--api-key=<key>", True),
-        ("*.pdf", False),
-        ("gpt-5.2, text-embedding-3-large", False),
-    ],
-    ids=[
-        "endpoint", "sas", "query", "spaces", "shell-expansion", "key",
-        "resource", "option-value", "wildcard", "model-list",
-    ],
-)
-def test_bash_placeholders_only_omit_unnecessary_quotes(value, unquoted):
-    rendered = render_command([value], executable="cu", language="bash", environment={})
-    if unquoted:
-        assert rendered == "cu " + value
-    else:
-        assert rendered.startswith('cu "') and rendered.endswith('"')
-
-
-def test_environment_rendering_preserves_values_and_powershell_restoration():
-    arguments = ["profile", "get", "endpoint"]
-    environment = {"CU_ENDPOINT": "https://example.services.ai.azure.com/"}
-    bash = render_command(arguments, executable="cu", language="bash", environment=environment)
-    powershell = render_command(arguments, executable="cu", language="powershell", environment=environment)
-    assert shlex.split(bash)[0] == "CU_ENDPOINT=" + environment["CU_ENDPOINT"]
-    assert "$previous_CU_ENDPOINT = $env:CU_ENDPOINT" in powershell
-    assert "finally {\n  $env:CU_ENDPOINT = $previous_CU_ENDPOINT" in powershell
-    assert f'$env:CU_ENDPOINT = "{environment["CU_ENDPOINT"]}"' in powershell
-
-
-@pytest.mark.parametrize("total_length", [78, 79], ids=["fits", "wraps"])
-def test_bash_environment_wrapping_counts_the_full_line(total_length):
-    command = "cu profile list"
-    value = "x" * (total_length - len("MODE= " + command))
-
-    rendered = render_command(["profile", "list"], executable="cu", language="bash", environment={"MODE": value})
-
-    separator = " " if total_length == 78 else " \\\n  "
-    assert rendered == f"MODE={value}{separator}{command}"
-
-
-def test_bash_long_environment_command_groups_options_and_values():
-    endpoint = "https://<temporary-resource>.services.ai.azure.com/"
-    explicit_endpoint = "https://<one-time-resource>.services.ai.azure.com/"
-    arguments = ["analyzer", "list", "--profile", "prod", "--endpoint", explicit_endpoint, "--info"]
-
-    rendered = render_command(arguments, executable="cu", language="bash", environment={"CU_ENDPOINT": endpoint})
-
-    assert rendered == (
-        f"CU_ENDPOINT={endpoint} \\\n"
-        "  cu analyzer list \\\n"
-        "    --profile prod \\\n"
-        f"    --endpoint {explicit_endpoint} \\\n"
-        "    --info"
-    )
-
-
-@pytest.mark.parametrize("language", ["bash", "powershell"])
-def test_placeholders_execute_bound_values_and_publish_templates(language, region):
-    from cu_cli.profile import ProfileStore
-
-    endpoint = "https://<resource-name>.services.ai.azure.com/"
-    arguments = ["profile", "set", "endpoint", endpoint]
-
-    invoke_cli(arguments, language=language, placeholder_values={"resource-name": "cu-docs-resource"})
-
-    assert ProfileStore.load().get("endpoint") == "https://cu-docs-resource.services.ai.azure.com/"
-    assert "cu-docs-resource" not in _content(region)
-    assert arguments == ["profile", "set", "endpoint", endpoint]
-    if language == "bash":
-        assert _content(region) == f"cu profile set endpoint {endpoint}"
-    else:
-        assert f'"{endpoint}"' in _content(region)
+def _shell(language):
+    executable = shutil.which("bash" if language == "bash" else "pwsh")
+    if language == "bash" and os.name == "nt":
+        git = shutil.which("git")
+        if git:
+            candidate = Path(git).parents[1] / "bin" / "bash.exe"
+            if candidate.is_file():
+                executable = str(candidate)
+    if not executable:
+        pytest.skip(f"{language} shell is unavailable for generated-script execution")
+    return executable
 
 
 def test_key_placeholder_is_never_published(region):
     from cu_cli.profile import ProfileStore
 
-    invoke_cli(["profile", "set", "api_key", "<key>"], placeholder_values={"key": "offline-test-key"})
+    run_command("cu profile set api_key <key>", placeholder_values={"key": "offline-test-key"})
 
     assert ProfileStore.load().get("api_key") == "offline-test-key"
     assert _content(region) == "cu profile set api_key <key>"
-
-
-def test_environment_placeholder_binds_only_for_the_command(region, monkeypatch):
-    template = "https://<temporary-resource>.services.ai.azure.com/"
-    monkeypatch.setenv("CU_ENDPOINT", "https://saved.services.ai.azure.com/")
-
-    result = invoke_cli(
-        ["env-var", "list", "--json"], env={"CU_ENDPOINT": template},
-        placeholder_values={"temporary-resource": "cu-docs-temporary"},
-    )
-
-    actual = {item["name"]: item["value"] for item in json.loads(result.stdout)}
-    assert actual["CU_ENDPOINT"] == "https://cu-docs-temporary.services.ai.azure.com/"
-    assert os.environ["CU_ENDPOINT"] == "https://saved.services.ai.azure.com/"
-    assert _content(region).startswith(f"CU_ENDPOINT={template} ")
 
 
 @pytest.mark.parametrize(
     "values", [{}, {"resource-name": "cu-docs-resource", "unused": "value"}],
     ids=["missing-binding", "unused-binding"],
 )
-@pytest.mark.parametrize("location", ["argument", "environment"])
-def test_invalid_placeholder_bindings_fail_before_cli_execution(monkeypatch, values, location):
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cu profile set endpoint https://<resource-name>.services.ai.azure.com/",
+        "CU_ENDPOINT=https://<resource-name>.services.ai.azure.com/ cu env-var list",
+    ],
+    ids=["argument", "environment"],
+)
+def test_invalid_placeholder_bindings_fail_before_cli_execution(monkeypatch, values, command):
     monkeypatch.setattr(
         click.testing.CliRunner, "invoke",
         lambda *_args, **_kwargs: pytest.fail("invalid bindings must fail before invocation"),
     )
-    template = "https://<resource-name>.services.ai.azure.com/"
-    arguments = ["profile", "set", "endpoint", template] if location == "argument" else ["env-var", "list"]
-    environment = {} if location == "argument" else {"CU_ENDPOINT": template}
 
     with pytest.raises(ValueError, match="placeholder"):
-        invoke_cli(arguments, env=environment, placeholder_values=values)
+        run_command(command, placeholder_values=values)
 
 
 def test_failing_documented_command_is_not_published(region, monkeypatch):
@@ -180,7 +87,7 @@ def test_failing_documented_command_is_not_published(region, monkeypatch):
     )
 
     with pytest.raises(AssertionError, match="--source"):
-        invoke_cli(["analyze", "./documents", "--pattern", "*.pdf"])
+        run_command('cu analyze ./documents --pattern "*.pdf"')
 
     assert region == {}
 
@@ -189,23 +96,25 @@ def test_commands_outside_regions_are_not_published():
     parts: dict[str, list[dict]] = {}
     token = _PARTS.set(parts)
     try:
-        result = invoke_cli(["--version"])
+        result = run_command("cu --version")
     finally:
         _PARTS.reset(token)
 
     assert result.exit_code == 0 and parts == {}
 
 
-@pytest.mark.parametrize("language", ["bash", "powershell"])
-def test_region_commands_are_compact_and_keep_comments(region, language):
-    invoke_cli(["--version"], language=language)
-    invoke_cli(["--help"], language=language, comment="Inspect available commands.")
+def test_region_commands_are_compact_and_keep_comments(region):
+    run_command("cu --version")
+    run_command("""
+        # Inspect available commands.
+        cu --help
+    """)
 
     assert _content(region) == "cu --version\n# Inspect available commands.\ncu --help"
 
 
 def test_region_cannot_mix_command_and_output_languages(region):
-    invoke_cli(["--version"])
+    run_command("cu --version")
 
     with pytest.raises(AssertionError, match="mixes 'bash' and 'text'"):
         record_output("output")
@@ -219,105 +128,205 @@ def test_output_blocks_validate_their_language(region):
         record_output("not json", language="json")
 
 
+def test_command_text_runs_bound_words_and_is_published_as_written(region):
+    from cu_cli.profile import ProfileStore
+
+    result = run_command(r"""
+        # Save the endpoint on the active profile.
+        cu profile set endpoint \
+          https://<resource-name>.services.ai.azure.com/
+    """, placeholder_values={"resource-name": "cu-docs-resource"})
+
+    assert result.exit_code == 0
+    assert ProfileStore.load().get("endpoint") == "https://cu-docs-resource.services.ai.azure.com/"
+    assert _content(region) == (
+        "# Save the endpoint on the active profile.\n"
+        "cu profile set endpoint \\\n"
+        "  https://<resource-name>.services.ai.azure.com/"
+    )
+
+
+def test_line_continuation_lost_by_a_plain_string_is_rejected():
+    with pytest.raises(AssertionError, match="raw string"):
+        run_command("""
+            cu profile set endpoint \
+              https://example.services.ai.azure.com/
+        """)
+
+
 @pytest.mark.parametrize(
-    "comment,expected",
-    [
-        (None, "az login"),
-        ("", "az login"),
-        ("Sign in.\nUse the intended account.", "# Sign in.\n# Use the intended account.\naz login"),
-    ],
-    ids=["plain", "empty", "multiline-comment"],
+    "script", ["cu --version\ncu --help", "# Only a comment."], ids=["two-commands", "comment-only"],
 )
-def test_external_prerequisites_are_published_without_running(region, monkeypatch, comment, expected):
-    monkeypatch.setattr(subprocess, "run", lambda *_args, **_kwargs: pytest.fail("external commands must not execute"))
-
-    record_external(["az", "login"], reason="Interactive sign-in prerequisite.", comment=comment)
-
-    assert _content(region) == expected
-
-
-def test_only_installation_and_sign_in_can_skip_execution(region):
-    with pytest.raises(AssertionError, match="Only installation and login"):
-        record_external(["cu", "analyze", "sample_invoice.pdf"], reason="Not allowed.")
+def test_each_call_runs_exactly_one_command(script):
+    with pytest.raises(AssertionError, match="exactly one command"):
+        run_command(script)
 
 
 @pytest.mark.parametrize(
-    "comment,expected",
+    "command",
     [
-        (None, "az cu profile list --output json"),
-        (
-            "Read the shared profile.\nKeep the same Azure CLI configuration.",
-            "# Read the shared profile.\n# Keep the same Azure CLI configuration.\n"
-            "az cu profile list --output json",
-        ),
+        "cu analyze --source documents --pattern *.pdf",
+        "cu profile set endpoint $CU_ENDPOINT",
+        'cu analyze "$(pwd)/sample_invoice.pdf"',
+        "cu --version; cu --help",
+        "cu --version # trailing comment",
+        "cu analyze ~/sample_invoice.pdf",
+        "cu analyze --url https://example.test/a.pdf?sp=r&sig=value",
+        "cu analyze sample\\ invoice.pdf",
+        'cu analyze "unterminated.pdf',
     ],
-    ids=["plain", "multiline-comment"],
+    ids=[
+        "glob", "variable", "substitution", "separator", "trailing-comment",
+        "home", "background", "escape", "unterminated-quote",
+    ],
 )
-def test_azure_cli_commands_run_the_local_extension(region, monkeypatch, comment, expected):
+def test_shell_syntax_bash_would_interpret_is_rejected(command, monkeypatch):
+    monkeypatch.setattr(
+        click.testing.CliRunner, "invoke",
+        lambda *_args, **_kwargs: pytest.fail("rejected command text must not run"),
+    )
+
+    with pytest.raises(AssertionError, match="shell syntax"):
+        run_command(command)
+
+
+@pytest.mark.parametrize("command", ["python --version", "az login"], ids=["other-program", "other-az-command"])
+def test_only_cu_and_az_cu_commands_run(command, monkeypatch):
+    monkeypatch.setattr(
+        click.testing.CliRunner, "invoke",
+        lambda *_args, **_kwargs: pytest.fail("rejected command text must not run"),
+    )
+
+    with pytest.raises(AssertionError, match="cu, cu-cli, or az cu"):
+        run_command(command)
+
+
+def test_azure_command_text_runs_the_local_extension(region, monkeypatch):
     monkeypatch.setattr("azure.cli.core.util.handle_version_update", lambda: None)
 
-    profiles = invoke_azure(["cu", "profile", "list", "--output", "json"], comment=comment)
+    profiles = run_command("""
+        # Read the shared profile.
+        az cu profile list --output json
+    """)
 
     assert any(profile["name"] == "default" for profile in profiles)
-    assert _content(region) == expected
+    assert _content(region) == "# Read the shared profile.\naz cu profile list --output json"
 
 
-@pytest.mark.parametrize("language", ["bash", "powershell"])
-@pytest.mark.parametrize("scenario", ["complex-values", "profile-endpoint", "metacharacters", "endpoint-precedence"])
-def test_generated_shell_runs_exact_arguments_and_restores_environment(language, scenario):
-    executable = shutil.which("bash" if language == "bash" else "pwsh")
-    if language == "bash" and os.name == "nt":
-        git = shutil.which("git")
-        if git:
-            candidate = Path(git).parents[1] / "bin" / "bash.exe"
-            if candidate.is_file():
-                executable = str(candidate)
-    if not executable:
-        pytest.skip(f"{language} shell is unavailable for generated-script execution")
-    arguments = [
-        "analyze", "--url", "https://example.test/bob's/video.mp4?sp=r&sig=a%2Bb",
-        "--analyzer", "prebuilt-videoSearch", "--output-dir", "results with spaces", "--json",
+def test_external_command_text_is_published_without_running(region, monkeypatch):
+    monkeypatch.setattr(subprocess, "run", lambda *_args, **_kwargs: pytest.fail("external commands must not execute"))
+
+    record_external("""
+        # Sign in.
+        az login
+    """, reason="Interactive sign-in prerequisite.")
+
+    assert _content(region) == "# Sign in.\naz login"
+    with pytest.raises(AssertionError, match="Only installation and login"):
+        record_external("cu --version", reason="Not allowed.")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'cu analyze --url "https://example.test/bob\'s/video.mp4?sp=r&sig=a%2Bb" --output-dir "results with spaces"',
+        "cu analyze --pattern '*.pdf' --models \"gpt-5.2, text-embedding-3-large\" --value '$literal' \"\" -9e2",
+        "# Continue a long command.\ncu analyze sample_invoice.pdf \\\n  --analyzer prebuilt-layout",
+        "CU_ENDPOINT=https://temporary.example.test/ \\\n  cu analyzer list --info",
+    ],
+    ids=["quoted-url", "literal-words", "continuation", "environment-prefix"],
+)
+def test_accepted_command_text_matches_bash_words(command):
+    content, environment, words = _documented_command(command)
+    script = (
+        "cu() { printf '%s\\0' \"$CU_ENDPOINT\" \"$@\"; }\nexport CU_ENDPOINT=before\n"
+        + content + "\nprintf '%s\\0' \"$CU_ENDPOINT\"\n"
+    )
+
+    result = subprocess.run([_shell("bash"), "--noprofile", "--norc", "-c", script], capture_output=True, check=False)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.decode().split("\0") == [
+        environment.get("CU_ENDPOINT", "before"), *words[1:], "before", "",
     ]
-    if scenario == "profile-endpoint":
-        arguments = ["profile", "set", "endpoint", "https://<dev-resource>.services.ai.azure.com/", "--name", "dev"]
-    endpoint = "https://temporary.services.ai.azure.com/"
-    if scenario == "endpoint-precedence":
-        endpoint = "https://temporary-resource.services.ai.azure.com/"
-        arguments = [
-            "analyzer", "list", "--profile", "prod", "--endpoint",
-            "https://one-time-resource.services.ai.azure.com/", "--info",
-        ]
-    if scenario == "metacharacters":
-        Path("match.pdf").touch()
-        arguments = [
-            "analyze", "--pattern", "*.pdf", "--models", "gpt-5.2, text-embedding-3-large",
-            "--value", "$should_stay_literal", "$(echo expanded)", "`echo expanded`",
-            'embedded"quote', "", "C:\\folder\\file.pdf", "trailing\\", "-9e2",
-        ]
-        endpoint = 'https://temporary.services.ai.azure.com/?value=$should_stay_literal&literal=`text`&quoted="text"'
-    rendered = render_command(arguments, executable="cu", language=language, environment={"CU_ENDPOINT": endpoint})
-    if scenario == "profile-endpoint":
-        rendered = rendered.replace("<dev-resource>", "dev")
-        arguments = [argument.replace("<dev-resource>", "dev") for argument in arguments]
-    if language == "bash":
-        script = (
-            "cu() { printf '%s\\0' \"$CU_ENDPOINT\" \"$@\"; }\n"
-            "export CU_ENDPOINT=before\n" + rendered + "\nprintf '%s\\0' \"$CU_ENDPOINT\"\n"
-        )
-        result = subprocess.run([executable, "--noprofile", "--norc", "-c", script], capture_output=True, check=False)
-        assert result.returncode == 0, result.stderr
-        assert result.stdout.decode().split("\0") == [endpoint, *arguments, "before", ""]
-    else:
-        script = (
-            "function cu { @{ endpoint=$env:CU_ENDPOINT; arguments=@($args) } }\n"
-            "$env:CU_ENDPOINT = 'before'\n$observed = & {\n" + rendered + "\n}\n"
-            "$observed['restored'] = $env:CU_ENDPOINT\n"
-            "$observed | ConvertTo-Json -Depth 4 -Compress\n"
-        )
-        result = subprocess.run(
-            [executable, "-NoProfile", "-NonInteractive", "-Command", script], capture_output=True, check=False,
-        )
-        assert result.returncode == 0, result.stderr
-        assert json.loads(result.stdout.decode("utf-8-sig")) == {
-            "endpoint": endpoint, "arguments": arguments, "restored": "before",
-        }
+
+
+def test_environment_prefix_sets_the_variable_only_for_the_command(region, monkeypatch):
+    monkeypatch.setenv("CU_ENDPOINT", "https://saved.services.ai.azure.com/")
+
+    result = run_command(r"""
+        CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/ \
+          cu env-var list --json
+    """, placeholder_values={"temporary-resource": "cu-docs-temporary"})
+
+    actual = {item["name"]: item["value"] for item in json.loads(result.stdout)}
+    assert actual["CU_ENDPOINT"] == "https://cu-docs-temporary.services.ai.azure.com/"
+    assert os.environ["CU_ENDPOINT"] == "https://saved.services.ai.azure.com/"
+    assert _content(region) == (
+        "CU_ENDPOINT=https://<temporary-resource>.services.ai.azure.com/ \\\n  cu env-var list --json"
+    )
+
+
+_POWERSHELL_OVERRIDE = """
+    # Override the endpoint for one command.
+    $previous_CU_ENDPOINT = $env:CU_ENDPOINT
+    $env:CU_ENDPOINT = "https://<temporary-resource>.services.ai.azure.com/"
+    try {
+      cu env-var list --json
+    } finally {
+      $env:CU_ENDPOINT = $previous_CU_ENDPOINT
+    }
+"""
+
+
+def test_powershell_environment_pattern_sets_the_variable_only_for_the_command(region, monkeypatch):
+    monkeypatch.setenv("CU_ENDPOINT", "https://saved.services.ai.azure.com/")
+
+    result = run_command(
+        _POWERSHELL_OVERRIDE, language="powershell",
+        placeholder_values={"temporary-resource": "cu-docs-temporary"},
+    )
+
+    actual = {item["name"]: item["value"] for item in json.loads(result.stdout)}
+    assert actual["CU_ENDPOINT"] == "https://cu-docs-temporary.services.ai.azure.com/"
+    assert os.environ["CU_ENDPOINT"] == "https://saved.services.ai.azure.com/"
+    assert region["probe"][0]["language"] == "powershell"
+    assert _content(region) == textwrap.dedent(_POWERSHELL_OVERRIDE).strip("\n")
+
+
+@pytest.mark.parametrize(
+    "script",
+    [
+        "cu --version",
+        _POWERSHELL_OVERRIDE.replace("= $previous_CU_ENDPOINT", "= $null"),
+        _POWERSHELL_OVERRIDE.replace("cu env-var list --json", 'cu analyze "sample invoice.pdf"'),
+    ],
+    ids=["no-environment", "no-restore", "quoted-argument"],
+)
+def test_powershell_text_outside_the_supported_pattern_is_rejected(script, monkeypatch):
+    monkeypatch.setattr(
+        click.testing.CliRunner, "invoke",
+        lambda *_args, **_kwargs: pytest.fail("rejected command text must not run"),
+    )
+
+    with pytest.raises(AssertionError, match="PowerShell"):
+        run_command(script, language="powershell")
+
+
+def test_accepted_powershell_text_matches_powershell():
+    content, environment, words = _documented_command(_POWERSHELL_OVERRIDE, "powershell")
+    script = (
+        "function cu { @{ endpoint=$env:CU_ENDPOINT; arguments=@($args) } }\n"
+        "$env:CU_ENDPOINT = 'before'\n$observed = & {\n" + content + "\n}\n"
+        "$observed['restored'] = $env:CU_ENDPOINT\n"
+        "$observed | ConvertTo-Json -Depth 4 -Compress\n"
+    )
+
+    result = subprocess.run(
+        [_shell("powershell"), "-NoProfile", "-NonInteractive", "-Command", script], capture_output=True, check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout.decode("utf-8-sig")) == {
+        "endpoint": environment["CU_ENDPOINT"], "arguments": words[1:], "restored": "before",
+    }
