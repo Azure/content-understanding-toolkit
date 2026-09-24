@@ -62,25 +62,8 @@ analyzer, so both can remain available during validation.
 - [`jq`](https://jqlang.github.io/jq/) for the optional automated checks and
   comparison commands in this guide.
 
-For an isolated installation that keeps CU CLI dependencies separate from other
-Python packages while making the command available across shells, first
-[install pipx](https://pipx.pypa.io/latest/how-to/install-pipx.html), then
-install CU CLI:
-
-```powershell
-pipx install cu-cli
-cu --version
-cu --help
-```
-
-If CU CLI is already installed with pipx, update it instead:
-
-```powershell
-pipx upgrade cu-cli
-```
-
-If you don't want to use pipx, install CU CLI in a virtual environment. On
-Windows using PowerShell:
+Install CU CLI in a virtual environment to keep its dependencies separate from
+other Python packages. On Windows using PowerShell:
 
 ```powershell
 python -m venv .venv
