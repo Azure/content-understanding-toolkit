@@ -283,6 +283,7 @@ you intentionally want to replace the selected `--output-file`.
 Further reading:
 
 - [Create a custom analyzer](https://learn.microsoft.com/azure/ai-services/content-understanding/tutorial/create-custom-analyzer)
+- [CU CLI recipes](docs/recipes/README.md)
 - [Supported generative models](https://learn.microsoft.com/azure/ai-services/content-understanding/service-limits#supported-generative-models)
 - Run `cu analyzer --help` for analyzer management and testing commands.
 
@@ -318,6 +319,14 @@ operational guidance, see the
 - safe batch previews, output handling, and machine-readable reports
 - analyzer schema, lifecycle, testing, and cross-resource copy workflows
 - Content Understanding defaults and troubleshooting
+
+## Recipes
+
+[CU CLI recipes](docs/recipes/README.md) provide task-focused, end-to-end
+procedures with verification, troubleshooting, and rollback guidance. Current
+recipes include:
+
+- [Migrate schema-only custom analyzers from `2025-11-01` to `2026-06-01-preview`](docs/recipes/migrate-schema-only-analyzers-2025-11-01-to-2026-06-01-preview.md)
 
 ## More information
 
