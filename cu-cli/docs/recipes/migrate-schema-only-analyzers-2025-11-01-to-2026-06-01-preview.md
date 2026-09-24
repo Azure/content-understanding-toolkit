@@ -65,7 +65,7 @@ analyzer, so both can remain available during validation.
 Install or update CU CLI on Windows:
 
 ```powershell
-py -m pip install --upgrade cu-cli
+python -m pip install --upgrade cu-cli
 cu --version
 cu --help
 ```
