@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "content-understanding"
-version = "0.1.0b2"
+version = "0.1.0b3"
 description = "Azure CLI extension for Azure Content Understanding."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -20,8 +20,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "cu-cli-core>=0.1.0b3,<0.2.0",
-    "azure-mgmt-cognitiveservices>=13.6.0,<14.0.0",
+    "cu-cli-core>=0.1.0b4,<0.2.0",
+    "azure-core>=1.37.0,<1.40.0",
 ]
 
 [project.optional-dependencies]

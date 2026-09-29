@@ -117,7 +117,7 @@ examples:
     ("analyzer", "test"): """
 examples:
   - name: Test all PDF files under a directory.
-    text: az cu analyzer test --name ContosoInvoice --source samples --pattern "*.pdf" --output-file report.json --yes
+    text: az cu analyzer test --name ContosoInvoice --source samples --pattern "\\*.pdf" --output-file report.json --yes
 """,
     ("analyzer", "copy"): """
 examples:

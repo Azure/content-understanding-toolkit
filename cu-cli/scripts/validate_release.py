@@ -42,6 +42,7 @@ PACKAGE_INDEX_API_URLS = {
     "pypi": "https://pypi.org/pypi",
     "testpypi": "https://test.pypi.org/pypi",
 }
+EXTENSION_HOST_DEPENDENCIES = {"azure-mgmt-cognitiveservices"}
 
 
 def load_project(path: Path) -> dict[str, object]:
@@ -132,6 +133,18 @@ def validate_frontend_metadata(root: Path, frontend: str) -> str:
             f"{frontend} must use the bounded compatible core requirement "
             f"{expected_requirement}"
         )
+
+    if frontend == "extension":
+        normalized_dependencies = {
+            re.split(r"[<>=!~;\s\[]", dependency, maxsplit=1)[0].casefold()
+            for dependency in dependencies
+        }
+        conflicts = sorted(normalized_dependencies & EXTENSION_HOST_DEPENDENCIES)
+        if conflicts:
+            raise ValueError(
+                "extension must use Azure CLI host dependencies instead of declaring: "
+                + ", ".join(conflicts)
+            )
 
     return core_version
 
