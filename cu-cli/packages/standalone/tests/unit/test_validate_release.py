@@ -139,6 +139,7 @@ def test_extension_rejects_azure_cli_host_dependency(tmp_path: Path) -> None:
         version="0.1.0b1",
         dependencies=[
             "cu-cli-core>=0.1.0b1,<0.2.0",
+            "azure-core>=1.37.0,<1.40.0",
             "azure-mgmt-cognitiveservices>=13.6.0,<14.0.0",
         ],
     )

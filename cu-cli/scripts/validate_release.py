@@ -42,7 +42,10 @@ PACKAGE_INDEX_API_URLS = {
     "pypi": "https://pypi.org/pypi",
     "testpypi": "https://test.pypi.org/pypi",
 }
-EXTENSION_HOST_DEPENDENCIES = {"azure-mgmt-cognitiveservices"}
+EXTENSION_HOST_DEPENDENCIES = {
+    "azure-core",
+    "azure-mgmt-cognitiveservices",
+}
 
 
 def load_project(path: Path) -> dict[str, object]:

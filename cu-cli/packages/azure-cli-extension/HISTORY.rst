@@ -4,9 +4,8 @@ Release History
 0.1.0b3 (2026-09-28)
 +++++++++++++++++++++
 
-* Use the Cognitive Services management SDK supplied by the Azure CLI host and
-	align Azure Core with the host, avoiding dependency conflicts across
-	supported Azure CLI versions.
+* Use Azure SDK dependencies supplied by the Azure CLI host, avoiding direct
+	version conflicts across supported Azure CLI versions.
 
 0.1.0b2 (2026-09-14)
 +++++++++++++++++++++
