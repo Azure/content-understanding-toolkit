@@ -46,6 +46,10 @@ EXTENSION_HOST_DEPENDENCIES = {
     "azure-core",
     "azure-mgmt-cognitiveservices",
 }
+CORE_REQUIREMENT_PATTERN = re.compile(
+    r"^cu-cli-core>=(\d+)\.(\d+)\.(\d+)(?:(a|b|rc)(\d+))?,<(\d+)\.(\d+)\.(\d+)$",
+    flags=re.IGNORECASE,
+)
 
 
 def load_project(path: Path) -> dict[str, object]:
@@ -130,12 +134,38 @@ def validate_frontend_metadata(root: Path, frontend: str) -> str:
     ):
         raise ValueError(f"{frontend_path} does not define string dependencies")
 
-    expected_requirement = f"cu-cli-core>={core_version},<{core_upper_bound}"
-    if expected_requirement not in dependencies:
+    core_requirements = [
+        dependency
+        for dependency in dependencies
+        if re.split(r"[<>=!~;\s\[]", dependency, maxsplit=1)[0].casefold()
+        == "cu-cli-core"
+    ]
+    requirement_match = (
+        CORE_REQUIREMENT_PATTERN.fullmatch(core_requirements[0])
+        if len(core_requirements) == 1
+        else None
+    )
+    if requirement_match is None:
         raise ValueError(
             f"{frontend} must use the bounded compatible core requirement "
-            f"{expected_requirement}"
+            f"cu-cli-core>=<version>,<{core_upper_bound}"
         )
+
+    lower_major, lower_minor, lower_patch = (
+        int(requirement_match.group(index)) for index in (1, 2, 3)
+    )
+    upper_version = ".".join(requirement_match.group(index) for index in (6, 7, 8))
+    if (lower_major, lower_minor) != (core_major, core_minor) or upper_version != core_upper_bound:
+        raise ValueError(
+            f"{frontend} must use a core version from the current {core_major}.{core_minor} "
+            f"release line with upper bound <{core_upper_bound}"
+        )
+
+    prerelease_label = requirement_match.group(4) or ""
+    prerelease_number = requirement_match.group(5) or ""
+    required_core_version = (
+        f"{lower_major}.{lower_minor}.{lower_patch}{prerelease_label}{prerelease_number}"
+    )
 
     if frontend == "extension":
         normalized_dependencies = {
@@ -149,7 +179,7 @@ def validate_frontend_metadata(root: Path, frontend: str) -> str:
                 + ", ".join(conflicts)
             )
 
-    return core_version
+    return required_core_version
 
 
 def validate_changelog(path: Path, version: str) -> None:
