@@ -1,6 +1,12 @@
 Release History
 ===============
 
+0.1.0b3 (2026-09-28)
++++++++++++++++++++++
+
+* Use Azure SDK dependencies supplied by the Azure CLI host, avoiding direct
+	version conflicts across supported Azure CLI versions.
+
 0.1.0b2 (2026-09-14)
 +++++++++++++++++++++
 

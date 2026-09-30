@@ -11,6 +11,7 @@ fi
 
 extension_wheel="$(realpath "$1")"
 core_wheel="$(realpath "$2")"
+azure_cli_version="${AZURE_CLI_VERSION:-latest}"
 temp_root="$(mktemp -d)"
 trap 'rm -rf "${temp_root}"' EXIT
 
@@ -27,8 +28,15 @@ export AZURE_CONFIG_DIR="${temp_root}/azure"
 export AZURE_EXTENSION_DIR="${AZURE_CONFIG_DIR}/cliextensions"
 export PIP_FIND_LINKS="$(dirname "${core_wheel}")"
 
+if [[ "${azure_cli_version}" == "latest" ]]; then
+    azure_cli_requirement="azure-cli>=2.75.0"
+else
+    azure_cli_requirement="azure-cli==${azure_cli_version}"
+fi
+
 "${python_bin}" -m pip install --disable-pip-version-check --quiet \
-    "azure-cli>=2.75.0"
+    "${azure_cli_requirement}"
+"${python_bin}" -m pip check
 "${az_bin}" extension add \
     --source "${extension_wheel}" \
     --yes \
@@ -42,11 +50,13 @@ export PIP_FIND_LINKS="$(dirname "${core_wheel}")"
 
 "${python_bin}" - <<'PY'
 import os
+import sys
 
 from importlib import import_module
 from pathlib import Path
 
 extension_dir = Path(os.environ["AZURE_EXTENSION_DIR"]) / "content-understanding"
+sys.path.insert(0, str(extension_dir))
 import azure.ai  # Simulate Azure CLI command modules that load this namespace first.
 from azure.cli.core import get_default_cli
 
@@ -54,12 +64,21 @@ result = get_default_cli().invoke(["cu", "--help"])
 
 sdk = import_module("azure.ai.contentunderstanding")
 serialization = import_module("cu_cli_core.serialization")
+management = import_module("azure.mgmt.cognitiveservices")
 
 assert Path(serialization.__file__).is_relative_to(extension_dir)
 assert Path(sdk.__file__).is_relative_to(extension_dir)
+assert not Path(management.__file__).is_relative_to(extension_dir)
 assert hasattr(serialization, "render_llm_input")
 assert hasattr(sdk, "ContentUnderstandingClient")
 raise SystemExit(result)
 PY
 
-echo "Validated clean Azure CLI installation of $(basename "${extension_wheel}")."
+"${python_bin}" - <<'PY'
+from importlib.metadata import version
+
+print(f"Azure CLI: {version('azure-cli')}")
+print(f"Cognitive Services management SDK: {version('azure-mgmt-cognitiveservices')}")
+PY
+
+echo "Validated clean Azure CLI installation of $(basename "${extension_wheel}") against ${azure_cli_requirement}."

@@ -59,6 +59,10 @@ bash scripts/validate_extension_wheel.sh \
 	packages/core/dist/cu_cli_core-*.whl
 ```
 
+Release validation runs this check against both the minimum supported Azure CLI
+version and the latest available version. To select one explicitly, set
+`AZURE_CLI_VERSION` to a version such as `2.75.0`, or to `latest`.
+
 Run the Azure CLI extensions linter before publishing. This clones clean,
 temporary copies of the Azure CLI `dev` branch and the extensions repository,
 then runs the same pinned `azdev` wheel linter used by their pipeline:

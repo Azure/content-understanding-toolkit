@@ -131,6 +131,35 @@ def test_validates_extension_release_metadata(tmp_path: Path) -> None:
     _validate(tmp_path, package="extension", expected_version="0.1.0b1")
 
 
+def test_extension_accepts_earlier_core_in_same_release_line(tmp_path: Path) -> None:
+    _write_release_tree(tmp_path, core_version="0.1.0b4")
+    _write_project(
+        tmp_path / "packages/azure-cli-extension/pyproject.toml",
+        name="content-understanding",
+        version="0.1.0b1",
+        dependencies=["cu-cli-core>=0.1.0b3,<0.2.0"],
+    )
+
+    _validate(tmp_path, package="extension", expected_version="0.1.0b1")
+
+
+def test_extension_rejects_azure_cli_host_dependency(tmp_path: Path) -> None:
+    _write_release_tree(tmp_path)
+    _write_project(
+        tmp_path / "packages/azure-cli-extension/pyproject.toml",
+        name="content-understanding",
+        version="0.1.0b1",
+        dependencies=[
+            "cu-cli-core>=0.1.0b1,<0.2.0",
+            "azure-core>=1.37.0,<1.40.0",
+            "azure-mgmt-cognitiveservices>=13.6.0,<14.0.0",
+        ],
+    )
+
+    with pytest.raises(ValueError, match="must use Azure CLI host dependencies"):
+        _validate(tmp_path, package="extension", expected_version="0.1.0b1")
+
+
 def test_writes_extension_release_notes_as_markdown(tmp_path: Path) -> None:
     _write_release_tree(tmp_path)
     output = tmp_path / "dist/release-notes.md"

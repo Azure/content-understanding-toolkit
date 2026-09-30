@@ -110,10 +110,13 @@ jobs:
       # directory to catch unresolved dependencies and command loading failures.
       - name: Test clean extension installation
         if: inputs.package == 'extension'
-        run: >-
-          bash scripts/validate_extension_wheel.sh
-          dist/content_understanding-*.whl
-          packages/core/dist/cu_cli_core-*.whl
+        run: |
+          AZURE_CLI_VERSION=2.75.0 bash scripts/validate_extension_wheel.sh \
+            dist/content_understanding-*.whl \
+            packages/core/dist/cu_cli_core-*.whl
+          AZURE_CLI_VERSION=latest bash scripts/validate_extension_wheel.sh \
+            dist/content_understanding-*.whl \
+            packages/core/dist/cu_cli_core-*.whl
       # Match the Python version used for the upstream Azure CLI tooling checks.
       - name: Set up Azure CLI validation Python
         if: inputs.package == 'extension'
