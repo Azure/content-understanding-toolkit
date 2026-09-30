@@ -1,0 +1,63 @@
+name: Deploy Content Understanding Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dynamic_hitl/web_app/**"
+      - ".github/workflows/deploy-dynamic-hitl-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dynamic_hitl/web_app/package-lock.json
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Install dependencies
+        run: npm ci
+        working-directory: dynamic_hitl/web_app
+      - name: Build site
+        run: npm run build
+        working-directory: dynamic_hitl/web_app
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dynamic_hitl/web_app/dist
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v4

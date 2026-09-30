@@ -24,6 +24,22 @@ npm run preview  # serve dist/ locally
 Static Web Apps, GitHub Pages, a blob container, or any web server. **No backend, no API
 keys, no Python at page-view time.**
 
+## Deploy to GitHub Pages
+
+The [Pages workflow](../../.github/workflows/deploy-dynamic-hitl-pages.yml) builds this app
+with Node.js 22 and publishes only `dist/`, using the committed payload.
+
+1. In the repository's **Settings > Pages**, set **Build and deployment > Source** to
+  **GitHub Actions**. Leave **Custom domain** empty to use the default address.
+2. Merge the workflow into `main`. Changes to this app or the workflow on `main` trigger
+  deployment automatically.
+3. To deploy manually, open **Actions > Deploy Content Understanding Pages > Run workflow**
+  and select `main`. Other branches cannot deploy. Complete any required approvals for
+  the `github-pages` environment.
+
+After a successful deployment, the default site address is
+<https://azure.github.io/content-understanding-toolkit/>.
+
 ## What the page walks through
 
 | Section | Point it makes |
