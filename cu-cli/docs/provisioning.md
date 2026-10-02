@@ -52,19 +52,27 @@ resource paths.
 | --- | --- |
 | Create a new Microsoft Foundry resource **and automatically assign roles** | One of:<ul><li><strong>Owner</strong> on the selected subscription</li><li><strong>Contributor</strong> plus <strong>Role Based Access Control Administrator</strong> on the selected subscription</li><li><strong>Contributor</strong> plus <strong>User Access Administrator</strong> on the selected subscription</li></ul> |
 | Create a new Microsoft Foundry resource **without assigning roles** | One of:<ul><li><strong>Contributor</strong> on the selected subscription</li><li><strong>Owner</strong> on the selected subscription</li><li>A custom role with equivalent permissions</li></ul>The identity needs permission to create the resource group, Foundry resource and project, and model deployments. With Contributor only, decline the role-assignment prompt; the generated post-provision step uses key authentication. |
-| Deploy models to an existing Microsoft Foundry resource with the generated project | One of:<ul><li><strong>Contributor</strong> on the selected subscription</li><li>A narrower custom role with the required subscription deployment and resource actions</li></ul>The identity needs permission to run the subscription-scope deployment and create model deployments on the selected resource. This path creates no role assignments. |
+| Deploy models to an existing Microsoft Foundry resource **without assigning roles** | One of:<ul><li><strong>Contributor</strong> on the selected subscription</li><li>A narrower custom role with the required subscription deployment and resource actions</li></ul>The identity needs permission to run the subscription-scope deployment and create model deployments on the selected resource. |
+| Reuse an existing Microsoft Foundry resource **and automatically assign roles** | The existing-resource deployment permissions above, plus <strong>Owner</strong>, <strong>Role Based Access Control Administrator</strong>, or <strong>User Access Administrator</strong> on the target resource or a parent scope. |
 | Use an existing resource with Microsoft Entra ID authentication | <ul><li><strong>Cognitive Services User</strong> on the Microsoft Foundry resource</li></ul>Contributor is not required and does not include this data-plane access. |
 | Use an existing resource with key authentication | <ul><li>A valid resource key</li></ul>Contributor and Cognitive Services User are not required for key-authenticated requests. |
 
-For a new resource, `azd up` can optionally assign **Cognitive Services User**
+For a new or existing resource, `azd up` can optionally assign **Cognitive Services User**
 to the user or service principal running azd. This grants that principal
 Entra-based data-plane access; it does not grant access to other identities.
 Role assignment is disabled by default for noninteractive generation; pass
 `--assign-roles true` to opt in. Interactive generation asks before enabling
-it. The existing-resource path never creates role assignments.
+it for a new resource. For an existing resource, both `cu infra generate` and
+`az cu infra generate` preserve an explicit `true` or `false`, default to `false`
+when omitted, and do not prompt for role assignment.
 
-For an existing resource, grant an Entra identity **Cognitive Services User**
-through the resource's **Access control (IAM)** page. Without it,
+Role assignment is part of the required Bicep deployment, before the
+post-provision hook configures login authentication. A failed role assignment
+fails provisioning and does not trigger automatic profile setup. New role
+assignments can take time to propagate before data-plane requests succeed.
+
+Alternatively, grant an Entra identity **Cognitive Services User** through the
+existing resource's **Access control (IAM)** page. Without it,
 Entra-authenticated commands such as `cu defaults set`, `cu analyzer create`,
 and `cu analyze` fail with an authorization error.
 
@@ -152,9 +160,9 @@ azd up
 ```
 
 This reuses the selected resource and resource group. It does not create
-another resource group, Foundry resource, Foundry project, or role assignment.
-It creates the selected model deployments on that resource. To request exact
-models instead:
+another resource group, Foundry resource, or Foundry project. Role assignment
+is disabled unless you add `--assign-roles true`. It creates the selected model
+deployments on that resource. To request exact models instead:
 
 ```bash
 cu infra generate \

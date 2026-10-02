@@ -129,14 +129,22 @@ def test_interactive_wizard_prompts_in_order_with_shared_defaults(monkeypatch):
     assert "Assign RBAC roles" in prompts[4][1]
 
 
-def test_existing_resource_never_assigns_roles_or_prompts_for_them(monkeypatch):
+@pytest.mark.parametrize("interactive", [False, True], ids=["noninteractive", "interactive"])
+@pytest.mark.parametrize(
+    ("assign_roles", "expected_assign_roles"),
+    [(None, False), (False, False), (True, True)],
+    ids=["omitted", "false", "true"],
+)
+def test_existing_resource_preserves_role_choice_without_prompting(
+    monkeypatch, interactive, assign_roles, expected_assign_roles
+):
     monkeypatch.setattr(
         "cu_cli.commands._infra_wizard._prompt_assign_roles",
         lambda: pytest.fail("existing resources must not prompt for role assignment"),
     )
 
     choices = _resolve_choices(
-        interactive=True,
+        interactive=interactive,
         already_opted_in=True,
         env="dev",
         location="eastus2",
@@ -148,12 +156,12 @@ def test_existing_resource_never_assigns_roles_or_prompts_for_them(monkeypatch):
         foundry_endpoint="https://existing.services.ai.azure.com/",
         foundry_resource_group="rg-existing",
         models=["none"],
-        assign_roles=True,
+        assign_roles=assign_roles,
         force_profile_setup=False,
     )
 
     assert choices is not None
-    assert choices.assign_roles is False
+    assert choices.assign_roles is expected_assign_roles
 
 
 def test_write_template_reuses_existing_template_for_new_env(tmp_path):

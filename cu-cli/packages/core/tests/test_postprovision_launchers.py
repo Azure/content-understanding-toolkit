@@ -16,14 +16,15 @@ pytestmark = pytest.mark.unit
 HOOKS = Path(str(resources.files("cu_cli_core").joinpath("resources/azd_template/hooks")))
 
 
-def _command(path: Path, log: Path, label: str) -> None:
+def _command(path: Path, log: Path, label: str, exit_code: int = 0) -> None:
     path.write_text(
-        f'#!/bin/sh\nprintf \'%s\\n\' "{label} $*" >> \'{log}\'\n',
+        f'#!/bin/sh\nprintf \'%s\\n\' "{label} $*" >> \'{log}\'\nexit {exit_code}\n',
         encoding="utf-8",
     )
     path.chmod(0o755)
 
 
+@pytest.mark.parametrize("exit_code", [0, 7], ids=["success", "failure"])
 @pytest.mark.parametrize(
     ("frontends", "expected"),
     [
@@ -34,12 +35,12 @@ def _command(path: Path, log: Path, label: str) -> None:
     ],
 )
 @pytest.mark.skipif(os.name == "nt", reason="POSIX stubs")
-def test_posix_launcher_selects_one_available_frontend(tmp_path, frontends, expected):
+def test_posix_launcher_selects_one_available_frontend(tmp_path, frontends, expected, exit_code):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     log = tmp_path / "calls"
     for frontend in frontends:
-        _command(bin_dir / frontend, log, "azure" if frontend == "az" else "standalone")
+        _command(bin_dir / frontend, log, "azure" if frontend == "az" else "standalone", exit_code)
 
     result = subprocess.run(
         ["/bin/sh", str(HOOKS / "postprovision.sh")],
@@ -49,7 +50,7 @@ def test_posix_launcher_selects_one_available_frontend(tmp_path, frontends, expe
         env={**os.environ, "PATH": str(bin_dir)},
     )
 
-    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.returncode == exit_code, result.stdout + result.stderr
     assert log.read_text(encoding="utf-8").strip() == expected
 
 
@@ -95,12 +96,18 @@ def test_launchers_are_policy_free_and_reference_both_frontends():
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows PowerShell launcher")
-def test_powershell_launcher_selects_azure_cli(tmp_path):
+@pytest.mark.parametrize("exit_code", [0, 7], ids=["success", "failure"])
+@pytest.mark.parametrize(
+    ("frontend", "expected"),
+    [("cu-cli", "standalone _infra-postprovision-v1"), ("az", "azure cu infra _postprovision-v1")],
+)
+def test_powershell_launcher_propagates_frontend_result(tmp_path, frontend, expected, exit_code):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     log = tmp_path / "calls"
-    (bin_dir / "az.cmd").write_text(
-        f'@echo off\r\necho azure %*>>"{log}"\r\n', encoding="utf-8"
+    label = "azure" if frontend == "az" else "standalone"
+    (bin_dir / f"{frontend}.cmd").write_text(
+        f'@echo off\r\necho {label} %*>>"{log}"\r\nexit /b {exit_code}\r\n', encoding="utf-8"
     )
     powershell = shutil.which("pwsh") or shutil.which("powershell")
     assert powershell is not None
@@ -113,5 +120,5 @@ def test_powershell_launcher_selects_azure_cli(tmp_path):
         env={**os.environ, "PATH": str(bin_dir)},
     )
 
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert log.read_text(encoding="utf-8").strip() == "azure cu infra _postprovision-v1"
+    assert result.returncode == exit_code, result.stdout + result.stderr
+    assert log.read_text(encoding="utf-8").strip() == expected

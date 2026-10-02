@@ -36,6 +36,17 @@ authentication instead. Role assignment defaults to `false`; opt in during
 interactive generation or pass `--assign-roles true` when generating the
 project.
 
+For an existing Foundry resource, role assignment also defaults to `false` and
+is never prompted for. Pass `--assign-roles true` to either `cu infra generate`
+or `az cu infra generate` to assign the role on that account. In addition to
+deployment permissions, the deploying identity needs permission to create role
+assignments on the target account or a parent scope.
+
+Role assignment runs in the initial, required Bicep deployment. If it fails,
+provisioning fails before the post-provision hook can configure login
+authentication. Successful assignment does not guarantee immediate data-plane
+access because RBAC changes can take time to propagate.
+
 With Entra authentication, CU CLI also requires **Cognitive Services User** on
 the Microsoft Foundry resource to configure defaults and create, manage, and run
 analyzers. This is data-plane access and is not included in Owner or
