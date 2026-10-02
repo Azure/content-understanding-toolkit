@@ -54,7 +54,7 @@ def test_readme_documents_analyzer_short_option():
     readme = _README.read_text(encoding="utf-8")
 
     assert "`-a` is the short form of `--analyzer`" in readme
-    assert "cu analyze ./document.pdf -a prebuilt-layout" in readme
+    assert "cu analyze sample_invoice.pdf -a prebuilt-layout" in readme
 
 
 def test_usage_guide_directory_patterns_use_source_option():

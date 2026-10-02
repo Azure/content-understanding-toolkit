@@ -49,15 +49,28 @@ Requirements:
 - [Azure CLI](https://aka.ms/azcli) for login and resource discovery
 - [Azure Developer CLI](https://aka.ms/azd) only when using `cu infra generate`
 
+Local PDF examples use the complete
+[sample_invoice.pdf](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/sample_files/sample_invoice.pdf)
+included in this repository. Use that file in the working directory, or provide
+your own document. Directory examples use copies of it under the indicated
+source directories; those copies are not different invoice or receipt samples.
+Resource endpoints, keys, deployment names, and SAS URLs remain illustrative.
+Replace them with your own configuration. The examples after connection setup
+assume a ready selected profile. Installation and interactive sign-in are
+prerequisites, not operations performed by the offline documentation tests.
+
+<!-- Snippet:cli_installation -->
 ```bash
 python -m pip install cu-cli
 cu --version
+# List top-level command groups and global options.
 cu --help
 ```
 
 macOS includes an unrelated system command named `cu`. Use the equivalent
 `cu-cli` executable on macOS:
 
+<!-- Snippet:cu_cli_help -->
 ```bash
 cu-cli --help
 ```
@@ -75,18 +88,27 @@ deployment mappings; it is not an Azure resource. For a ready resource,
 configure the automatically available `default` profile. With Microsoft Entra
 ID authentication:
 
+<!-- Snippet:configure_login -->
 ```bash
+# Save the endpoint on the active profile.
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
+# Login authentication is the default; this command selects it explicitly.
 cu profile set auth_mode login
+# Sign in for the default login authentication mode.
 az login
+# Check the active profile.
 cu doctor
 ```
 
 Alternatively, use a resource key:
 
+<!-- Snippet:configure_key -->
 ```bash
+# Save the endpoint on the active profile.
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
+# Save a resource key on the active profile and select key authentication.
 cu profile set api_key <key>
+# Check the active profile.
 cu doctor
 ```
 
@@ -108,18 +130,16 @@ Azure CLI configuration file (`~/.azure/config` by default, or the file under
 or model-deployment mapping saved with one frontend is immediately available to
 the other. For example:
 
+<!-- Snippet:shared_frontend_profile -->
 ```bash
 # Save the endpoint with the standalone frontend.
 cu profile set endpoint https://<resource-name>.services.ai.azure.com/
-
 # Use the same default profile with the Azure CLI extension.
 az cu analyzer list --output table
-
 # Change the default analyzer with the Azure CLI extension.
 az cu profile set --key default_analyzer --value prebuilt-layout
-
 # Use that setting with the standalone frontend.
-cu analyze ./document.pdf
+cu analyze sample_invoice.pdf --json
 ```
 
 The command names and capabilities overlap, but frontend conventions differ:
@@ -154,8 +174,10 @@ the only preview capability that requires a new CU CLI option:
 result directly instead of using the default long-running-operation (LRO)
 polling flow.
 
+<!-- Snippet:analyze_inline -->
 ```bash
-cu analyze --inline --api-version 2026-06-01-preview document.pdf --analyzer prebuilt-layout
+cu analyze --inline --api-version 2026-06-01-preview sample_invoice.pdf --analyzer prebuilt-layout \
+  --json
 ```
 
 Save the preview version to a profile to avoid passing `--api-version` on every
@@ -171,25 +193,30 @@ Further reading:
 
 List the prebuilt analyzers available to the configured resource:
 
+<!-- Snippet:analyzer_list_prebuilt -->
 ```bash
-cu analyzer list
+cu analyzer list --kind prebuilt
 ```
 
 Start with the `prebuilt-layout` content extraction analyzer. It extracts text,
 paragraphs, tables, figures, and document structure without requiring a language
-model or embeddings model. `-a` is the short form of `--analyzer`:
+model or embeddings model:
 
+<!-- Snippet:analyze_layout_options -->
 ```bash
 # Generate Markdown from the analyzer result with the CU SDK's to_llm_input().
-cu analyze ./document.pdf -a prebuilt-layout
+# This is a billed service call; Markdown is written to standard output.
+cu analyze sample_invoice.pdf --analyzer prebuilt-layout
+# `-a` is the short form of `--analyzer`.
+cu analyze sample_invoice.pdf -a prebuilt-layout
 ```
 
 Analyze a remote file with `--url` without downloading it through the CLI.
 Quote URLs that contain SAS query parameters so the shell preserves `&` characters:
 
+<!-- Snippet:analyze_url -->
 ```bash
-cu analyze --url "https://storage.example.net/container/video.mp4?sv=<version>&sp=r&sig=<signature>" \
-  --analyzer prebuilt-videoSearch
+cu analyze --url "https://storage.example.net/container/video.mp4?sv=<version>&sp=r&sig=<signature>" -a prebuilt-videoSearch
 ```
 
 Repeat `--url` for multiple URLs and specify `--output-dir` for their results.
@@ -212,8 +239,9 @@ Domain-specific prebuilt analyzers, such as `prebuilt-invoice`, extract a
 defined set of structured fields. They require the model setup described in
 [Deploy models and configure defaults](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/provisioning.md#deploy-models-and-configure-defaults):
 
+<!-- Snippet:analyze_invoice -->
 ```bash
-cu analyze ./invoice.pdf --analyzer prebuilt-invoice --json
+cu analyze sample_invoice.pdf -a prebuilt-invoice --json
 ```
 
 The command returns an analyzer result. Use `--json` when you want the
@@ -223,14 +251,16 @@ Analyze several files into one output directory. `--pattern` requires
 `--source`, because a positional path can be either a file or a directory and
 `--pattern` only makes sense once a directory is named explicitly:
 
+<!-- Snippet:analyze_pattern -->
 ```bash
-cu analyze --source ./documents --pattern "*.pdf" --output-dir ./results
+# Analyze only matching files directly inside my_document_dir.
+cu analyze --source my_document_dir --pattern "*.pdf" -a prebuilt-layout --output-dir results
 ```
 
 Each result is written under `./results` and keeps the input path relative to
-`./documents`. For example, `./documents/invoice-01.pdf` produces
-`./results/invoice-01.pdf.result.md`. Markdown results use the
-`.result.md` suffix; adding `--json` produces `.result.json` files instead.
+`./my_document_dir`. For example, `./my_document_dir/invoice-01.pdf` produces
+`./results/invoice-01.pdf.result.md`. Add `--json` to write `.result.json`
+files instead.
 
 Further reading:
 
@@ -249,6 +279,7 @@ Custom analyzers require supported model deployments and configured Content
 Understanding defaults. Confirm the model-to-deployment mappings before creating
 the analyzer:
 
+<!-- Snippet:defaults_show -->
 ```bash
 # Show the Content Understanding defaults configured on the resource.
 cu defaults show
@@ -259,26 +290,25 @@ If the required mappings are missing, follow
 to configure them. Then generate a starter analyzer schema from a representative
 file:
 
+<!-- Snippet:custom_analyzer_workflow -->
 ```bash
 # Generate a schema from a representative document.
-cu analyzer schema create \
-  --from-sample ./invoice.pdf \
-  --output-file ./invoice-schema.json
-
+cu analyzer schema create --name invoice_v1 --from-sample sample_invoice.pdf --output-file schema.json
 # Review and update the generated schema for your extraction requirements,
 # then create the analyzer.
-cu analyzer create --name invoice_v1 --schema ./invoice-schema.json
-
+cu analyzer create --name invoice_v1 --schema schema.json
 # Run the analyzer against the sample and summarize whether fields were returned
 # and any confidence values supplied by the service. This is not an accuracy
 # benchmark and does not compare the result with labeled ground truth.
-cu analyzer test invoice_v1 ./invoice.pdf
-
-cu analyze ./invoice.pdf --analyzer invoice_v1 --json
+cu analyzer test invoice_v1 sample_invoice.pdf
+cu analyze sample_invoice.pdf -a invoice_v1 --json
 ```
 
 Schema generation preserves existing files by default. Pass `--force` only when
 you intentionally want to replace the selected `--output-file`.
+
+Analyzer testing reports returned fields and available confidence values. It is
+not an accuracy benchmark against labeled ground truth.
 
 Further reading:
 
@@ -297,11 +327,15 @@ Further reading:
 | `cu infra generate` | Generate an azd/Bicep project used to provision a Microsoft Foundry resource and configure Content Understanding. Run `azd up` to provision it. |
 | `cu doctor` | Verify the active CU CLI profile, authentication, and model readiness. |
 | `cu env-var` | Inspect supported environment-variable overrides. |
+| `cu upgrade` | Check for a newer package version or upgrade the installed CLI. |
 
 Every command provides examples:
 
+<!-- Snippet:setup_help -->
 ```bash
+# Show how to save profile values, including supported keys and examples.
 cu profile --help
+# Show profile-based and Azure-discovery analyzer copy options.
 cu analyzer copy --help
 cu infra generate --help
 ```
@@ -348,15 +382,25 @@ for more information.
 If you work with multiple resources, create named profiles and either activate
 one or select it per command:
 
+<!-- Snippet:multiple_profiles -->
 ```bash
+# Create an empty dev profile.
 cu profile create dev
+# Save the dev resource endpoint without changing the active profile.
 cu profile set endpoint https://<dev-resource>.services.ai.azure.com/ --name dev
+# Create an empty prod profile.
 cu profile create prod
+# Save a distinct resource endpoint on prod.
 cu profile set endpoint https://<prod-resource>.services.ai.azure.com/ --name prod
-
+# Make dev the profile used when --profile is omitted.
 cu profile set-active dev
-cu analyzer list
+# Use all effective settings from the active dev profile.
+# --info prints resolved, non-secret runtime settings to stderr before the request.
+# It is not a dry run; the analyzer list request still runs.
+cu analyzer list --info
+# Use prod for this command only; dev remains active.
 cu analyzer list --profile prod
+# Check prod without changing the active profile.
 cu doctor --profile prod
 ```
 

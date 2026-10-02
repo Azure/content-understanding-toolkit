@@ -136,15 +136,17 @@ def apply_defaults(
 ) -> tuple[Any, dict[str, str]]:
     """Merge or replace service defaults and return the result and final mapping."""
 
-    existing: dict[str, str] = {}
-    if not replace:
-        from azure.core.exceptions import HttpResponseError
+    from azure.core.exceptions import HttpResponseError
 
-        try:
-            existing = extract_model_deployments(client.get_defaults())
-        except HttpResponseError as exc:
-            if not is_defaults_not_set(exc):
-                raise
+    existing: dict[str, str] = {}
+    try:
+        existing = extract_model_deployments(client.get_defaults())
+    except HttpResponseError as exc:
+        if not is_defaults_not_set(exc):
+            raise
     merged = dict(desired) if replace else {**existing, **desired}
     merged = with_prebuilt_default_mappings(merged)
-    return client.update_defaults(model_deployments=merged), merged
+    patch_mappings: dict[str, str | None] = dict(merged)
+    if replace:
+        patch_mappings.update({model: None for model in existing if model not in merged})
+    return client.update_defaults(model_deployments=patch_mappings), merged

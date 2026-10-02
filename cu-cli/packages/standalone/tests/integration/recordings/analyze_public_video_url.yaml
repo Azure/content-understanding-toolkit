@@ -1,0 +1,1807 @@
+interactions:
+- request:
+    body: <binary-scrubbed>
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '154'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: POST
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzers/prebuilt-videoSearch:analyze?api-version=2025-11-01&stringEncoding=codePoint
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:21 GMT
+      Operation-Location:
+      - https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+      Request-Id:
+      - e83d5de0-5d69-4436-b312-c11ddb5d7ca8
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - e83d5de0-5d69-4436-b312-c11ddb5d7ca8
+      x-envoy-upstream-service-time:
+      - '5245'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 202
+      message: Accepted
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:24 GMT
+      Request-Id:
+      - ff355a12-1121-4807-9f1d-3e063a251ef0
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - ff355a12-1121-4807-9f1d-3e063a251ef0
+      x-envoy-upstream-service-time:
+      - '185'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:26 GMT
+      Request-Id:
+      - b05875f6-e2af-4a8d-87eb-fa4bafdd4892
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - b05875f6-e2af-4a8d-87eb-fa4bafdd4892
+      x-envoy-upstream-service-time:
+      - '33'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:28 GMT
+      Request-Id:
+      - ef7d2739-db92-465a-8e77-8c4b37c9d3f8
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - ef7d2739-db92-465a-8e77-8c4b37c9d3f8
+      x-envoy-upstream-service-time:
+      - '122'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:31 GMT
+      Request-Id:
+      - 5bb87666-199e-422f-84cd-5ed2c603005e
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 5bb87666-199e-422f-84cd-5ed2c603005e
+      x-envoy-upstream-service-time:
+      - '47'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:34 GMT
+      Request-Id:
+      - d21bc290-40f8-41f7-ae80-2a4656abaaab
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - d21bc290-40f8-41f7-ae80-2a4656abaaab
+      x-envoy-upstream-service-time:
+      - '176'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:37 GMT
+      Request-Id:
+      - 5634baaf-0039-44d2-870f-dc626b763e43
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 5634baaf-0039-44d2-870f-dc626b763e43
+      x-envoy-upstream-service-time:
+      - '246'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:40 GMT
+      Request-Id:
+      - 6199415b-36f5-4ffc-b218-8a49f0cf4816
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 6199415b-36f5-4ffc-b218-8a49f0cf4816
+      x-envoy-upstream-service-time:
+      - '38'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:43 GMT
+      Request-Id:
+      - b1980c52-15f9-4059-8c5b-bb785c8e5122
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - b1980c52-15f9-4059-8c5b-bb785c8e5122
+      x-envoy-upstream-service-time:
+      - '486'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:45 GMT
+      Request-Id:
+      - 48504066-a4bf-4265-bd2e-567bcc9bd175
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 48504066-a4bf-4265-bd2e-567bcc9bd175
+      x-envoy-upstream-service-time:
+      - '72'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:48 GMT
+      Request-Id:
+      - bedc1931-ccb2-47e4-b17f-8380a7c50409
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - bedc1931-ccb2-47e4-b17f-8380a7c50409
+      x-envoy-upstream-service-time:
+      - '69'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:51 GMT
+      Request-Id:
+      - b5a62230-719b-4d5c-9b38-80d31bfa6fcd
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - b5a62230-719b-4d5c-9b38-80d31bfa6fcd
+      x-envoy-upstream-service-time:
+      - '64'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:54 GMT
+      Request-Id:
+      - 077d5937-8cef-4d9a-95d4-56e3b7a8ad65
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 077d5937-8cef-4d9a-95d4-56e3b7a8ad65
+      x-envoy-upstream-service-time:
+      - '231'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:56 GMT
+      Request-Id:
+      - 0d2a420a-c6e9-4930-9fd6-78c869b98539
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 0d2a420a-c6e9-4930-9fd6-78c869b98539
+      x-envoy-upstream-service-time:
+      - '44'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:34:59 GMT
+      Request-Id:
+      - b8f9856b-61af-425b-aeb2-04778d31d560
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - b8f9856b-61af-425b-aeb2-04778d31d560
+      x-envoy-upstream-service-time:
+      - '67'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:02 GMT
+      Request-Id:
+      - e4925fdf-0d4d-4b3d-a6a3-06ed7e665292
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - e4925fdf-0d4d-4b3d-a6a3-06ed7e665292
+      x-envoy-upstream-service-time:
+      - '75'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:05 GMT
+      Request-Id:
+      - 6a4e41c2-a063-48f7-83be-b8c3ba591fb2
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 6a4e41c2-a063-48f7-83be-b8c3ba591fb2
+      x-envoy-upstream-service-time:
+      - '91'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:07 GMT
+      Request-Id:
+      - 138e6baa-d51b-48e0-8eb2-f839766e2be7
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 138e6baa-d51b-48e0-8eb2-f839766e2be7
+      x-envoy-upstream-service-time:
+      - '486'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:10 GMT
+      Request-Id:
+      - 1db60614-d39d-4cad-9c30-afc0ae50327f
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 1db60614-d39d-4cad-9c30-afc0ae50327f
+      x-envoy-upstream-service-time:
+      - '35'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:14 GMT
+      Request-Id:
+      - a7c5b68c-60c5-4bc9-8a18-bb9c43a35d3d
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - a7c5b68c-60c5-4bc9-8a18-bb9c43a35d3d
+      x-envoy-upstream-service-time:
+      - '453'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:17 GMT
+      Request-Id:
+      - 78fcd5bb-dc03-4e0a-bc1b-78fedbb849b8
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 78fcd5bb-dc03-4e0a-bc1b-78fedbb849b8
+      x-envoy-upstream-service-time:
+      - '91'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:19 GMT
+      Request-Id:
+      - 48f3558f-3abd-4445-bba1-252227f10878
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 48f3558f-3abd-4445-bba1-252227f10878
+      x-envoy-upstream-service-time:
+      - '52'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:22 GMT
+      Request-Id:
+      - 1ab6afdc-8ae1-4025-a6c5-c2f9260c7435
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 1ab6afdc-8ae1-4025-a6c5-c2f9260c7435
+      x-envoy-upstream-service-time:
+      - '50'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:24 GMT
+      Request-Id:
+      - 419ea402-d283-4803-ad0e-078d94892c43
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 419ea402-d283-4803-ad0e-078d94892c43
+      x-envoy-upstream-service-time:
+      - '74'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:27 GMT
+      Request-Id:
+      - 752e2967-83a6-4a0a-85f4-ade552facd6f
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 752e2967-83a6-4a0a-85f4-ade552facd6f
+      x-envoy-upstream-service-time:
+      - '49'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:30 GMT
+      Request-Id:
+      - 15509a2c-6673-4659-82af-8045ddc7aa4e
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 15509a2c-6673-4659-82af-8045ddc7aa4e
+      x-envoy-upstream-service-time:
+      - '310'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:33 GMT
+      Request-Id:
+      - 450fa08c-3250-44b3-abee-48233ceede19
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 450fa08c-3250-44b3-abee-48233ceede19
+      x-envoy-upstream-service-time:
+      - '857'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:36 GMT
+      Request-Id:
+      - 900f6221-96db-47b7-94bc-3a30bf329570
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 900f6221-96db-47b7-94bc-3a30bf329570
+      x-envoy-upstream-service-time:
+      - '48'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:38 GMT
+      Request-Id:
+      - 37601840-5062-44c9-b130-d4e11ef132e4
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 37601840-5062-44c9-b130-d4e11ef132e4
+      x-envoy-upstream-service-time:
+      - '42'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:42 GMT
+      Request-Id:
+      - 7159aef0-bc7c-448a-aba8-d1dc6b574b2d
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 7159aef0-bc7c-448a-aba8-d1dc6b574b2d
+      x-envoy-upstream-service-time:
+      - '70'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:44 GMT
+      Request-Id:
+      - 74a08728-d238-4145-af02-5749ab8f3b4c
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 74a08728-d238-4145-af02-5749ab8f3b4c
+      x-envoy-upstream-service-time:
+      - '34'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:47 GMT
+      Request-Id:
+      - bbe006b4-02f5-474c-9f7e-8d23f823d89a
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - bbe006b4-02f5-474c-9f7e-8d23f823d89a
+      x-envoy-upstream-service-time:
+      - '556'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:51 GMT
+      Request-Id:
+      - 79142637-acf1-4ebb-85ea-b2741ecf0213
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - 79142637-acf1-4ebb-85ea-b2741ecf0213
+      x-envoy-upstream-service-time:
+      - '161'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Running","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","warnings":[],"contents":[]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:53 GMT
+      Request-Id:
+      - ac1c88e8-0982-4966-a914-f706200e553b
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - ac1c88e8-0982-4966-a914-f706200e553b
+      x-envoy-upstream-service-time:
+      - '35'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - cu-cli/0.1.0b2 azsdk-python-ai-contentunderstanding/1.2.0b3 Python/3.11.9
+        (Windows-10-10.0.26200-SP0)
+      authorization:
+      - REDACTED
+      x-ms-client-request-id:
+      - REDACTED
+    method: GET
+    uri: https://sanitized.services.ai.azure.com/contentunderstanding/analyzerResults/e83d5de0-5d69-4436-b312-c11ddb5d7ca8?api-version=2025-11-01
+  response:
+    body:
+      string: '{"id":"e83d5de0-5d69-4436-b312-c11ddb5d7ca8","status":"Succeeded","result":{"analyzerId":"prebuilt-videoSearch","apiVersion":"2025-11-01","createdAt":"2026-09-15T09:34:18Z","stringEncoding":"codePoint","warnings":[],"contents":[{"markdown":"#
+        Video: 00:00.733 => 00:02.067\nWidth: 1080\nHeight: 608\n\nTranscript\n```\nWEBVTT\n\n00:01.390
+        --> 00:06.670\n<Speaker 1>When it comes to the neural TTS, in order to get
+        a good voice, it''s better to have good data.\n```\n\nKey Frames\n- 00:00.733
+        ![](keyFrame.733.jpg)\n- 00:02.067 ![](keyFrame.2067.jpg)","fields":{"Summary":{"type":"string","valueString":"A
+        title card introduces a collaboration between Flight Simulator and Microsoft
+        Azure AI over an aerial island view."}},"kind":"audioVisual","startTimeMs":733,"endTimeMs":2067,"width":1080,"height":608,"KeyFrameTimesMs":[733,2067],"transcriptPhrases":[{"speaker":"Speaker
+        1","startTimeMs":1390,"endTimeMs":6670,"text":"When it comes to the neural
+        TTS, in order to get a good voice, it''s better to have good data.","confidence":0.928,"words":[{"startTimeMs":1390,"endTimeMs":1630,"text":"When"},{"startTimeMs":1630,"endTimeMs":1790,"text":"it"},{"startTimeMs":1790,"endTimeMs":2030,"text":"comes"},{"startTimeMs":2030,"endTimeMs":2150,"text":"to"},{"startTimeMs":2150,"endTimeMs":2230,"text":"the"},{"startTimeMs":2230,"endTimeMs":2590,"text":"neural"},{"startTimeMs":2590,"endTimeMs":3230,"text":"TTS,"},{"startTimeMs":3230,"endTimeMs":3470,"text":"in"},{"startTimeMs":3470,"endTimeMs":3710,"text":"order"},{"startTimeMs":3710,"endTimeMs":3910,"text":"to"},{"startTimeMs":3990,"endTimeMs":4190,"text":"get"},{"startTimeMs":4190,"endTimeMs":4270,"text":"a"},{"startTimeMs":4270,"endTimeMs":4510,"text":"good"},{"startTimeMs":4510,"endTimeMs":4910,"text":"voice,"},{"startTimeMs":4990,"endTimeMs":5230,"text":"it''s"},{"startTimeMs":5230,"endTimeMs":5630,"text":"better"},{"startTimeMs":5630,"endTimeMs":5790,"text":"to"},{"startTimeMs":5790,"endTimeMs":6030,"text":"have"},{"startTimeMs":6030,"endTimeMs":6310,"text":"good"},{"startTimeMs":6310,"endTimeMs":6670,"text":"data."}],"locale":"en-US"}],"cameraShotTimesMs":[1467,3233,7367,8200,11367,13567,16100,19433,23967,30033,33200,35267,37700,39200,42033],"mimeType":"video/mp4"},{"markdown":"#
+        Video: 00:02.067 => 00:04.067\nWidth: 1080\nHeight: 608\n\n\n\nKey Frames\n-
+        00:02.067 ![](keyFrame.2067.jpg)\n- 00:02.667 ![](keyFrame.2667.jpg)\n- 00:04.067
+        ![](keyFrame.4067.jpg)","fields":{"Summary":{"type":"string","valueString":"An
+        interview-style shot of a man in an office explains that high-quality data
+        is needed to produce good neural text-to-speech voices."}},"kind":"audioVisual","startTimeMs":2067,"endTimeMs":4067,"width":1080,"height":608,"KeyFrameTimesMs":[2067,2667,4067],"transcriptPhrases":[],"cameraShotTimesMs":[1467,3233,7367,8200,11367,13567,16100,19433,23967,30033,33200,35267,37700,39200,42033]},{"markdown":"#
+        Video: 00:04.067 => 00:07.800\nWidth: 1080\nHeight: 608\n\nTranscript\n```\nWEBVTT\n\n00:07.150
+        --> 00:13.350\n<Speaker 2>To achieve that, we build a universal TTS model
+        based on 3,000 hours of data.\n```\n\nKey Frames\n- 00:04.067 ![](keyFrame.4067.jpg)\n-
+        00:04.900 ![](keyFrame.4900.jpg)\n- 00:05.733 ![](keyFrame.5733.jpg)\n- 00:06.567
+        ![](keyFrame.6567.jpg)\n- 00:07.800 ![](keyFrame.7800.jpg)","fields":{"Summary":{"type":"string","valueString":"Animated
+        audio waveforms visualize speech data as the narration continues about building
+        a universal TTS model."}},"kind":"audioVisual","startTimeMs":4067,"endTimeMs":7800,"width":1080,"height":608,"KeyFrameTimesMs":[4067,4900,5733,6567,7800],"transcriptPhrases":[{"speaker":"Speaker
+        2","startTimeMs":7150,"endTimeMs":13350,"text":"To achieve that, we build
+        a universal TTS model based on 3,000 hours of data.","confidence":0.928,"words":[{"startTimeMs":7150,"endTimeMs":7390,"text":"To"},{"startTimeMs":7590,"endTimeMs":7870,"text":"achieve"},{"startTimeMs":7990,"endTimeMs":8190,"text":"that,"},{"startTimeMs":8190,"endTimeMs":8310,"text":"we"},{"startTimeMs":8350,"endTimeMs":8590,"text":"build"},{"startTimeMs":8750,"endTimeMs":8790,"text":"a"},{"startTimeMs":8790,"endTimeMs":9350,"text":"universal"},{"startTimeMs":9390,"endTimeMs":9790,"text":"TTS"},{"startTimeMs":9790,"endTimeMs":10270,"text":"model"},{"startTimeMs":10630,"endTimeMs":10870,"text":"based"},{"startTimeMs":11030,"endTimeMs":11230,"text":"on"},{"startTimeMs":11510,"endTimeMs":12190,"text":"3,000"},{"startTimeMs":12350,"endTimeMs":12510,"text":"hours"},{"startTimeMs":12790,"endTimeMs":12910,"text":"of"},{"startTimeMs":13070,"endTimeMs":13350,"text":"data."}],"locale":"en-US"}],"cameraShotTimesMs":[1467,3233,7367,8200,11367,13567,16100,19433,23967,30033,33200,35267,37700,39200,42033]},{"markdown":"#
+        Video: 00:07.800 => 00:09.000\nWidth: 1080\nHeight: 608\n\n\n\nKey Frames\n-
+        00:07.800 ![](keyFrame.7800.jpg)\n- 00:09.000 ![](keyFrame.9000.jpg)","fields":{"Summary":{"type":"string","valueString":"A
+        second interview shot continues the explanation about training a universal
+        TTS model with large-scale data."}},"kind":"audioVisual","startTimeMs":7800,"endTimeMs":9000,"width":1080,"height":608,"KeyFrameTimesMs":[7800,9000],"transcriptPhrases":[],"cameraShotTimesMs":[1467,3233,7367,8200,11367,13567,16100,19433,23967,30033,33200,35267,37700,39200,42033]},{"markdown":"#
+        Video: 00:09.000 => 00:14.200\nWidth: 1080\nHeight: 608\n\nTranscript\n```\nWEBVTT\n\n00:13.470
+        --> 00:23.710\n<Speaker 1>We actually accumulated tons of the data so that
+        this universal model is able to capture the nuance of the audio and generate
+        a more natural voice for the algorithm.\n```\n\nKey Frames\n- 00:09.000 ![](keyFrame.9000.jpg)\n-
+        00:09.800 ![](keyFrame.9800.jpg)\n- 00:10.600 ![](keyFrame.10600.jpg)\n- 00:12.100
+        ![](keyFrame.12100.jpg)\n- 00:12.833 ![](keyFrame.12833.jpg)\n- 00:14.200
+        ![](keyFrame.14200.jpg)","fields":{"Summary":{"type":"string","valueString":"B-roll
+        shows large-scale infrastructure and computing environments while the narration
+        emphasizes accumulating lots of data to capture nuance and naturalness."}},"kind":"audioVisual","startTimeMs":9000,"endTimeMs":14200,"width":1080,"height":608,"KeyFrameTimesMs":[9000,9800,10600,12100,12833,14200],"transcriptPhrases":[{"speaker":"Speaker
+        1","startTimeMs":13470,"endTimeMs":23710,"text":"We actually accumulated tons
+        of the data so that this universal model is able to capture the nuance of
+        the audio and generate a more natural voice for the algorithm.","confidence":0.928,"words":[{"startTimeMs":13470,"endTimeMs":13630,"text":"We"},{"startTimeMs":13630,"endTimeMs":14030,"text":"actually"},{"startTimeMs":14030,"endTimeMs":14790,"text":"accumulated"},{"startTimeMs":14790,"endTimeMs":15230,"text":"tons"},{"startTimeMs":15230,"endTimeMs":15390,"text":"of"},{"startTimeMs":15390,"endTimeMs":15510,"text":"the"},{"startTimeMs":15630,"endTimeMs":16030,"text":"data"},{"startTimeMs":16030,"endTimeMs":16270,"text":"so"},{"startTimeMs":16270,"endTimeMs":16470,"text":"that"},{"startTimeMs":16470,"endTimeMs":16670,"text":"this"},{"startTimeMs":16670,"endTimeMs":17150,"text":"universal"},{"startTimeMs":17150,"endTimeMs":17550,"text":"model"},{"startTimeMs":17630,"endTimeMs":17750,"text":"is"},{"startTimeMs":17790,"endTimeMs":18110,"text":"able"},{"startTimeMs":18110,"endTimeMs":18350,"text":"to"},{"startTimeMs":18390,"endTimeMs":18790,"text":"capture"},{"startTimeMs":18790,"endTimeMs":18910,"text":"the"},{"startTimeMs":18910,"endTimeMs":19470,"text":"nuance"},{"startTimeMs":19470,"endTimeMs":19550,"text":"of"},{"startTimeMs":19550,"endTimeMs":19710,"text":"the"},{"startTimeMs":19710,"endTimeMs":20270,"text":"audio"},{"startTimeMs":20430,"endTimeMs":20750,"text":"and"},{"startTimeMs":20750,"endTimeMs":21390,"text":"generate"},{"startTimeMs":21470,"endTimeMs":21550,"text":"a"},{"startTimeMs":21550,"endTimeMs":21790,"text":"more"},{"startTimeMs":21790,"endTimeMs":22310,"text":"natural"},{"startTimeMs":22310,"endTimeMs":22590,"text":"voice"},{"startTimeMs":22750,"endTimeMs":22990,"text":"for"},{"startTimeMs":22990,"endTimeMs":23150,"text":"the"},{"startTimeMs":23150,"endTimeMs":23710,"text":"algorithm."}],"locale":"en-US"}],"cameraShotTimesMs":[1467,3233,7367,8200,11367,13567,16100,19433,23967,30033,33200,35267,37700,39200,42033]},{"markdown":"#
+        Video: 00:14.200 => 00:16.933\nWidth: 1080\nHeight: 608\n\n\n\nKey Frames\n-
+        00:14.200 ![](keyFrame.14200.jpg)\n- 00:14.833 ![](keyFrame.14833.jpg)\n-
+        00:15.467 ![](keyFrame.15467.jpg)\n- 00:16.933 ![](keyFrame.16933.jpg)","fields":{"Summary":{"type":"string","valueString":"The
+        first interviewee returns, describing how the universal model captures audio
+        nuance to generate more natural voices."}},"kind":"audioVisual","startTimeMs":14200,"endTimeMs":16933,"width":1080,"height":608,"KeyFrameTimesMs":[14200,14833,15467,16933],"transcriptPhrases":[],"cameraShotTimesMs":[1467,3233,7367,8200,11367,13567,16100,19433,23967,30033,33200,35267,37700,39200,42033]},{"markdown":"#
+        Video: 00:16.933 => 00:24.833\nWidth: 1080\nHeight: 608\n\nTranscript\n```\nWEBVTT\n\n00:24.070
+        --> 00:29.150\n<Speaker 3>What we liked about cognitive services offerings
+        were that they had a much higher fidelity.\n```\n\nKey Frames\n- 00:16.933
+        ![](keyFrame.16933.jpg)\n- 00:17.767 ![](keyFrame.17767.jpg)\n- 00:18.600
+        ![](keyFrame.18600.jpg)\n- 00:20.167 ![](keyFrame.20167.jpg)\n- 00:20.900
+        ![](keyFrame.20900.jpg)\n- 00:21.633 ![](keyFrame.21633.jpg)\n- 00:22.367
+        ![](keyFrame.22367.jpg)\n- 00:23.100 ![](keyFrame.23100.jpg)\n- 00:24.833
+        ![](keyFrame.24833.jpg)","fields":{"Summary":{"type":"string","valueString":"Flight
+        Simulator-style aerial footage shows a red biplane flying over a coastal landscape,
+        transitioning to a scenic castle and mountains."}},"kind":"audioVisual","startTimeMs":16933,"endTimeMs":24833,"width":1080,"height":608,"KeyFrameTimesMs":[16933,17767,18600,20167,20900,21633,22367,23100,24833],"transcriptPhrases":[{"speaker":"Speaker
+        3","startTimeMs":24070,"endTimeMs":29150,"text":"What we liked about cognitive
+        services offerings were that they had a much higher fidelity.","confidence":0.928,"words":[{"startTimeMs":24070,"endTimeMs":24230,"text":"What"},{"startTimeMs":24230,"endTimeMs":24350,"text":"we"},{"startTimeMs":24350,"endTimeMs":24590,"text":"liked"},{"startTimeMs":24590,"endTimeMs":24910,"text":"about"},{"startTimeMs":24990,"endTimeMs":25470,"text":"cognitive"},{"startTimeMs":25470,"endTimeMs":25950,"text":"services"},{"startTimeMs":25950,"endTimeMs":26430,"text":"offerings"},{"startTimeMs":26510,"endTimeMs":26750,"text":"were"},{"startTimeMs":26750,"endTimeMs":27070,"text":"that"},{"startTimeMs":27230,"endTimeMs":27630,"text":"they"},{"startTimeMs":27630,"endTimeMs":27830,"text":"had"},{"startTimeMs":27830,"endTimeMs":27870,"text":"a"},{"startTimeMs":27870,"endTimeMs":28190,"text":"much"},{"startTimeMs":28190,"endTimeMs":28590,"text":"higher"},{"startTimeMs":28590,"endTimeMs":29150,"text":"fidelity."}],"locale":"en-US"}],"cameraShotTimesMs":[1467,3233,7367,8200,11367,13567,16100,19433,23967,30033,33200,35267,37700,39200,42033]},{"markdown":"#
+        Video: 00:24.833 => 00:33.900\nWidth: 1080\nHeight: 608\n\nTranscript\n```\nWEBVTT\n\n00:29.630
+        --> 00:32.910\n<Speaker 3>And they sounded a lot more like an actual human
+        voice.\n\n00:33.710 --> 00:37.150\n<Speaker 4>Orlando ground 9555 requesting
+        the end of pushback.\n```\n\nKey Frames\n- 00:24.833 ![](keyFrame.24833.jpg)\n-
+        00:25.700 ![](keyFrame.25700.jpg)\n- 00:26.567 ![](keyFrame.26567.jpg)\n-
+        00:27.433 ![](keyFrame.27433.jpg)\n- 00:28.300 ![](keyFrame.28300.jpg)\n-
+        00:29.167 ![](keyFrame.29167.jpg)\n- 00:30.833 ![](keyFrame.30833.jpg)\n-
+        00:31.633 ![](keyFrame.31633.jpg)\n- 00:32.433 ![](keyFrame.32433.jpg)\n-
+        00:33.900 ![](keyFrame.33900.jpg)","fields":{"Summary":{"type":"string","valueString":"A
+        third interviewee discusses preferring Cognitive Services for higher-fidelity,
+        more human-sounding voices."}},"kind":"audioVisual","startTimeMs":24833,"endTimeMs":33900,"width":1080,"height":608,"KeyFrameTimesMs":[24833,25700,26567,27433,28300,29167,30833,31633,32433,33900],"transcriptPhrases":[{"speaker":"Speaker
+        3","startTimeMs":29630,"endTimeMs":32910,"text":"And they sounded a lot more
+        like an actual human voice.","confidence":0.819,"words":[{"startTimeMs":29630,"endTimeMs":30070,"text":"And"},{"startTimeMs":30070,"endTimeMs":30190,"text":"they"},{"startTimeMs":30190,"endTimeMs":30510,"text":"sounded"},{"startTimeMs":30510,"endTimeMs":30550,"text":"a"},{"startTimeMs":30550,"endTimeMs":30670,"text":"lot"},{"startTimeMs":30670,"endTimeMs":30910,"text":"more"},{"startTimeMs":30910,"endTimeMs":31230,"text":"like"},{"startTimeMs":31670,"endTimeMs":31790,"text":"an"},{"startTimeMs":31790,"endTimeMs":32110,"text":"actual"},{"startTimeMs":32110,"endTimeMs":32430,"text":"human"},{"startTimeMs":32430,"endTimeMs":32910,"text":"voice."}],"locale":"en-US"},{"speaker":"Speaker
+        4","startTimeMs":33710,"endTimeMs":37150,"text":"Orlando ground 9555 requesting
+        the end of pushback.","confidence":0.819,"words":[{"startTimeMs":33710,"endTimeMs":34190,"text":"Orlando"},{"startTimeMs":34190,"endTimeMs":34590,"text":"ground"},{"startTimeMs":34590,"endTimeMs":35630,"text":"9555"},{"startTimeMs":35630,"endTimeMs":36190,"text":"requesting"},{"startTimeMs":36190,"endTimeMs":36310,"text":"the"},{"startTimeMs":36350,"endTimeMs":36550,"text":"end"},{"startTimeMs":36550,"endTimeMs":36670,"text":"of"},{"startTimeMs":36670,"endTimeMs":37150,"text":"pushback."}],"locale":"en-US"}],"cameraShotTimesMs":[1467,3233,7367,8200,11367,13567,16100,19433,23967,30033,33200,35267,37700,39200,42033]},{"markdown":"#
+        Video: 00:33.900 => 00:42.633\nWidth: 1080\nHeight: 608\n\nTranscript\n```\nWEBVTT\n\n00:38.670
+        --> 00:41.310\n<Speaker 4>9555 request to end pushback received.\n```\n\nKey
+        Frames\n- 00:33.900 ![](keyFrame.33900.jpg)\n- 00:34.600 ![](keyFrame.34600.jpg)\n-
+        00:36.067 ![](keyFrame.36067.jpg)\n- 00:36.867 ![](keyFrame.36867.jpg)\n-
+        00:38.200 ![](keyFrame.38200.jpg)\n- 00:38.700 ![](keyFrame.38700.jpg)\n-
+        00:39.900 ![](keyFrame.39900.jpg)\n- 00:40.600 ![](keyFrame.40600.jpg)\n-
+        00:41.300 ![](keyFrame.41300.jpg)\n- 00:42.633 ![](keyFrame.42633.jpg)","fields":{"Summary":{"type":"string","valueString":"Airport
+        ground operations in Flight Simulator: an airliner is guided on the ramp as
+        radio-style ground communications play."}},"kind":"audioVisual","startTimeMs":33900,"endTimeMs":42633,"width":1080,"height":608,"KeyFrameTimesMs":[33900,34600,36067,36867,38200,38700,39900,40600,41300,42633],"transcriptPhrases":[{"speaker":"Speaker
+        4","startTimeMs":38670,"endTimeMs":41310,"text":"9555 request to end pushback
+        received.","confidence":0.819,"words":[{"startTimeMs":38670,"endTimeMs":39630,"text":"9555"},{"startTimeMs":39630,"endTimeMs":40070,"text":"request"},{"startTimeMs":40150,"endTimeMs":40230,"text":"to"},{"startTimeMs":40270,"endTimeMs":40430,"text":"end"},{"startTimeMs":40470,"endTimeMs":40910,"text":"pushback"},{"startTimeMs":40910,"endTimeMs":41310,"text":"received."}],"locale":"en-US"}],"cameraShotTimesMs":[1467,3233,7367,8200,11367,13567,16100,19433,23967,30033,33200,35267,37700,39200,42033]},{"markdown":"#
+        Video: 00:42.633 => 00:43.233\nWidth: 1080\nHeight: 608\n\n\n\nKey Frames\n-
+        00:42.633 ![](keyFrame.42633.jpg)\n- 00:43.233 ![](keyFrame.43233.jpg)","fields":{"Summary":{"type":"string","valueString":"The
+        video ends on a black screen with the Microsoft logo."}},"kind":"audioVisual","startTimeMs":42633,"endTimeMs":43233,"width":1080,"height":608,"KeyFrameTimesMs":[42633,43233],"transcriptPhrases":[],"cameraShotTimesMs":[1467,3233,7367,8200,11367,13567,16100,19433,23967,30033,33200,35267,37700,39200,42033]}]},"usage":{"videoHours":0.013,"contextualizationTokens":12222,"tokens":{"gpt-5.2-input":10664,"gpt-5.2-output":950}}}'
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 15 Sep 2026 09:35:56 GMT
+      Request-Id:
+      - d2f777cc-c471-4a52-bd65-17220a4b2c70
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      api-supported-versions:
+      - 2025-11-01,2026-06-01-preview
+      apim-request-id:
+      - d2f777cc-c471-4a52-bd65-17220a4b2c70
+      x-envoy-upstream-service-time:
+      - '780'
+      x-ms-region:
+      - East US
+      x-ms-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

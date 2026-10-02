@@ -59,6 +59,10 @@ cd "${product_dir}"
 python scripts/check_headers.py
 end_section
 
+section "Documentation snippets"
+python scripts/update-snippet.py check
+end_section
+
 section "Frontend CU SDK boundary"
 python scripts/validate_frontend_sdk_boundary.py
 end_section

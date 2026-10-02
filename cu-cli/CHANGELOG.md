@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Bugs Fixed
+
+- Fixed `cu defaults set --replace` retaining obsolete model mappings. Replacement
+  now requires reading the current defaults before updating them.
+
 ## 0.1.0b3 (2026-09-14)
 
 ### Bugs Fixed
