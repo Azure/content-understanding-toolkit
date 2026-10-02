@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Azure Content Understanding Toolkit</title>
+    <meta
+      name="description"
+      content="Tools that ease integration with Azure AI Content Understanding, plus experimental tools that capture best practices for building on it."
+    />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="wrap">
+        <div class="hero__brand">
+          <!-- Official mark geometry: four 10-unit squares on a 1-unit gutter. -->
+          <svg class="hero__logo" viewBox="0 0 21 21" aria-hidden="true" focusable="false">
+            <rect x="0" y="0" width="10" height="10" fill="#f25022" />
+            <rect x="11" y="0" width="10" height="10" fill="#7fba00" />
+            <rect x="0" y="11" width="10" height="10" fill="#00a4ef" />
+            <rect x="11" y="11" width="10" height="10" fill="#ffb900" />
+          </svg>
+          Microsoft
+          <span class="hero__divider"></span>
+          Azure AI Content Understanding
+        </div>
+
+        <h1 class="hero__title">The toolkit for <em>building</em> on Content Understanding.</h1>
+        <p class="hero__lede">
+          Content Understanding turns documents, images, audio, and video into structured output.
+          These are the tools that make it faster to adopt — a command line, the prebuilt schemas,
+          and field-tested practices for putting the results into production.
+        </p>
+      </div>
+    </header>
+
+    <section class="section section--tint" id="tools">
+      <div class="wrap">
+        <div class="section__head">
+          <div class="section__eyebrow">What's in the toolkit</div>
+          <h2 class="section__title">Four tools, one service.</h2>
+          <p class="section__lede">
+            Start with the command line to get content flowing, use the schema index to pick the
+            right prebuilt analyzer, then decide what a human still needs to check.
+          </p>
+        </div>
+
+        <div class="tools">
+          <article class="tool">
+            <div class="tool__head">
+              <span class="tool__kind">Command line</span>
+              <span class="tag tag--preview">Preview</span>
+            </div>
+            <h3 class="tool__title">CU CLI</h3>
+            <p class="tool__body">
+              A standalone <code>cu</code> command for analyzing files, creating and testing custom
+              analyzers, managing resource profiles and model defaults, and generating the Azure
+              infrastructure to run on. Takes local files, HTTPS URLs, or blob SAS URLs.
+            </p>
+            <div class="tool__code">python -m pip install cu-cli</div>
+            <div class="tool__links">
+              <a
+                href="https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/README.md"
+                >Read the docs</a
+              >
+              <a href="https://github.com/Azure/content-understanding-toolkit/tree/main/cu-cli"
+                >Browse the source</a
+              >
+            </div>
+          </article>
+
+          <article class="tool">
+            <div class="tool__head">
+              <span class="tool__kind">Azure CLI extension</span>
+              <span class="tag tag--preview">Preview</span>
+            </div>
+            <h3 class="tool__title">az cu</h3>
+            <p class="tool__body">
+              The same operations as a native Azure CLI extension, so you get Azure CLI
+              authentication, output formatting, <code>--query</code>, subscription selection, and
+              extension updates the way your scripts already expect them.
+            </p>
+            <div class="tool__code">az extension add --name content-understanding</div>
+            <div class="tool__links">
+              <a
+                href="https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/packages/azure-cli-extension/README.md"
+                >Read the docs</a
+              >
+              <a
+                href="https://github.com/Azure/content-understanding-toolkit/tree/main/cu-cli/packages/azure-cli-extension"
+                >Browse the source</a
+              >
+            </div>
+          </article>
+
+          <article class="tool">
+            <div class="tool__head">
+              <span class="tool__kind">Reference</span>
+            </div>
+            <h3 class="tool__title">Prebuilt schema definitions</h3>
+            <p class="tool__body">
+              Every field a prebuilt document analyzer returns — name, type, extraction method,
+              description, and example — browsable by API version. Covers finance, identity,
+              personal records, legal, mortgage, procurement, and US tax forms.
+            </p>
+            <div class="tool__links">
+              <a
+                href="https://github.com/Azure/content-understanding-toolkit/blob/main/prebuilt-schema/SUPPORTED_ANALYZERS.md"
+                >Open the analyzer index</a
+              >
+              <a
+                href="https://github.com/Azure/content-understanding-toolkit/tree/main/prebuilt-schema"
+                >Browse the source</a
+              >
+            </div>
+          </article>
+
+          <article class="tool">
+            <div class="tool__head">
+              <span class="tool__kind">Interactive explainer</span>
+            </div>
+            <h3 class="tool__title">Dynamic human-in-the-loop</h3>
+            <p class="tool__body">
+              Turn the confidence score into a per-field human-review policy you can defend, and
+              measure what it saves. On 1,000 CORD v2 receipts, an 80% catch target takes 27% of
+              values off the review queue. A Python calibration lab runs the same method on your
+              own extractions.
+            </p>
+            <div class="tool__links">
+              <a href="./dynamic-hitl/">Open the explainer</a>
+              <a
+                href="https://github.com/Azure/content-understanding-toolkit/tree/main/dynamic_hitl"
+                >Browse the source</a
+              >
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="border-top: 0; padding-top: 16px">
+      <div class="wrap">
+        <div class="cta">
+          <h2>Get content flowing in three commands.</h2>
+          <p>
+            You need Python 3.10 or later and the Azure CLI for sign-in. Point the CLI at a file and
+            it returns structured output you can pipe straight into whatever comes next.
+          </p>
+          <div class="cta__steps">
+            <div class="cta__step">
+              <b>1 · Install</b>
+              <code>python -m pip install cu-cli</code>
+            </div>
+            <div class="cta__step">
+              <b>2 · Point at your resource</b>
+              <code>cu profile set endpoint https://&lt;resource&gt;.services.ai.azure.com/</code>
+            </div>
+            <div class="cta__step">
+              <b>3 · Analyze</b>
+              <code>cu analyze ./invoice.pdf</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <span>
+            <a href="https://github.com/Azure/content-understanding-toolkit">Azure/content-understanding-toolkit</a>
+            · MIT licensed
+          </span>
+          <span>
+            <a href="https://github.com/Azure/content-understanding-toolkit/issues">Report an issue</a>
+            ·
+            <a href="https://github.com/Azure/content-understanding-toolkit/blob/main/SUPPORT.md">Support</a>
+            ·
+            <a href="https://learn.microsoft.com/azure/ai-services/content-understanding/overview">Azure docs</a>
+          </span>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>
