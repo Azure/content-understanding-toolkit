@@ -25,6 +25,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional, Sequence
 
+from .errors import ServiceError, ServiceErrorDetail
+
 RESULT_SUFFIXES = (".result.md", ".result.json")
 
 
@@ -211,6 +213,48 @@ def _capture_raw_response(
     return deserialized, pipeline_response.http_response
 
 
+def _service_error_details(error: object) -> tuple[ServiceErrorDetail, ...]:
+    """Flatten a service error and its nested errors for frontend rendering."""
+    pending = [error]
+    details: list[ServiceErrorDetail] = []
+    while pending:
+        item = pending.pop(0)
+        if not isinstance(item, Mapping):
+            continue
+        details.append(
+            ServiceErrorDetail(
+                code=item.get("code"),
+                message=item.get("message"),
+                target=item.get("target"),
+            )
+        )
+        nested = item.get("innererror", item.get("innerError"))
+        if nested is not None:
+            pending.append(nested)
+        children = item.get("details")
+        if isinstance(children, list):
+            pending.extend(children)
+    return tuple(detail for detail in details if detail.code or detail.message or detail.target)
+
+
+def _raw_analysis_result(raw_response: Any) -> Any:
+    """Deserialize a raw response and reject a service-reported failed operation."""
+    result = raw_response.json()
+    if not isinstance(result, Mapping) or str(result.get("status", "")).lower() != "failed":
+        return result
+
+    details = _service_error_details(result.get("error"))
+    description = "; ".join(
+        ": ".join(part for part in (detail.code, detail.message) if part)
+        for detail in details
+        if detail.code or detail.message
+    )
+    message = "Analysis failed according to the service response."
+    if description:
+        message = f"{message} {description}"
+    raise ServiceError(message, details=details, context={"status": result.get("status")})
+
+
 def analyze_bytes(
     client: Any,
     analyzer_id: str,
@@ -244,7 +288,7 @@ def analyze_bytes_with_usage(
     completed = poller.result()
     if raw_json:
         _, raw_response = completed
-        result = raw_response.json()
+        result = _raw_analysis_result(raw_response)
     else:
         result = completed
     return AnalyzeResponse(result=result, usage=getattr(poller, "usage", None))
@@ -289,7 +333,7 @@ def analyze_url_with_usage(
     completed = poller.result()
     if raw_json:
         _, raw_response = completed
-        result = raw_response.json()
+        result = _raw_analysis_result(raw_response)
     else:
         result = completed
     return AnalyzeResponse(result=result, usage=getattr(poller, "usage", None))
@@ -327,7 +371,7 @@ def analyze_bytes_inline_with_usage(
     )
     if raw_json:
         response, raw_response = completed
-        result = raw_response.json()
+        result = _raw_analysis_result(raw_response)
     else:
         response = completed
         result = response.result
@@ -366,7 +410,7 @@ def analyze_url_inline_with_usage(
     )
     if raw_json:
         response, raw_response = completed
-        result = raw_response.json()
+        result = _raw_analysis_result(raw_response)
     else:
         response = completed
         result = response.result

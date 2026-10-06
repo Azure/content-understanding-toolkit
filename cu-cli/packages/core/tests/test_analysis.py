@@ -40,6 +40,7 @@ from cu_cli_core.analysis import (
     plan_jobs,
 )
 from cu_cli_core.contracts import AnalyzeRequest
+from cu_cli_core.errors import ServiceError
 from cu_cli_core.operations.analysis import execute_analyze
 
 pytestmark = pytest.mark.unit
@@ -70,23 +71,31 @@ class _FakePipelineResponse:
 class _FakeClient:
     """Records calls and echoes a deterministic result per analyzer/bytes."""
 
-    def __init__(self):
+    def __init__(self, *, raw_status="Succeeded", raw_error=None):
         self.calls: list[tuple[str, int]] = []
         self.url_calls: list[tuple[str, str]] = []
+        self.raw_status = raw_status
+        self.raw_error = raw_error
+
+    def _raw(self, result, **metadata):
+        payload = {"status": self.raw_status, "result": result}
+        payload.update(metadata)
+        if self.raw_error is not None:
+            payload["error"] = self.raw_error
+        return payload
 
     def begin_analyze_binary(self, *, analyzer_id, binary_input, cls=None):
         self.calls.append((analyzer_id, len(binary_input)))
         deserialized = {"analyzer_id": analyzer_id, "size": len(binary_input)}
-        raw = {
-            "id": "operation-id",
-            "status": "Succeeded",
-            "result": {
+        raw = self._raw(
+            {
                 "analyzerId": analyzer_id,
                 "size": len(binary_input),
                 "serviceOnly": True,
             },
-            "usage": {"documentPagesStandard": 1},
-        }
+            id="operation-id",
+            usage={"documentPagesStandard": 1},
+        )
         result = (
             cls(_FakePipelineResponse(raw), deserialized, {})
             if cls is not None
@@ -100,14 +109,11 @@ class _FakeClient:
             "result": {"analyzer_id": analyzer_id, "size": len(binary_input)},
             "usage": {"documentPagesMinimalInline": 1},
         })()
-        raw = {
-            "status": "Succeeded",
-            "result": {
-                "analyzerId": analyzer_id,
-                "size": len(binary_input),
-                "serviceOnly": True,
-            },
-        }
+        raw = self._raw({
+            "analyzerId": analyzer_id,
+            "size": len(binary_input),
+            "serviceOnly": True,
+        })
         return (
             cls(_FakePipelineResponse(raw), response, {})
             if cls is not None
@@ -118,11 +124,10 @@ class _FakeClient:
         url = inputs[0].url
         self.url_calls.append((analyzer_id, url))
         deserialized = {"analyzer_id": analyzer_id, "url": url}
-        raw = {
-            "id": "operation-id",
-            "status": "Succeeded",
-            "result": {"analyzerId": analyzer_id, "url": url, "serviceOnly": True},
-        }
+        raw = self._raw(
+            {"analyzerId": analyzer_id, "url": url, "serviceOnly": True},
+            id="operation-id",
+        )
         result = (
             cls(_FakePipelineResponse(raw), deserialized, {})
             if cls is not None
@@ -137,10 +142,7 @@ class _FakeClient:
             "result": {"analyzer_id": analyzer_id, "url": url},
             "usage": {"documentPagesMinimalInline": 1},
         })()
-        raw = {
-            "status": "Succeeded",
-            "result": {"analyzerId": analyzer_id, "url": url, "serviceOnly": True},
-        }
+        raw = self._raw({"analyzerId": analyzer_id, "url": url, "serviceOnly": True})
         return (
             cls(_FakePipelineResponse(raw), response, {})
             if cls is not None
@@ -272,6 +274,51 @@ def test_usage_aware_helpers_retain_lro_and_inline_usage():
     assert lro.usage == {"documentPagesStandard": 1}
     assert inline.result["size"] == 3
     assert inline.usage == {"documentPagesMinimalInline": 1}
+
+
+@pytest.mark.parametrize(
+    "invoke",
+    [
+        lambda client: analyze_bytes_with_usage(
+            client, "prebuilt-layout", b"invalid", raw_json=True
+        ),
+        lambda client: analyze_url_with_usage(
+            client, "prebuilt-layout", "https://example.test/invalid", raw_json=True
+        ),
+        lambda client: analyze_bytes_inline_with_usage(
+            client, "prebuilt-layout", b"invalid", raw_json=True
+        ),
+        lambda client: analyze_url_inline_with_usage(
+            client, "prebuilt-layout", "https://example.test/invalid", raw_json=True
+        ),
+    ],
+    ids=["lro-binary", "lro-url", "inline-binary", "inline-url"],
+)
+def test_raw_json_helpers_raise_for_failed_service_envelope(invoke):
+    client = _FakeClient(
+        raw_status="Failed",
+        raw_error={
+            "code": "InvalidRequest",
+            "message": "The request is invalid.",
+            "innererror": {
+                "code": "InvalidContent",
+                "details": [{"code": "InvalidFormat", "message": "Unsupported content."}],
+            },
+        },
+    )
+
+    with pytest.raises(ServiceError) as exc_info:
+        invoke(client)
+
+    error = exc_info.value
+    assert [detail.code for detail in error.details] == [
+        "InvalidRequest",
+        "InvalidContent",
+        "InvalidFormat",
+    ]
+    assert "InvalidRequest" in str(error)
+    assert "InvalidContent" in str(error)
+    assert "InvalidFormat" in str(error)
 
 
 def test_analyze_many_collects_all_successes():
