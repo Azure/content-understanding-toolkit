@@ -34,6 +34,8 @@ def _isolate_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     # patched to the isolated path above and never mutates the real config.
     if rec_mode in {"live", "record"}:
         monkeypatch.setenv("AZURE_CONFIG_DIR", str(original_home / ".azure"))
+        if os.name == "nt":
+            monkeypatch.setenv("USERPROFILE", str(original_home))
     else:
         monkeypatch.setenv("AZURE_CONFIG_DIR", str(home / ".azure"))
     # Strip any CU_* env so tests control precedence explicitly, but preserve

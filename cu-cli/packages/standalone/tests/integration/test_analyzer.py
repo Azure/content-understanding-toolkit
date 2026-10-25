@@ -106,6 +106,7 @@ _TEMPLATE_ANALYZER_ID = "cu_cli_tmpl_analyzer_v1"
 _ROUTE_TARGET_ID = "cu_cli_route_target_v1"
 _TEMPLATE_CLASSIFIER_ID = "cu_cli_tmpl_classifier_v1"
 _COPY_TARGET_ID = "cu_cli_copy_target_v1"
+_UPDATE_ANALYZER_ID = "cu_cli_update_test_v1"
 
 
 def _build_classifier_schema_with_routing(path: str, route_target_id: str) -> Path:
@@ -174,6 +175,76 @@ def test_scenario_3_analyzer_lifecycle_create_show_delete(cloud_project):
     with use_cassette("analyzer_delete"):
         res = _run("analyzer", "delete", "cu_cli_test_v1", "--yes")
     assert res.exit_code == 0, res.output
+
+
+def test_analyzer_update_metadata_preserves_schema(cloud_project):
+    _write_schema("update-schema.json", analyzer_id=_UPDATE_ANALYZER_ID)
+    created = False
+    with use_cassette("analyzer_update_lifecycle"):
+        try:
+            res = _run(
+                "analyzer",
+                "create",
+                _UPDATE_ANALYZER_ID,
+                "--schema",
+                "update-schema.json",
+            )
+            _require_create_success(res)
+            created = True
+
+            before = _run("analyzer", "show", _UPDATE_ANALYZER_ID)
+            assert before.exit_code == 0, before.output
+            before_payload = json.loads(before.output[before.output.find("{"):])
+
+            updated = _run(
+                "analyzer",
+                "update",
+                _UPDATE_ANALYZER_ID,
+                "--description",
+                "Updated by CU CLI analyzer-update validation",
+                "--tag",
+                "owner=cu-cli",
+                "--tag",
+                "scenario=update-validation",
+            )
+            assert updated.exit_code == 0, updated.output
+
+            after = _run("analyzer", "show", _UPDATE_ANALYZER_ID)
+            assert after.exit_code == 0, after.output
+            after_payload = json.loads(after.output[after.output.find("{"):])
+
+            assert after_payload["description"] == (
+                "Updated by CU CLI analyzer-update validation"
+            )
+            assert after_payload["tags"] == {
+                "owner": "cu-cli",
+                "scenario": "update-validation",
+            }
+            assert after_payload["fieldSchema"] == before_payload["fieldSchema"]
+
+            retagged = _run(
+                "analyzer",
+                "update",
+                _UPDATE_ANALYZER_ID,
+                "--tag",
+                "owner=platform",
+            )
+            assert retagged.exit_code == 0, retagged.output
+
+            retagged_result = _run("analyzer", "show", _UPDATE_ANALYZER_ID)
+            assert retagged_result.exit_code == 0, retagged_result.output
+            retagged_payload = json.loads(
+                retagged_result.output[retagged_result.output.find("{"):]
+            )
+            assert retagged_payload["tags"] == {
+                "owner": "platform",
+                "scenario": "update-validation",
+            }
+            assert retagged_payload["fieldSchema"] == before_payload["fieldSchema"]
+        finally:
+            if created:
+                deleted = _run("analyzer", "delete", _UPDATE_ANALYZER_ID, "--yes")
+                assert deleted.exit_code == 0, deleted.output
 
 
 @pytest.mark.skipif(

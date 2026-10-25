@@ -3,7 +3,7 @@
 
 """``cu analyzer`` — manage and author custom analyzers.
 
-MVP command surface: ``list``, ``show``, ``create``, ``delete``,
+MVP command surface: ``list``, ``show``, ``create``, ``update``, ``delete``,
 ``test``, ``validate``, and ``schema create``. The ``validate`` and default
 ``schema create`` paths are **LLM-free and offline** — they give coding
 agents a deterministic author->validate loop with no service round-trips.
@@ -36,6 +36,7 @@ from cu_cli_core.command_spec import (
     ANALYZER_SCHEMA_CREATE,
     ANALYZER_SHOW,
     ANALYZER_TEST,
+    ANALYZER_UPDATE,
     ANALYZER_VALIDATE,
     CommandBindingError,
     build_request,
@@ -167,7 +168,7 @@ def _require_custom_analyzer_id(analyzer_id: str) -> None:
 
 @click.group("analyzer",
                help="Manage analyzers, which define how Content Understanding processes files. "
-               "List, show, create, copy, delete, and test analyzers, or create and validate "
+               "List, show, create, update, copy, delete, and test analyzers, or create and validate "
                "local analyzer schemas.",
              epilog="[bold cyan]Common commands:[/bold cyan]\n\n"
                     "[bold green]cu analyzer list[/bold green]\n\n"
@@ -316,6 +317,58 @@ def cmd_create(
         result = resolve_identifier(ANALYZER_CREATE.operation)(client, aid, body)
     final_id = getattr(result, "analyzer_id", aid)
     console.print(f"[green]ok[/green] created analyzer: {final_id}")
+    calling_timer.print()
+
+
+@analyzer_group.command(
+    "update",
+    help=ANALYZER_UPDATE.help,
+    epilog=common_commands(
+        (
+            "cu analyzer update ANALYZER_NAME --description DESCRIPTION",
+            "Update an analyzer description.",
+        ),
+        (
+            "cu analyzer update ANALYZER_NAME --tag KEY=VALUE --tag KEY=VALUE",
+            "Set one or more analyzer tags.",
+        ),
+    ),
+)
+@with_command_arguments(ANALYZER_UPDATE)
+@with_auth_options
+@friendly_errors
+def cmd_update(
+    positional_analyzer_name, analyzer_name, description, tag_assignments,
+    endpoint, api_key, api_version, entra, profile_name,
+    show_runtime_context, show_calling_time
+) -> None:
+    try:
+        request = build_request(
+            ANALYZER_UPDATE,
+            {
+                "positional_analyzer_name": positional_analyzer_name,
+                "analyzer_name": analyzer_name,
+                "description": description,
+                "tag_assignments": tag_assignments,
+            },
+        )
+    except CommandBindingError as exc:
+        raise CuCliError(str(exc), exit_code=VALIDATION_FAILURE) from exc
+    client = _client(endpoint, api_key, api_version, entra, profile_name, show_runtime_context)
+    with calling_time(show_calling_time) as calling_timer:
+        result = resolve_identifier(ANALYZER_UPDATE.operation)(
+            client,
+            request.name,
+            description=request.description,
+            tags=request.tags or None,
+        )
+    changed = []
+    if request.description is not None:
+        changed.append("description")
+    if request.tags:
+        changed.append("tags")
+    final_id = getattr(result, "analyzer_id", request.name)
+    console.print(f"[green]ok[/green] updated analyzer: {final_id} ({', '.join(changed)})")
     calling_timer.print()
 
 
