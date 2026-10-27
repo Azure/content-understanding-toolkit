@@ -49,8 +49,26 @@ Requirements:
 - [Azure CLI](https://aka.ms/azcli) for login and resource discovery
 - [Azure Developer CLI](https://aka.ms/azd) only when using `cu infra generate`
 
+Install CU CLI in a virtual environment to keep its dependencies separate from
+other Python packages. Activate the environment again in each new shell before
+running `cu`.
+
+On Windows using PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade cu-cli
+cu --version
+cu --help
+```
+
+On Linux or macOS:
+
 ```bash
-python -m pip install cu-cli
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade cu-cli
 cu --version
 cu --help
 ```
@@ -283,6 +301,7 @@ you intentionally want to replace the selected `--output-file`.
 Further reading:
 
 - [Create a custom analyzer](https://learn.microsoft.com/azure/ai-services/content-understanding/tutorial/create-custom-analyzer)
+- [CU CLI recipes](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/recipes/README.md)
 - [Supported generative models](https://learn.microsoft.com/azure/ai-services/content-understanding/service-limits#supported-generative-models)
 - Run `cu analyzer --help` for analyzer management and testing commands.
 
@@ -318,6 +337,15 @@ operational guidance, see the
 - safe batch previews, output handling, and machine-readable reports
 - analyzer schema, lifecycle, testing, and cross-resource copy workflows
 - Content Understanding defaults and troubleshooting
+
+## Recipes
+
+[CU CLI recipes](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/recipes/README.md)
+provide task-focused, end-to-end
+procedures with verification, troubleshooting, and rollback guidance. Current
+recipes include:
+
+- [Migrate schema-only custom analyzers from `2025-11-01` to `2026-06-01-preview`](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/docs/recipes/migrate-schema-only-analyzers-2025-11-01-to-2026-06-01-preview.md)
 
 ## More information
 
