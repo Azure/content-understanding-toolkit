@@ -1,12 +1,29 @@
-# Azure Content Understanding extension for Azure CLI
+# Azure Content Understanding extension for Azure CLI (`az cu`) [DEPRECATED]
 
-This preview extension adds Azure Content Understanding commands under `az cu`.
+<a id="deprecation-warning"></a>
+
+> [!WARNING]
+> **Deprecated: migrate from `az cu` to `azd ai cu`.**
+>
+> This Azure CLI extension (`az cu`) and the standalone `cu-cli` are deprecated
+> and will no longer be maintained except for security fixes. **All other future
+> updates will be delivered exclusively through `azd ai cu`**, the new Azure
+> Developer CLI (`azd`) extension.
+>
+> **[Get started with the new CLI at aka.ms/cu-cli](https://aka.ms/cu-cli).**
+>
+> Benefits of moving to `azd ai cu`:
+> - **Faster command-line performance**, including cold starts and warm starts.
+> - **Still open source.**
+> - **Standard `azd env` support** to manage separate development, test, and production environments.
+> - **More new features are planned** for `azd ai cu`.
+>
+> The instructions below describe the deprecated extension. For the new CLI and
+> migration guidance, visit **[aka.ms/cu-cli](https://aka.ms/cu-cli)**.
+
+This deprecated extension adds Azure Content Understanding commands under `az cu`.
 It uses the identity, cloud, and active subscription selected by Azure CLI and
 supports standard Azure CLI output formats and JMESPath queries.
-
-> [!IMPORTANT]
-> This package is a preview. Commands and package contracts may change before
-> general availability.
 
 ## Content Understanding concepts
 
@@ -38,7 +55,13 @@ Further reading:
 - [What is Content Understanding?](https://learn.microsoft.com/azure/ai-services/content-understanding/overview)
 - [Content Understanding terminology](https://learn.microsoft.com/azure/ai-services/content-understanding/glossary)
 
-## Install
+<a id="install"></a>
+
+## Install [DEPRECATED]
+
+> **[DEPRECATED]** These installation instructions are for `az cu`, which will
+> only receive security fixes. See the [deprecation warning](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/packages/azure-cli-extension/README.md#deprecation-warning)
+> and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
 
 Requirements:
 
@@ -55,7 +78,13 @@ az extension add --name content-understanding
 az cu --help
 ```
 
-## Connect to Microsoft Foundry and check setup
+<a id="connect-to-microsoft-foundry-and-check-setup"></a>
+
+## Connect to Microsoft Foundry and check setup [DEPRECATED]
+
+> **[DEPRECATED]** These setup instructions are for `az cu`, which will only
+> receive security fixes. See the [deprecation warning](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/packages/azure-cli-extension/README.md#deprecation-warning)
+> and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
 
 You need a Microsoft Foundry resource endpoint. LLM-based prebuilt analyzers and
 custom analyzers also need supported LLM and embeddings deployments plus Content
@@ -323,7 +352,13 @@ Further reading:
 - [Supported generative models](https://learn.microsoft.com/azure/ai-services/content-understanding/service-limits#supported-generative-models)
 - Run `az cu analyzer --help` for analyzer management and testing commands.
 
-## Generate Microsoft Foundry infrastructure
+<a id="generate-microsoft-foundry-infrastructure"></a>
+
+## Generate Microsoft Foundry infrastructure [DEPRECATED]
+
+> **[DEPRECATED]** These provisioning instructions are for `az cu`, which will
+> only receive security fixes. See the [deprecation warning](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/packages/azure-cli-extension/README.md#deprecation-warning)
+> and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
 
 `az cu infra generate` writes a self-contained azd/Bicep project. It does not
 provision resources or run `azd up`. On a terminal it offers subscription,
@@ -383,7 +418,13 @@ az cu analyzer copy --help
 az cu infra generate --help
 ```
 
-## CU CLI usage guide
+<a id="cu-cli-usage-guide"></a>
+
+## CU CLI usage guide [DEPRECATED]
+
+> **[DEPRECATED]** This usage guide is for the deprecated `az cu` and `cu-cli`,
+> which will only receive security fixes. See the [deprecation warning](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/packages/azure-cli-extension/README.md#deprecation-warning)
+> and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
 
 Use this README for installation, resource connection, and the first successful
 analysis. For Azure provisioning, see the
