@@ -1,4 +1,6 @@
-# Provision Microsoft Foundry for CU CLI
+# Provision Microsoft Foundry for CU CLI [DEPRECATED]
+
+> **[DEPRECATED]** This provisioning guide is for the deprecated CU CLI, which will only receive security fixes. See the [deprecation warning at the beginning of the CU CLI README](../README.md#deprecation-warning) and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
 
 This is the authoritative guide to creating or reusing a Microsoft Foundry
 resource for Content Understanding, deploying supported models, configuring

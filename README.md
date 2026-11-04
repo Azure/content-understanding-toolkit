@@ -2,12 +2,17 @@
 
 The **Azure Content Understanding Toolkit** is a set of tools that ease integration with [Azure Content Understanding][cu_overview], together with experimental tools that capture best practices for building on Content Understanding.
 
+> [!WARNING]
+> **CU CLI and `az cu` are deprecated.** The standalone `cu-cli` and its associated Azure CLI extension (`az cu`) will no longer be maintained except for security fixes. All other future updates will be delivered exclusively through `azd ai cu`, the new Azure Developer CLI (`azd`) extension.
+>
+> **[Get started with `azd ai cu` at aka.ms/cu-cli](https://aka.ms/cu-cli).** See the [CU CLI migration notice](cu-cli/README.md#deprecation-warning) for details.
+
 ## Tools in this repository
 
 | Tool | Location | Description |
 | --- | --- | --- |
-| **CU CLI** | [`cu-cli/`](cu-cli/README.md) | Standalone `cu` frontend for analyzing files, creating and testing custom analyzers, managing resource profiles and model defaults, and generating Azure infrastructure. Install with `pip install cu-cli`. |
-| **Azure CLI extension (preview)** | [`content-understanding`](cu-cli/packages/azure-cli-extension/README.md) | Native `az cu` frontend over the same shared operations, with Azure CLI authentication, output, query, subscription, and extension-update conventions. |
+| **CU CLI [DEPRECATED]** | [`cu-cli/`](cu-cli/README.md) | Standalone `cu` frontend for analyzing files, creating and testing custom analyzers, managing resource profiles and model defaults, and generating Azure infrastructure. **Security fixes only.** Migrate to [`azd ai cu`](https://aka.ms/cu-cli). |
+| **Azure CLI extension (`az cu`) [DEPRECATED]** | [`content-understanding`](cu-cli/packages/azure-cli-extension/README.md) | Native `az cu` frontend over the same shared operations, with Azure CLI authentication, output, query, and subscription conventions. **Security fixes only.** Migrate to [`azd ai cu`](https://aka.ms/cu-cli). |
 | **Prebuilt schema definitions** | [`prebuilt-schema/`](prebuilt-schema/README.md) | Browse domain-specific prebuilt analyzer schemas by API version, or use the [single-file analyzer index](prebuilt-schema/SUPPORTED_ANALYZERS.md). |
 | **Dynamic HITL** | [`dynamic_hitl/`](dynamic_hitl/README.md) | Turn Content Understanding confidence scores into a per-field human-review policy: calibrate cutoffs on your own extractions, then route only the values that need a person. Includes a Python calibration lab and an interactive explainer site. |
 

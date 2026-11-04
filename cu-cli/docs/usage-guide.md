@@ -1,4 +1,6 @@
-# CU CLI usage guide
+# CU CLI usage guide [DEPRECATED]
+
+> **[DEPRECATED]** This usage guide is for the deprecated CU CLI, which will only receive security fixes. See the [deprecation warning at the beginning of the CU CLI README](../README.md#deprecation-warning) and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
 
 This guide covers the preview `cu` standalone CLI. On macOS, substitute
 `cu-cli` because the operating system already provides an unrelated `cu`
