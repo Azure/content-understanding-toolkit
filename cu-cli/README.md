@@ -62,7 +62,7 @@ Further reading:
 
 ## Install [DEPRECATED]
 
-> **[DEPRECATED]** These installation instructions are for the deprecated CU CLI, which will only receive security fixes. See the [deprecation warning at the beginning of this README](#deprecation-warning) and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
+> **[DEPRECATED]** These installation instructions are for the deprecated CU CLI, which will only receive security fixes. See the [deprecation warning at the beginning of this README](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/README.md#deprecation-warning) and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
 
 Requirements:
 
@@ -85,7 +85,7 @@ cu-cli --help
 
 ## Connect to Microsoft Foundry and check setup
 
-> **[DEPRECATED]** These provisioning instructions are for the deprecated CU CLI, which will only receive security fixes. See the [deprecation warning at the beginning of this README](#deprecation-warning) and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
+> **[DEPRECATED]** These provisioning instructions are for the deprecated CU CLI, which will only receive security fixes. See the [deprecation warning at the beginning of this README](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/README.md#deprecation-warning) and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
 
 You need a Microsoft Foundry resource endpoint. LLM-based prebuilt analyzers and
 custom analyzers also need supported LLM and embeddings deployments plus Content
@@ -333,7 +333,7 @@ cu infra generate --help
 
 ## CU CLI usage guide [DEPRECATED]
 
-> **[DEPRECATED]** This usage guide is for the deprecated CU CLI, which will only receive security fixes. See the [deprecation warning at the beginning of this README](#deprecation-warning) and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
+> **[DEPRECATED]** This usage guide is for the deprecated CU CLI, which will only receive security fixes. See the [deprecation warning at the beginning of this README](https://github.com/Azure/content-understanding-toolkit/blob/main/cu-cli/README.md#deprecation-warning) and migrate to [`azd ai cu`](https://aka.ms/cu-cli).
 
 Use this README for installation, resource connection, and the first successful
 analysis. For Azure provisioning, see the
